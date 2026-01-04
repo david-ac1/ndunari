@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
+import 'providers/scan_result_provider.dart';
 
-void main() {
+Future<void> main() async {
+  // Ensure Flutter is initialized
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
+  
   runApp(const NdunariApp());
 }
 
@@ -11,11 +20,16 @@ class NdunariApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Ndunari',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      home: const HomeScreen(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ScanResultProvider()),
+      ],
+      child: MaterialApp(
+        title: 'Ndunari',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        home: const HomeScreen(),
+      ),
     );
   }
 }
