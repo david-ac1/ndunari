@@ -1,11 +1,24 @@
+```dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import '../theme/app_colors.dart';
 import '../providers/stewardship_provider.dart';
+import '../providers/voice_guide_provider.dart';
+import '../models/stewardship_assessment.dart';
 import '../widgets/bottom_nav_bar.dart';
 
-/// Stewardship screen for prescription antibiotic analysis
+/// Stewardship Screen - Check prescription for antibiotic stewardship
+/// 
+/// 🎯 GEMINI 3 PRO THINKING MODE + VOICE GUIDE
+/// ============================================
+/// 
+/// Features:
+/// 1. Gemini 3 Pro with Thinking for complex medical reasoning
+/// 2. WHO AWaRe classification (ACCESS/WATCH/RESERVE)
+/// 3. Multilingual counseling (5 Nigerian languages)
+/// 4. 🔊 VOICE GUIDE: Audio playback for low-literacy accessibility
+/// 5. Regional AMR pattern analysis
 class StewardshipScreen extends StatefulWidget {
   const StewardshipScreen({super.key});
 

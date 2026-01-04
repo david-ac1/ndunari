@@ -45,5 +45,13 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	
+	<!-- Permission Descriptions -->
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access is required to scan drug packaging for authentication and counterfeit detection.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Location is used to provide regional drug resistance information and improve stewardship recommendations.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Photo library access allows you to select images of drug packages for verification.</string>
 </dict>
 </plist>

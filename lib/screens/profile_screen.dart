@@ -136,7 +136,7 @@ class ProfileScreen extends StatelessWidget {
                     if (value != null) {
                       provider.setPreferredLanguage(value);
                       Navigator.pop(context);
-                    },
+                    }
                   },
                 );
               }).toList(),

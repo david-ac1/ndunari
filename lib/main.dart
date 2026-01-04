@@ -6,6 +6,8 @@ import 'screens/home_screen.dart';
 import 'providers/scan_result_provider.dart';
 import 'providers/stewardship_provider.dart';
 import 'providers/user_provider.dart';
+import 'providers/connectivity_provider.dart';
+import 'providers/voice_guide_provider.dart';
 
 Future<void> main() async {
   // Ensure Flutter is initialized
@@ -27,6 +29,8 @@ class NdunariApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ScanResultProvider()),
         ChangeNotifierProvider(create: (_) => StewardshipProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
+        ChangeNotifierProvider(create: (_) => VoiceGuideProvider()),
       ],
       child: MaterialApp(
         title: 'Ndunari',
