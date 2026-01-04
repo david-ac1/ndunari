@@ -3,6 +3,9 @@ import '../theme/app_colors.dart';
 import '../widgets/action_card.dart';
 import '../widgets/bottom_nav_bar.dart';
 import 'forensic_scan_screen.dart';
+import 'stewardship_screen.dart';
+import 'history_screen.dart';
+import 'profile_screen.dart';
 
 /// Home screen with quick action cards and recent activity
 class HomeScreen extends StatefulWidget {
@@ -27,8 +30,19 @@ class _HomeScreenState extends State<HomeScreen> {
         context,
         MaterialPageRoute(builder: (context) => const ForensicScanScreen()),
       );
+    } else if (index == 2) {
+      // Navigate to History screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const HistoryScreen()),
+      );
+    } else if (index == 3) {
+      // Navigate to Profile screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ProfileScreen()),
+      );
     }
-    // TODO: Add navigation for History (index 2) and Profile (index 3) screens
   }
 
   @override
@@ -108,10 +122,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     subtitle: 'Verify antibiotic use',
                     gradient: AppColors.secondaryGradient,
                     onTap: () {
-                      // TODO: Navigate to Stewardship screen
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Stewardship screen coming soon'),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const StewardshipScreen(),
                         ),
                       );
                     },

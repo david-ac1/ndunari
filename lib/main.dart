@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
 import 'providers/scan_result_provider.dart';
+import 'providers/stewardship_provider.dart';
+import 'providers/user_provider.dart';
 
 Future<void> main() async {
   // Ensure Flutter is initialized
@@ -23,6 +25,8 @@ class NdunariApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ScanResultProvider()),
+        ChangeNotifierProvider(create: (_) => StewardshipProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
       ],
       child: MaterialApp(
         title: 'Ndunari',
