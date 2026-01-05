@@ -12,6 +12,14 @@
 
 ---
 
+## 🎯 For Hackathon Judges
+
+**📘 [READ THIS FIRST: Gemini 3 Technical Deep Dive →](GEMINI3_TECHNICAL.md)**
+
+*Why temperature 1.0 is critical | How high-resolution vision enables forensics | Why thinking mode is essential for medical reasoning | Our novel tiered architecture saves 92% API costs*
+
+---
+
 ## 🎯 The Problem: A Crisis Claiming 331,500 Lives Annually
 
 ### Counterfeit Drugs (267,000 deaths/year globally)

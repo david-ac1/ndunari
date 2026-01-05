@@ -42,23 +42,22 @@ class AgentCoordinator {
           _nafdacService.isReserveDrug(nafdacResult.drugName);
 
       if (needsProAnalysis) {
-        // TODO: Escalate to Pro for deep forensic analysis
-        // This would use Gemini Pro with high thinking for complex cases
-        // For now, return enhanced Flash result
-        return ForensicAnalysisResult(
-          authenticityScore: flashResult.authenticityScore,
-          isAuthentic: flashResult.isAuthentic && nafdacResult.isValid,
-          findings: [
-            ...flashResult.findings,
-            'NAFDAC verification: ${nafdacResult.registrationStatus}',
-            if (!nafdacResult.isValid) '⚠️ Requires clinical review (Pro analysis recommended)',
-          ],
-          batchNumber: flashResult.batchNumber,
-          nafdacVerified: nafdacResult.isValid,
-          location: location,
-          scannedAt: DateTime.now(),
-          thoughtSignature: flashResult.thoughtSignature,
+        // 🚀 ACTIVE PRO ESCALATION - Grand Prize Feature!
+        // Escalate to Gemini 3 Pro Thinking for deep forensic analysis
+        print('⚠️ Suspicious drug detected. Escalating to Pro Thinking...');
+        print('   - Authenticity: ${flashResult.authenticityScore}%');
+        print('   - NAFDAC Valid: ${nafdacResult.isValid}');
+        print('   - Drug Class: ${nafdacResult.classification}');
+        
+        final proResult = await _forensicEye.deepAnalysis(
+          imageBytes,
+          location,
+          flashResult,
+          nafdacResult,
         );
+        
+        // Pro analysis complete - return enhanced result
+        return proResult;
       }
 
       // Authentication confident, return Flash result

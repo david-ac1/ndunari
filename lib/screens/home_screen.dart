@@ -131,23 +131,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
                   ActionCard(
-                    icon: Icons.record_voice_over,
-                    title: 'Voice Guide',
-                    subtitle: 'Audio instructions',
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF9C27B0), Color(0xFFBA68C8)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                title: '🔊 Voice Guide',
+                subtitle: 'Audio counseling in your language',
+                icon: Icons.volume_up,
+                gradient: AppColors.dangerGradient,
+                onTap: () {
+                  // Navigate to stewardship where voice guide is available
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Voice guide available in Antibiotic Stewardship! Analyze a prescription to hear multilingual counseling.'),
+                      duration: Duration(seconds: 3),
                     ),
-                    onTap: () {
-                      // TODO: Implement voice guide feature
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Voice guide feature coming soon'),
-                        ),
-                      );
-                    },
-                  ),
+                  );
+                  // Optionally navigate to stewardship
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const StewardshipScreen(),
+                    ),
+                  );
+                },
+              ),
                   ActionCard(
                     icon: Icons.info_outline,
                     title: 'Learn More',

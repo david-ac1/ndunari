@@ -6,6 +6,7 @@ class NAFDACValidationResult {
   final DateTime? expiryDate;
   final String registrationStatus; // "VERIFIED", "INVALID", "EXPIRED", "UNKNOWN"
   final String? registrationNumber;
+  final String classification; // WHO AWaRe: ACCESS, WATCH, RESERVE
 
   NAFDACValidationResult({
     required this.isValid,
@@ -14,6 +15,7 @@ class NAFDACValidationResult {
     this.expiryDate,
     required this.registrationStatus,
     this.registrationNumber,
+    this.classification = 'UNKNOWN',
   });
 
   factory NAFDACValidationResult.fromJson(Map<String, dynamic> json) {

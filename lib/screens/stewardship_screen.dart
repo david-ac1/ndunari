@@ -1,4 +1,3 @@
-```dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
@@ -387,18 +386,78 @@ class _StewardshipScreenState extends State<StewardshipScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Counseling Text
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              assessment.counseling[_selectedLanguage] ??
-                  'Counseling not available in this language',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
+          // Counseling Text with Voice Guide Button
+          Consumer<VoiceGuideProvider>(
+            builder: (context, voiceProvider, child) {
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            assessment.counseling[_selectedLanguage] ??
+                                'Counseling not available in this language',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                        ),
+                        // 🔊 VOICE GUIDE BUTTON
+                        IconButton(
+                          icon: Icon(
+                            voiceProvider.isPlaying
+                                ? Icons.stop_circle
+                                : Icons.volume_up,
+                            size: 32,
+                            color: AppColors.primary,
+                          ),
+                          onPressed: () {
+                            if (voiceProvider.isPlaying) {
+                              voiceProvider.stop();
+                            } else {
+                              final counselingText =
+                                  assessment.counseling[_selectedLanguage] ??
+                                      'No counseling available';
+                              voiceProvider.speak(
+                                counselingText,
+                                languageOverride: _selectedLanguage,
+                              );
+                            }
+                          },
+                          tooltip: voiceProvider.isPlaying
+                              ? 'Stop audio'
+                              : 'Play audio counseling',
+                        ),
+                      ],
+                    ),
+                    if (voiceProvider.isPlaying)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8),
+                        child: Row(
+                          children: [
+                            Icon(Icons.graphic_eq, size: 16, color: AppColors.primary),
+                            SizedBox(width: 8),
+                            Text(
+                              'Playing audio...',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.primary,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
           ),
         ],
       ),
