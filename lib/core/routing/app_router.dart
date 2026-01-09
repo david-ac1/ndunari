@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/forensic/presentation/forensic_scan_screen.dart';
+import '../../features/forensic/presentation/forensic_results_screen.dart';
 import '../../features/stewardship/presentation/stewardship_screen.dart';
 import '../../features/history/presentation/history_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../models/forensic_analysis_result.dart';
 import 'route_paths.dart';
 
 /// GoRouter configuration for Ndunari app
@@ -36,6 +38,28 @@ class AppRouter {
           key: state.pageKey,
           child: const ForensicScanScreen(),
         ),
+        routes: [
+          // Results subroute
+          GoRoute(
+            path: 'results',
+            name: 'forensicResults',
+            pageBuilder: (context, state) {
+              final result = state.extra as ForensicAnalysisResult?;
+              if (result == null) {
+                return MaterialPage(
+                  key: state.pageKey,
+                  child: const Scaffold(
+                    body: Center(child: Text('No results available')),
+                  ),
+                );
+              }
+              return MaterialPage(
+                key: state.pageKey,
+                child: ForensicResultsScreen(result: result),
+              );
+            },
+          ),
+        ],
       ),
 
       // ========== Stewardship Route ==========
