@@ -1,0 +1,50 @@
+{
+    "name": "Ndunari Health Shield",
+    "short_name": "Ndunari",
+    "description": "AI-powered pharmaceutical surveillance to combat counterfeit drugs and AMR",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0A4D3C",
+    "theme_color": "#0A4D3C",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/screenshot-home.png",
+            "sizes": "540x720",
+            "type": "image/png"
+        }
+    ],
+    "categories": [
+        "health",
+        "medical",
+        "productivity"
+    ],
+    "shortcuts": [
+        {
+            "name": "Scan Drug",
+            "short_name": "Scan",
+            "description": "Scan a drug package for authenticity",
+            "url": "/scan",
+            "icons": [
+                {
+                    "src": "/icon-scan.png",
+                    "sizes": "96x96"
+                }
+            ]
+        }
+    ]
+}

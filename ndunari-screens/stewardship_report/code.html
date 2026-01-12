@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Stewardship Report - Ndunari</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<!-- Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#4bb814",
+              "deep-forest": "#162111",
+              "warning-amber": "#ffb020",
+              "reserve-red": "#e63946",
+              "background-light": "#f6f8f6",
+              "background-dark": "#162111",
+              "surface-light": "#ffffff",
+              "surface-dark": "#1e2b18",
+            },
+            fontFamily: {
+              "display": ["Manrope", "sans-serif"]
+            },
+            borderRadius: {
+              "DEFAULT": "0.5rem",
+              "lg": "0.75rem",
+              "xl": "1rem",
+              "2xl": "1.5rem",
+              "full": "9999px"
+            },
+            backdropBlur: {
+              xs: '2px',
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .dark .glass-panel {
+            background: rgba(30, 43, 24, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-deep-forest dark:text-gray-100 antialiased overflow-x-hidden">
+<div class="relative min-h-screen w-full flex flex-col max-w-md mx-auto shadow-2xl bg-background-light dark:bg-background-dark">
+<!-- Top Navigation / Header -->
+<header class="sticky top-0 z-50 glass-panel px-4 py-3 flex items-center justify-between transition-colors duration-300">
+<div class="flex items-center gap-3">
+<button class="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-deep-forest dark:text-white hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined text-2xl">account_circle</span>
+</button>
+</div>
+<h1 class="text-lg font-bold tracking-tight">Stewardship Report</h1>
+<div class="flex items-center gap-2">
+<button class="flex items-center justify-center w-10 h-10 rounded-full bg-transparent text-deep-forest dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 px-4 pb-24 pt-4 flex flex-col gap-6">
+<!-- Summary Card (Fintech Style) -->
+<section class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-deep-forest to-[#2a3e20] text-white p-6 shadow-lg">
+<div class="absolute top-0 right-0 p-4 opacity-10">
+<span class="material-symbols-outlined text-9xl">shield_moon</span>
+</div>
+<div class="relative z-10">
+<p class="text-sm font-medium text-gray-300 mb-1 uppercase tracking-wider">Safety Index</p>
+<div class="flex items-end gap-3 mb-4">
+<span class="text-5xl font-bold tracking-tight">92%</span>
+<div class="flex items-center gap-1 text-primary bg-white/10 px-2 py-1 rounded mb-2 backdrop-blur-sm">
+<span class="material-symbols-outlined text-sm font-bold">trending_up</span>
+<span class="text-xs font-bold text-white">Low Risk</span>
+</div>
+</div>
+<!-- AI Insight Micro-Card -->
+<div class="mt-4 bg-white/10 backdrop-blur-md border border-white/10 rounded-xl p-3 flex items-start gap-3">
+<div class="bg-primary/20 p-1.5 rounded-lg shrink-0">
+<span class="material-symbols-outlined text-primary text-sm">auto_awesome</span>
+</div>
+<p class="text-xs text-gray-200 leading-relaxed">
+<span class="font-bold text-white">Ndunari AI:</span> Based on local resistance patterns in Lagos, Ciprofloxacin shows reduced efficacy this season.
+                        </p>
+</div>
+</div>
+</section>
+<!-- Search Bar -->
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined">search</span>
+<input class="w-full pl-11 pr-4 py-3 bg-white dark:bg-surface-dark border-none rounded-xl shadow-sm text-sm focus:ring-2 focus:ring-primary focus:outline-none placeholder:text-gray-400 dark:text-white" placeholder="Search antibiotics (e.g., Amoxicillin)" type="text"/>
+</div>
+<!-- Chips / Filters -->
+<div class="flex gap-3 overflow-x-auto hide-scrollbar pb-1">
+<button class="shrink-0 px-4 py-2 bg-deep-forest dark:bg-white text-white dark:text-deep-forest text-sm font-bold rounded-full shadow-sm">
+                    All
+                </button>
+<button class="shrink-0 px-4 py-2 bg-white dark:bg-surface-dark border border-gray-100 dark:border-gray-700 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-full hover:bg-gray-50 dark:hover:bg-white/5 transition flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                    Access
+                </button>
+<button class="shrink-0 px-4 py-2 bg-white dark:bg-surface-dark border border-gray-100 dark:border-gray-700 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-full hover:bg-gray-50 dark:hover:bg-white/5 transition flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-warning-amber"></span>
+                    Watch
+                </button>
+<button class="shrink-0 px-4 py-2 bg-white dark:bg-surface-dark border border-gray-100 dark:border-gray-700 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-full hover:bg-gray-50 dark:hover:bg-white/5 transition flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-reserve-red"></span>
+                    Reserve
+                </button>
+</div>
+<!-- Traffic Light Sections -->
+<div class="space-y-6">
+<!-- ACCESS - Green Group -->
+<section>
+<div class="flex items-center justify-between mb-3 px-1">
+<h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Access — First Choice</h3>
+<span class="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full">Safe</span>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden divide-y divide-gray-100 dark:divide-gray-800">
+<!-- Item 1 -->
+<div class="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">check_circle</span>
+</div>
+<div class="flex-1">
+<h4 class="font-bold text-base dark:text-white">Amoxicillin</h4>
+<p class="text-xs text-gray-500 dark:text-gray-400">500mg • Tablet • 3x Daily</p>
+</div>
+<span class="material-symbols-outlined text-gray-300">chevron_right</span>
+</div>
+<!-- Item 2 -->
+<div class="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">check_circle</span>
+</div>
+<div class="flex-1">
+<h4 class="font-bold text-base dark:text-white">Ampicillin</h4>
+<p class="text-xs text-gray-500 dark:text-gray-400">250mg • Capsule • 4x Daily</p>
+</div>
+<span class="material-symbols-outlined text-gray-300">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- WATCH - Amber Group -->
+<section>
+<div class="flex items-center justify-between mb-3 px-1">
+<h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Watch — Monitor Closely</h3>
+<span class="bg-warning-amber/10 text-warning-amber text-[10px] font-bold px-2 py-0.5 rounded-full">Caution</span>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden divide-y divide-gray-100 dark:divide-gray-800">
+<!-- Item 1 -->
+<div class="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group relative overflow-hidden">
+<!-- Amber Left Border Indicator -->
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-warning-amber"></div>
+<div class="w-10 h-10 rounded-full bg-warning-amber/10 flex items-center justify-center shrink-0 ml-1">
+<span class="material-symbols-outlined text-warning-amber group-hover:scale-110 transition-transform">warning</span>
+</div>
+<div class="flex-1">
+<h4 class="font-bold text-base dark:text-white">Ciprofloxacin</h4>
+<p class="text-xs text-gray-500 dark:text-gray-400">500mg • Tablet • Nigeria STD Guidelines</p>
+</div>
+<div class="flex flex-col items-end gap-1">
+<span class="text-[10px] font-bold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-1.5 py-0.5 rounded">High Res.</span>
+<span class="material-symbols-outlined text-gray-300">chevron_right</span>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-warning-amber"></div>
+<div class="w-10 h-10 rounded-full bg-warning-amber/10 flex items-center justify-center shrink-0 ml-1">
+<span class="material-symbols-outlined text-warning-amber group-hover:scale-110 transition-transform">warning</span>
+</div>
+<div class="flex-1">
+<h4 class="font-bold text-base dark:text-white">Azithromycin</h4>
+<p class="text-xs text-gray-500 dark:text-gray-400">250mg • Capsule</p>
+</div>
+<span class="material-symbols-outlined text-gray-300">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- RESERVE - Red Group -->
+<section>
+<div class="flex items-center justify-between mb-3 px-1">
+<h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Reserve — Last Resort</h3>
+<span class="bg-reserve-red/10 text-reserve-red text-[10px] font-bold px-2 py-0.5 rounded-full">Danger</span>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden relative">
+<!-- Background texture for danger zone -->
+<div class="absolute inset-0 bg-red-50 dark:bg-red-900/10 z-0 pointer-events-none"></div>
+<div class="relative z-10 p-4 flex items-center gap-4 hover:bg-white/40 dark:hover:bg-white/5 transition-colors cursor-pointer group">
+<!-- Red Left Border Indicator -->
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-reserve-red"></div>
+<div class="w-10 h-10 rounded-full bg-reserve-red/10 flex items-center justify-center shrink-0 ml-1">
+<span class="material-symbols-outlined text-reserve-red group-hover:scale-110 transition-transform">lock</span>
+</div>
+<div class="flex-1">
+<h4 class="font-bold text-base text-gray-900 dark:text-white">Colistin</h4>
+<p class="text-xs text-gray-500 dark:text-gray-400">Injectable • Hospital Use Only</p>
+</div>
+<div class="flex flex-col items-end gap-1">
+<span class="text-[10px] font-bold bg-reserve-red/10 text-reserve-red px-1.5 py-0.5 rounded">Restricted</span>
+<span class="material-symbols-outlined text-gray-400">chevron_right</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Bottom Navigation -->
+<nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 glass-panel border-t border-gray-200 dark:border-white/10 pb-5 pt-3 px-6 rounded-t-2xl">
+<div class="flex items-center justify-between">
+<button class="flex flex-col items-center gap-1 group">
+<span class="material-symbols-outlined text-gray-400 group-hover:text-primary transition-colors">home</span>
+<span class="text-[10px] font-medium text-gray-400 group-hover:text-primary transition-colors">Home</span>
+</button>
+<button class="flex flex-col items-center gap-1 group">
+<span class="material-symbols-outlined text-deep-forest dark:text-primary transition-colors">medical_services</span>
+<span class="text-[10px] font-bold text-deep-forest dark:text-primary transition-colors">Report</span>
+</button>
+<div class="relative -top-6">
+<button class="flex items-center justify-center w-14 h-14 rounded-full bg-primary text-white shadow-xl shadow-primary/30 hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-2xl">qr_code_scanner</span>
+</button>
+</div>
+<button class="flex flex-col items-center gap-1 group">
+<span class="material-symbols-outlined text-gray-400 group-hover:text-primary transition-colors">history</span>
+<span class="text-[10px] font-medium text-gray-400 group-hover:text-primary transition-colors">History</span>
+</button>
+<button class="flex flex-col items-center gap-1 group">
+<span class="material-symbols-outlined text-gray-400 group-hover:text-primary transition-colors">person</span>
+<span class="text-[10px] font-medium text-gray-400 group-hover:text-primary transition-colors">Profile</span>
+</button>
+</div>
+</nav>
+</div>
+<script>
+        // Simple theme toggle logic for demonstration
+        // Check local storage or system preference on load would go here in a real app
+    </script>
+</body></html>

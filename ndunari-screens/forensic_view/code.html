@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Ndunari Forensic View</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#4bb814",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#162111",
+                        "warning": "#FFC107", // Amber/Warning
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom utilities for glassmorphism since pure tailwind utilities can be repetitive */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .glass-dark {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-dark font-display text-white overflow-hidden h-screen w-screen relative">
+<!-- 1. Full Screen Camera Viewport (Simulated) -->
+<div class="absolute inset-0 z-0 w-full h-full bg-black">
+<!-- Background Image simulating the camera feed -->
+<div class="w-full h-full bg-center bg-cover bg-no-repeat opacity-80" data-alt="Close up of a medicine box on a table viewed through a smartphone camera lens" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAWNjM2cmGvyor5wWkpNorh6pTqbH7Pe58Au8acdzLlpSPwoYLsOzKwtimBKStyn90n53p1GOfDtnwXXuwZ5ZoK1UvvcitobDHf4mRL9bkW3tPmslUkQRgaAE6b9v7WW78UUAhMui2pzsk4SJ6rNQy9Nd0NMgGdV-fcHdkJMuPVxBWt6YKaOddsU7KNFZwni60KABGMjrwt5YdLsVQAVuwu3jUf9QYbV7VobH3m5iU8riEhpkYEChrnFX6YmuLTwziRC0TBQUFugSJc');">
+</div>
+<!-- Gradient Overlay for readability at top and bottom -->
+<div class="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80 pointer-events-none"></div>
+</div>
+<!-- 2. Top Header (Glassmorphic) -->
+<header class="absolute top-0 left-0 w-full z-30 pt-safe-top">
+<div class="flex items-center justify-between px-6 py-4 glass-dark mx-4 mt-4 rounded-xl">
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/10 transition-colors text-white">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+<h1 class="text-base font-bold tracking-wide text-white uppercase opacity-90">
+                Ndunari <span class="text-primary font-extrabold">Scan</span>
+</h1>
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/10 transition-colors text-white">
+<span class="material-symbols-outlined text-[24px]">flash_on</span>
+</button>
+</div>
+</header>
+<!-- 3. Central Scanning Area (Reticle & AR Tooltips) -->
+<main class="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none">
+<!-- Scanning Reticle -->
+<div class="relative w-72 h-72 border border-white/10 rounded-3xl bg-white/5 shadow-2xl backdrop-blur-[2px]">
+<!-- Corner Brackets -->
+<div class="absolute top-0 left-0 w-12 h-12 border-t-[4px] border-l-[4px] border-primary rounded-tl-2xl -mt-0.5 -ml-0.5"></div>
+<div class="absolute top-0 right-0 w-12 h-12 border-t-[4px] border-r-[4px] border-primary rounded-tr-2xl -mt-0.5 -mr-0.5"></div>
+<div class="absolute bottom-0 left-0 w-12 h-12 border-b-[4px] border-l-[4px] border-primary rounded-bl-2xl -mb-0.5 -ml-0.5"></div>
+<div class="absolute bottom-0 right-0 w-12 h-12 border-b-[4px] border-r-[4px] border-primary rounded-br-2xl -mb-0.5 -mr-0.5"></div>
+<!-- Scanning Line (Static representation of movement) -->
+<div class="absolute top-1/2 left-4 right-4 h-[2px] bg-primary/80 shadow-[0_0_15px_rgba(75,184,20,0.8)]"></div>
+</div>
+<!-- AR Tooltip 1: Verified (Positioned relative to center) -->
+<div class="absolute -translate-y-48 translate-x-16 pointer-events-auto">
+<div class="glass-panel flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg transform transition-all hover:scale-105 cursor-pointer">
+<div class="flex items-center justify-center w-8 h-8 rounded-full bg-primary/20 text-primary">
+<span class="material-symbols-outlined text-[20px]">verified_user</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs font-semibold text-primary uppercase tracking-wider">Verified</span>
+<span class="text-sm font-bold text-white">Safety Seal Intact</span>
+</div>
+<!-- Connector Line -->
+<div class="absolute top-full left-6 h-8 w-[1px] bg-white/40"></div>
+<div class="absolute top-[calc(100%+32px)] left-6 w-2 h-2 bg-white rounded-full"></div>
+</div>
+</div>
+<!-- AR Tooltip 2: Warning/Checking (Positioned relative to center) -->
+<div class="absolute translate-y-48 -translate-x-20 pointer-events-auto">
+<!-- Connector Line (Upwards) -->
+<div class="absolute bottom-[calc(100%+32px)] right-6 w-2 h-2 bg-warning rounded-full"></div>
+<div class="absolute bottom-full right-6 h-8 w-[1px] bg-warning/60"></div>
+<div class="glass-panel flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border-warning/30">
+<div class="flex items-center justify-center w-8 h-8 rounded-full bg-warning/20 text-warning animate-spin-slow">
+<span class="material-symbols-outlined text-[20px]">sync</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs font-semibold text-warning uppercase tracking-wider">Processing</span>
+<span class="text-sm font-bold text-white">Checking NAFDAC...</span>
+</div>
+</div>
+</div>
+</main>
+<!-- 4. Bottom Controls (Action Sheet) -->
+<footer class="absolute bottom-0 left-0 w-full z-30 pb-10 pt-6 px-6 flex flex-col items-center">
+<!-- Meta Text Instruction -->
+<div class="mb-8 text-center">
+<p class="text-white/90 text-sm font-medium bg-black/40 px-4 py-2 rounded-full backdrop-blur-sm border border-white/10 inline-flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">center_focus_strong</span>
+                Align the medication box within the frame
+            </p>
+</div>
+<!-- Camera Controls Row -->
+<div class="flex items-center justify-between w-full max-w-sm gap-8">
+<!-- Gallery / History Button -->
+<button class="flex flex-col items-center gap-1 group">
+<div class="w-12 h-12 rounded-full glass-dark flex items-center justify-center group-hover:bg-white/20 transition-all">
+<span class="material-symbols-outlined text-white">photo_library</span>
+</div>
+<span class="text-xs font-medium text-white/70">History</span>
+</button>
+<!-- Primary Capture Button -->
+<button class="relative group cursor-pointer transform active:scale-95 transition-transform">
+<!-- Outer Glow Ring -->
+<div class="absolute -inset-1 bg-primary/30 rounded-full blur-md group-hover:bg-primary/50 transition-all"></div>
+<!-- Outer Stroke Ring -->
+<div class="w-20 h-20 rounded-full border-[3px] border-white flex items-center justify-center relative z-10">
+<!-- Inner Fill -->
+<div class="w-16 h-16 rounded-full bg-primary flex items-center justify-center shadow-inner">
+<span class="material-symbols-outlined text-white text-[32px]">qr_code_scanner</span>
+</div>
+</div>
+</button>
+<!-- Manual Input Button -->
+<button class="flex flex-col items-center gap-1 group">
+<div class="w-12 h-12 rounded-full glass-dark flex items-center justify-center group-hover:bg-white/20 transition-all">
+<span class="material-symbols-outlined text-white">keyboard</span>
+</div>
+<span class="text-xs font-medium text-white/70">Manual</span>
+</button>
+</div>
+<!-- Mode Indicator -->
+<div class="mt-6">
+<button class="text-xs font-bold tracking-widest uppercase text-white/50 hover:text-white transition-colors flex items-center gap-1">
+                Forensic Scan Mode
+                <span class="material-symbols-outlined text-[14px]">expand_less</span>
+</button>
+</div>
+</footer>
+</body></html>

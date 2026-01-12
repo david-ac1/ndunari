@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Ndunari Home Screen</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Config -->
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#4bb814",
+                        "primary-dark": "#3a960e",
+                        "forest-green": "#121b0e", 
+                        "warning-amber": "#ffb02e",
+                        "background-light": "#ffffff", /* Pure White requested */
+                        "background-dark": "#0a1208", /* Deep dark for contrast */
+                        "glass-border": "rgba(255, 255, 255, 0.5)",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"],
+                        "sans": ["Manrope", "sans-serif"]
+                    },
+                    boxShadow: {
+                        "soft": "0 8px 30px rgba(0,0,0,0.04)",
+                        "glass": "0 8px 32px 0 rgba(31, 38, 135, 0.07)",
+                    },
+                    backgroundImage: {
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+        .dark .glass-panel {
+            background: rgba(18, 27, 14, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .forest-card {
+            background: linear-gradient(145deg, #121b0e 0%, #1a2615 100%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-forest-green dark:text-white antialiased selection:bg-primary selection:text-white">
+<div class="relative min-h-screen flex flex-col max-w-md mx-auto overflow-hidden pb-24">
+<!-- Decorative Background Gradients -->
+<div class="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none z-0"></div>
+<div class="absolute -top-20 -right-20 w-64 h-64 bg-primary/20 rounded-full blur-3xl pointer-events-none z-0"></div>
+<!-- Header -->
+<header class="relative z-10 px-6 pt-12 pb-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="h-12 w-12 rounded-full border-2 border-white dark:border-forest-green shadow-sm overflow-hidden bg-gray-100 relative">
+<img alt="Portrait of a smiling African woman" class="object-cover w-full h-full" data-alt="User profile avatar image" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA1GHKjrPoTHiVT26OBYYbyWP1KSk9dfmgR1aPo0RTWVsfbg4UhXgPP78xbyvvEiK-KAmo_xvRBGqs7o39VocHyX_cbrYoZQvLpfEGvpKjx7_bzPQD3BiPMNGtWov4k-khkYAXDTXNkccIAUj6qv4j-vC0OJeQkdCQUoEG9nJOOnmZuChHHWJ0lry_E47wTFaJlA5N4om2w9kqhkPiyhj45WL3Nkogl-5Spl4S-p51WCL6sB772381yKwH71-MQ9gXEzk5-TBHDvJp9"/>
+</div>
+<div>
+<p class="text-xs font-medium text-gray-500 dark:text-gray-400">Welcome back,</p>
+<h1 class="text-xl font-bold leading-tight">Chioma</h1>
+</div>
+</div>
+<button class="glass-panel h-10 w-10 flex items-center justify-center rounded-full shadow-sm hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-forest-green dark:text-white" style="font-size: 20px;">notifications</span>
+<span class="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-warning-amber border border-white"></span>
+</button>
+</header>
+<!-- Main Content Scroll Area -->
+<main class="relative z-10 flex-1 flex flex-col px-6 gap-6 overflow-y-auto no-scrollbar">
+<!-- Health Shield Status (Glassmorphism) -->
+<section class="w-full">
+<div class="glass-panel p-5 rounded-2xl shadow-glass relative overflow-hidden group">
+<div class="absolute right-0 top-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-primary/20 transition-all duration-500"></div>
+<div class="flex justify-between items-start relative z-10">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-primary" style="font-size: 24px;">verified_user</span>
+<h2 class="text-lg font-bold text-forest-green dark:text-white">Health Shield</h2>
+</div>
+<p class="text-3xl font-bold text-primary tracking-tight">Active</p>
+<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Last scan: 2 hours ago</p>
+</div>
+<div class="flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary animate-pulse">
+<span class="material-symbols-outlined" style="font-size: 32px;">security</span>
+</div>
+</div>
+<div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
+<p class="text-sm font-medium text-gray-600 dark:text-gray-300">Protected against counterfeits</p>
+<button class="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary hover:text-white transition-colors">
+                            Details
+                        </button>
+</div>
+</div>
+</section>
+<!-- Alerts (Chips) -->
+<section class="flex gap-3 overflow-x-auto pb-2 -mx-6 px-6 no-scrollbar snap-x">
+<div class="snap-start shrink-0 flex items-center gap-2 bg-warning-amber/10 border border-warning-amber/20 rounded-lg py-2 px-3 pr-4">
+<span class="material-symbols-outlined text-warning-amber" style="font-size: 20px;">warning</span>
+<div>
+<p class="text-xs font-bold text-forest-green dark:text-white">NAFDAC Alert</p>
+<p class="text-[10px] font-medium text-forest-green/70 dark:text-gray-400">Paracetamol Batch #291 Recall</p>
+</div>
+</div>
+<div class="snap-start shrink-0 flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg py-2 px-3 pr-4">
+<span class="material-symbols-outlined text-blue-600 dark:text-blue-400" style="font-size: 20px;">thermometer</span>
+<div>
+<p class="text-xs font-bold text-forest-green dark:text-white">Storage Tip</p>
+<p class="text-[10px] font-medium text-forest-green/70 dark:text-gray-400">Keep insulin below 25°C</p>
+</div>
+</div>
+</section>
+<!-- Primary Actions Grid (Fintech Style) -->
+<section class="grid grid-cols-2 gap-4">
+<!-- Scan Pack Card -->
+<button class="group relative flex flex-col justify-between h-48 rounded-2xl p-4 overflow-hidden shadow-soft transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-forest-green">
+<!-- Abstract pattern background -->
+<div class="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] mix-blend-overlay"></div>
+<div class="absolute -bottom-10 -right-10 w-32 h-32 bg-primary rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
+<div class="relative z-10 w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-sm border border-white/10">
+<span class="material-symbols-outlined text-white" style="font-size: 24px;">qr_code_scanner</span>
+</div>
+<div class="relative z-10 text-left">
+<h3 class="text-white text-lg font-bold leading-tight mb-1">Scan<br/>Pack</h3>
+<p class="text-white/60 text-xs font-medium">Verify barcode safety instantly</p>
+</div>
+<div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
+<span class="material-symbols-outlined text-primary">arrow_forward</span>
+</div>
+</button>
+<!-- Analyze Prescription Card -->
+<button class="group relative flex flex-col justify-between h-48 rounded-2xl p-4 overflow-hidden shadow-soft transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+<div class="absolute -top-10 -left-10 w-32 h-32 bg-blue-500 rounded-full blur-3xl opacity-5 dark:opacity-10"></div>
+<div class="relative z-10 w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+<span class="material-symbols-outlined text-primary" style="font-size: 24px;">document_scanner</span>
+</div>
+<div class="relative z-10 text-left">
+<h3 class="text-forest-green dark:text-white text-lg font-bold leading-tight mb-1">Analyze<br/>Rx</h3>
+<p class="text-gray-500 dark:text-gray-400 text-xs font-medium">Check for drug conflicts AI</p>
+</div>
+<div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
+<span class="material-symbols-outlined text-forest-green dark:text-white">arrow_forward</span>
+</div>
+</button>
+</section>
+<!-- Secondary Actions -->
+<section class="grid grid-cols-2 gap-3">
+<button class="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 active:scale-95 transition-transform">
+<div class="w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center text-red-500">
+<span class="material-symbols-outlined" style="font-size: 18px;">report_problem</span>
+</div>
+<span class="text-sm font-bold text-forest-green dark:text-white">Report Fake</span>
+</button>
+<button class="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 active:scale-95 transition-transform">
+<div class="w-8 h-8 rounded-full bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-purple-500">
+<span class="material-symbols-outlined" style="font-size: 18px;">medication</span>
+</div>
+<span class="text-sm font-bold text-forest-green dark:text-white">My Cabinet</span>
+</button>
+</section>
+<!-- Recent Activity List -->
+<section>
+<div class="flex items-center justify-between mb-3">
+<h3 class="text-lg font-bold text-forest-green dark:text-white">Recent Activity</h3>
+<button class="text-xs font-bold text-primary">See All</button>
+</div>
+<div class="flex flex-col gap-3">
+<!-- Item 1 -->
+<div class="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">
+<div class="flex items-center gap-3">
+<div class="h-10 w-10 rounded-lg bg-gray-100 dark:bg-gray-700 overflow-hidden flex-shrink-0">
+<img alt="Box of medicine pills" class="object-cover w-full h-full" data-alt="Pack of Amartem softgel" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnDyHI1YB03A5YZCBREBuln1xOgKdgdHj8uwhaZHQ-S1QX0V6CV9ejYYgfwqZq3i1WsFtBkwZ6z4gJxSejM-lYZ41rQAiAQ_h5tRWeBPfRh5JmdMoIdSL55Qqm6ZUWLKtbZPi9Bct_4UxCXGT54F7W1ZpyOrhsdoRkm5bGmAzPfegNnEUQpHABIXVLwUsOJcwLipMqtL3k1zNNJ73n6QSzRCwDFK32tosMY3KtVNAHq5aqywlXyrNLB-FxhpMnwq4iS6NHNHM_LF4i"/>
+</div>
+<div>
+<p class="text-sm font-bold text-forest-green dark:text-white">Amartem Softgel</p>
+<p class="text-xs text-gray-500 dark:text-gray-400">Verified • Today, 9:41 AM</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary" style="font-size: 20px;">check_circle</span>
+</div>
+<!-- Item 2 -->
+<div class="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">
+<div class="flex items-center gap-3">
+<div class="h-10 w-10 rounded-lg bg-gray-100 dark:bg-gray-700 overflow-hidden flex-shrink-0 relative">
+<!-- Abstract Fallback for PDF/Doc -->
+<div class="absolute inset-0 flex items-center justify-center bg-blue-50 dark:bg-blue-900/20">
+<span class="material-symbols-outlined text-blue-500" style="font-size: 20px;">description</span>
+</div>
+</div>
+<div>
+<p class="text-sm font-bold text-forest-green dark:text-white">Dr. Ibrahim's Rx</p>
+<p class="text-xs text-gray-500 dark:text-gray-400">Analysis Complete • Yesterday</p>
+</div>
+</div>
+<div class="px-2 py-1 bg-green-100 dark:bg-green-900/30 rounded text-[10px] font-bold text-green-700 dark:text-green-300">
+                            SAFE
+                        </div>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Action Button / Bottom Nav -->
+<nav class="fixed bottom-6 left-6 right-6 z-50">
+<div class="glass-panel h-16 rounded-full flex items-center justify-between px-2 shadow-2xl mx-auto max-w-sm">
+<button class="flex flex-col items-center justify-center w-12 h-12 rounded-full text-primary hover:bg-gray-100/50 dark:hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined filled" style="font-size: 24px; font-variation-settings: 'FILL' 1;">home</span>
+</button>
+<button class="flex flex-col items-center justify-center w-12 h-12 rounded-full text-gray-400 hover:text-forest-green dark:hover:text-white hover:bg-gray-100/50 dark:hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined" style="font-size: 24px;">history</span>
+</button>
+<!-- Central FAB -->
+<button class="flex items-center justify-center w-14 h-14 -mt-8 rounded-full bg-forest-green text-white shadow-lg border-4 border-white dark:border-background-dark transform transition-transform active:scale-95 hover:shadow-primary/40 hover:shadow-xl">
+<span class="material-symbols-outlined" style="font-size: 28px;">center_focus_strong</span>
+</button>
+<button class="flex flex-col items-center justify-center w-12 h-12 rounded-full text-gray-400 hover:text-forest-green dark:hover:text-white hover:bg-gray-100/50 dark:hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined" style="font-size: 24px;">map</span>
+</button>
+<button class="flex flex-col items-center justify-center w-12 h-12 rounded-full text-gray-400 hover:text-forest-green dark:hover:text-white hover:bg-gray-100/50 dark:hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined" style="font-size: 24px;">person</span>
+</button>
+</div>
+</nav>
+</div>
+</body></html>

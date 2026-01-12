@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Ndunari - User Profile</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Manrope -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#17cf54",
+                        "primary-dark": "#12a843",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#112116",
+                        "text-main": "#0e1b12",
+                        "text-sub": "#4e9767",
+                        "warning": "#ffc107",
+                        "surface-light": "rgba(255, 255, 255, 0.7)",
+                        "surface-dark": "rgba(30, 46, 35, 0.7)",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.375rem", // rounded-md approx 6px
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                    boxShadow: {
+                        "glass": "0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)",
+                        "glass-hover": "0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03)",
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom Glassmorphism Utilities */
+        .glass-panel {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .dark .glass-panel {
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-text-main dark:text-white transition-colors duration-300 min-h-screen">
+<div class="relative flex h-full w-full flex-col max-w-md mx-auto overflow-x-hidden pb-8">
+<!-- Top App Bar -->
+<div class="sticky top-0 z-50 flex items-center justify-between p-4 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md border-b border-transparent dark:border-white/5 transition-all">
+<div class="w-12">
+<!-- Placeholder for back button if needed, or empty for balance -->
+</div>
+<h2 class="text-lg font-bold leading-tight tracking-tight text-center flex-1">Profile</h2>
+<div class="flex w-12 items-center justify-end">
+<button class="flex items-center justify-center rounded-full w-10 h-10 text-text-main dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-[24px]">edit</span>
+</button>
+</div>
+</div>
+<!-- Profile Header -->
+<div class="flex flex-col items-center pt-2 pb-6 px-4">
+<div class="relative mb-4 group cursor-pointer">
+<div class="bg-center bg-no-repeat bg-cover rounded-full h-28 w-28 ring-4 ring-white dark:ring-[#1e2e23] shadow-lg" data-alt="Portrait of a smiling Nigerian man wearing a modern casual shirt" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCDIbQ0hAJp_aep-4AJN1285P_mi9MZ0D-27M15Wo7LJIAVUlVIcNrUgOTgwXjoYpSV0YYNg39tTRQu_F4bqynkvQiswGCPbP5SRUqyQ8bWBit-z1LFbqFX9hs4HasRvZe8SjF8XZlYVSwaz5AK3MFyWNOhJGassbUvLh-BGDdTtmlM7eRUyJt1rGYsg_P_XuMLOPdiCPfuess4HwIsyByYZtVdadqvfq8totqKanwR9d8vodIZT-hc5RsHLN3FmsSV4qQaTr_vNGtG");'>
+</div>
+<div class="absolute bottom-0 right-0 bg-primary text-white rounded-full p-1.5 shadow-sm border-2 border-white dark:border-[#1e2e23] flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px] font-bold">photo_camera</span>
+</div>
+</div>
+<div class="text-center space-y-1">
+<div class="flex items-center justify-center gap-1.5">
+<h1 class="text-2xl font-bold leading-tight tracking-tight text-text-main dark:text-white">Chinedu Okafor</h1>
+<span class="material-symbols-outlined text-primary text-[20px]" title="Verified User">verified</span>
+</div>
+<p class="text-text-sub text-sm font-medium">ID: NDU-8829-X • Member since 2023</p>
+</div>
+</div>
+<!-- Health Profile Status Card -->
+<div class="px-4 mb-6">
+<div class="glass-panel bg-surface-light dark:bg-surface-dark rounded-xl p-5 shadow-glass">
+<div class="flex flex-col gap-3">
+<div class="flex justify-between items-end">
+<div class="flex flex-col">
+<span class="text-text-sub text-xs font-semibold uppercase tracking-wider mb-1">Safety Score</span>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-bold text-text-main dark:text-white">85%</span>
+<span class="text-sm font-medium text-primary">Good</span>
+</div>
+</div>
+<div class="bg-primary/10 dark:bg-primary/20 p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary">health_and_safety</span>
+</div>
+</div>
+<div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+<div class="bg-primary h-2.5 rounded-full transition-all duration-1000 ease-out" style="width: 85%"></div>
+</div>
+<div class="flex items-start gap-2 mt-1">
+<span class="material-symbols-outlined text-warning text-[18px] mt-0.5">warning</span>
+<p class="text-text-sub text-sm leading-tight">Add 1 more emergency contact to reach 100% completion.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Stats Widgets -->
+<div class="px-4 mb-8">
+<div class="grid grid-cols-2 gap-4">
+<div class="glass-panel bg-white dark:bg-[#1e2e23] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col gap-2">
+<div class="flex items-center gap-2 text-text-sub">
+<span class="material-symbols-outlined text-[20px]">shield_person</span>
+<span class="text-xs font-semibold uppercase">Safety Checks</span>
+</div>
+<div class="flex items-end justify-between">
+<span class="text-2xl font-bold text-text-main dark:text-white">12</span>
+<span class="text-xs font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">+3 this mo</span>
+</div>
+</div>
+<div class="glass-panel bg-white dark:bg-[#1e2e23] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col gap-2">
+<div class="flex items-center gap-2 text-text-sub">
+<span class="material-symbols-outlined text-[20px]">notifications_active</span>
+<span class="text-xs font-semibold uppercase">Active Alerts</span>
+</div>
+<div class="flex items-end justify-between">
+<span class="text-2xl font-bold text-text-main dark:text-white">0</span>
+<span class="text-xs font-medium text-text-sub bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">All clear</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Settings Sections -->
+<div class="flex flex-col gap-6 px-4">
+<!-- Account Group -->
+<section>
+<h3 class="text-text-main dark:text-white text-lg font-bold leading-tight px-1 mb-3">Account</h3>
+<div class="bg-white dark:bg-[#1e2e23] rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-800 divide-y divide-gray-50 dark:divide-gray-800">
+<button class="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
+<span class="material-symbols-outlined">person</span>
+</div>
+<div class="text-left">
+<p class="text-sm font-bold text-text-main dark:text-white">Personal Information</p>
+<p class="text-xs text-text-sub">Name, Date of Birth, Gender</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-gray-400 group-hover:text-primary transition-colors">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
+<span class="material-symbols-outlined">credit_card</span>
+</div>
+<div class="text-left">
+<p class="text-sm font-bold text-text-main dark:text-white">Subscription &amp; Billing</p>
+<p class="text-xs text-text-sub">Manage Premium Plan</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-gray-400 group-hover:text-primary transition-colors">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- Health & Safety Group -->
+<section>
+<h3 class="text-text-main dark:text-white text-lg font-bold leading-tight px-1 mb-3">Health &amp; Safety</h3>
+<div class="bg-white dark:bg-[#1e2e23] rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-800 divide-y divide-gray-50 dark:divide-gray-800">
+<button class="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">monitor_heart</span>
+</div>
+<div class="text-left">
+<p class="text-sm font-bold text-text-main dark:text-white">Medical Records</p>
+<p class="text-xs text-text-sub">History, Allergies, Blood Type</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-gray-400 group-hover:text-primary transition-colors">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-orange-600 dark:text-orange-400">
+<span class="material-symbols-outlined">smart_toy</span>
+</div>
+<div class="text-left">
+<p class="text-sm font-bold text-text-main dark:text-white">AI Preferences</p>
+<p class="text-xs text-text-sub">Consultation style, Data sharing</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-gray-400 group-hover:text-primary transition-colors">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-teal-50 dark:bg-teal-900/20 flex items-center justify-center text-teal-600 dark:text-teal-400">
+<span class="material-symbols-outlined">emergency_share</span>
+</div>
+<div class="text-left">
+<p class="text-sm font-bold text-text-main dark:text-white">Emergency Contacts</p>
+<p class="text-xs text-text-sub">Manage trusted circle</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="bg-warning/10 text-warning text-[10px] font-bold px-2 py-0.5 rounded-full border border-warning/20">ACTION</span>
+<span class="material-symbols-outlined text-gray-400 group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</button>
+</div>
+</section>
+<!-- App Settings Group -->
+<section>
+<h3 class="text-text-main dark:text-white text-lg font-bold leading-tight px-1 mb-3">App Settings</h3>
+<div class="bg-white dark:bg-[#1e2e23] rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-800 divide-y divide-gray-50 dark:divide-gray-800">
+<button class="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300">
+<span class="material-symbols-outlined">lock</span>
+</div>
+<div class="text-left">
+<p class="text-sm font-bold text-text-main dark:text-white">Security &amp; Privacy</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-gray-400 group-hover:text-primary transition-colors">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300">
+<span class="material-symbols-outlined">help</span>
+</div>
+<div class="text-left">
+<p class="text-sm font-bold text-text-main dark:text-white">Support</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-gray-400 group-hover:text-primary transition-colors">chevron_right</span>
+</button>
+</div>
+</section>
+</div>
+<!-- Danger Zone / Footer -->
+<div class="px-4 mt-8 mb-4">
+<button class="w-full flex items-center justify-center gap-2 p-4 rounded-xl bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors font-bold">
+<span class="material-symbols-outlined">logout</span>
+                Log Out
+            </button>
+<div class="text-center mt-6 text-xs text-text-sub opacity-70">
+<p>Ndunari v1.0.4 (Build 2024)</p>
+</div>
+</div>
+<div class="h-10"></div>
+</div>
+</body></html>
