@@ -8,10 +8,6 @@
     --font-manrope: "Manrope", sans-serif;
   }
 
-  * {
-    @apply border-border;
-  }
-
   body {
     @apply bg-background-light dark:bg-background-dark text-slate-gray dark:text-white antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
@@ -21,6 +17,7 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -28,6 +25,7 @@
 }
 
 @layer components {
+
   /* Glassmorphism utilities */
   .glass-panel {
     @apply bg-white/70 dark:bg-forest-green-dark/60 backdrop-blur-xl border border-white/60 dark:border-white/10;
