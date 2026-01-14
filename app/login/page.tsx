@@ -1,13 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/components/providers/AuthProvider";
 import { signInWithEmail, signUpWithEmail, signInWithOAuth } from "@/lib/supabase/auth.service";
 
 
 export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-background-dark flex items-center justify-center">
+                <div className="animate-spin text-primary text-4xl">⏳</div>
+            </div>
+        }>
+            <LoginContent />
+        </Suspense>
+    );
+}
+
+function LoginContent() {
     const { user, loading } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();

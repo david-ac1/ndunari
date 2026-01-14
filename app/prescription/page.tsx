@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/app/components/providers/AuthProvider";
 import { useVoiceGuide } from "@/lib/hooks/use-voice-guide";
 import { savePrescription } from "@/lib/services/prescription-storage.service";
@@ -38,11 +38,11 @@ export default function PrescriptionPage() {
         }
     }, [result, enabled]);
 
-    const handleReadResult = (lang: 'english' | 'pidgin' = 'english') => {
+    const handleReadResult = useCallback((lang: 'english' | 'pidgin' = 'english') => {
         if (!result) return;
         const summary = `${result.drugName} is classified by WHO as ${result.awareCategory}. The risk level is ${result.riskLevel}. ${result.counseling[lang as keyof typeof result.counseling] || result.counseling.english}`;
         speak(summary, lang as any);
-    };
+    }, [result, speak]);
 
     const handleAnalyze = async (e: React.FormEvent) => {
         e.preventDefault();

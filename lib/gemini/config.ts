@@ -19,7 +19,7 @@ export const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === "true";
  * - Widely available model
  */
 export const FORENSIC_EYE_CONFIG = {
-    model: "gemini-3-flash-preview", // Gemini 3 Flash Preview - testing if available
+    model: "gemini-1.5-flash", // Stable, high-speed model for forensic scans
     generationConfig: {
         temperature: 1.0, // Balanced reasoning
         maxOutputTokens: 2048,
@@ -38,7 +38,7 @@ export const FORENSIC_EYE_CONFIG = {
  * - Only used for text-based prescription analysis
  */
 export const STEWARDSHIP_BRAIN_CONFIG = {
-    model: "gemini-3-flash-preview", // Same model for consistency
+    model: "gemini-1.5-flash", // Consistent high-speed reasoning
     generationConfig: {
         temperature: 1.0, // Precise medical reasoning
         maxOutputTokens: 4096, // For 5 languages + recommendations

@@ -55,7 +55,7 @@ export default function ScanPage() {
         }
     }, [scanState, result, enabled]);
 
-    const handleReadScanResults = () => {
+    const handleReadScanResults = useCallback(() => {
         if (!result) return;
         const statusText = result.forensic.riskLevel === 'safe' ? 'is verified as safe' :
             result.forensic.riskLevel === 'suspicious' ? 'is suspicious and requires manual verification' :
@@ -64,7 +64,7 @@ export default function ScanPage() {
         let text = `${result.forensic.drugName} ${statusText}. Our findings include: `;
         result.forensic.findings.forEach(f => text += `${f}. `);
         speak(text);
-    };
+    }, [result, speak]);
 
     // High quality video constraints
     const videoConstraints = {
