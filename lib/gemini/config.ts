@@ -12,18 +12,17 @@ export const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === "true";
 
 /**
  * Forensic Eye Model Configuration
- * Uses Gemini 2.0 Flash (Gemini 3) - Latest experimental model
+ * Using Gemini Pro - base model available on all API keys
  * Temperature 1.0: The sweet spot for nuanced counterfeit detection
  * 
  * FREE TIER LIMITS:
- * - 15 requests/minute
- * - 1,500 requests/day
- * - Use MOCK_MODE=true in .env.local if you hit limits during dev
+ * - 60 requests/minute
+ * - Widely available model
  */
 export const FORENSIC_EYE_CONFIG = {
-    model: "gemini-2.0-flash-exp", // Gemini 3 for hackathon
+    model: "gemini-3-flash-preview", // Gemini 3 Flash Preview - testing if available
     generationConfig: {
-        temperature: 1.0, // Balanced reasoning per GEMINI3_TECHNICAL.md
+        temperature: 1.0, // Balanced reasoning
         maxOutputTokens: 2048,
         topP: 0.95,
         topK: 40,
@@ -32,15 +31,15 @@ export const FORENSIC_EYE_CONFIG = {
 
 /**
  * Stewardship Brain Model Configuration
- * Uses Gemini 2.0 Flash Thinking (Gemini 3 with extended reasoning)
+ * Using Gemini Pro for clinical reasoning (no vision needed for escalation)
  * Temperature 1.0: Contextually appropriate for medical decisions
  * 
  * FREE TIER LIMITS:
- * - 15 requests/minute (same as Flash)
- * - Use sparingly - only for Reserve drugs and suspicious packages
+ * - 60 requests/minute
+ * - Only used for text-based prescription analysis
  */
 export const STEWARDSHIP_BRAIN_CONFIG = {
-    model: "gemini-2.0-flash-thinking-exp-1219", // Gemini 3 Thinking mode
+    model: "gemini-3-flash-preview", // Same model for consistency
     generationConfig: {
         temperature: 1.0, // Precise medical reasoning
         maxOutputTokens: 4096, // For 5 languages + recommendations

@@ -18,78 +18,12 @@ export const ForensicAnalysisSchema = z.object({
 export type ForensicAnalysis = z.infer<typeof ForensicAnalysisSchema>;
 
 /**
- * Quick validation result
- */
-interface QuickValidation {
-    isValidDrugPackage: boolean;
-    confidence: number;
-    reason?: string;
-}
-
-/**
  * Forensic Eye Service
  * Uses Gemini 2.0 Flash with high-resolution image processing
  * NO image compression - full resolution for microscopic detail detection
  */
 export class ForensicEyeService {
     private model = getForensicEyeModel();
-
-    /**
-     * Quick pre-validation to check if image contains drug packaging
-     * This prevents wasting API calls on faces, random objects, etc.
-     * Uses a simple, fast prompt to save on quota
-     */
-    private async quickValidate(imageBase64: string): Promise<QuickValidation> {
-        const prompt = `Is this image a photograph of pharmaceutical drug packaging (medicine box, blister pack, bottle, etc.)? 
-    
-Respond with ONLY a JSON object:
-{
-  "isValidDrugPackage": true/false,
-  "confidence": 0-100,
-  "reason": "brief explanation"
-}
-
-Examples of VALID: medicine boxes, pill bottles, drug packages, blister packs, pharmaceutical labels
-Examples of INVALID: human faces, furniture, food, random objects, blank images, documents`;
-
-        const imagePart = {
-            inlineData: {
-                data: imageBase64,
-                mimeType: "image/jpeg",
-            },
-        };
-
-        try {
-            const result = await retryWithBackoff(
-                () => this.model.generateContent([prompt, imagePart]),
-                1, // Only 1 retry for validation
-                1000
-            );
-            const response = await result.response;
-            const text = response.text();
-
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) {
-                // If can't parse, assume it's not a drug package
-                return {
-                    isValidDrugPackage: false,
-                    confidence: 0,
-                    reason: "Unable to parse validation response",
-                };
-            }
-
-            const validation = JSON.parse(jsonMatch[0]);
-            return validation;
-        } catch (error) {
-            console.error("Quick validation failed:", error);
-            // If validation fails, assume it's not valid to save API calls
-            return {
-                isValidDrugPackage: false,
-                confidence: 0,
-                reason: "Validation check failed",
-            };
-        }
-    }
 
     /**
      * Scan drug package for authenticity
@@ -132,68 +66,39 @@ Examples of INVALID: human faces, furniture, food, random objects, blank images,
                     ? imageData.replace(/^data:image\/\w+;base64,/, "")
                     : imageData.toString("base64");
 
-            // STEP 1: Quick validation to prevent wasting API calls
-            console.log("Running pre-scan validation...");
-            const validation = await this.quickValidate(imageBase64);
+            // Direct forensic scan - NO pre-validation to avoid false negatives
+            const prompt = `CRITICAL: You MUST respond with ONLY valid JSON. No explanations, no commentary, no markdown.
 
-            if (!validation.isValidDrugPackage || validation.confidence < 50) {
-                throw new Error(
-                    `Not a valid drug package image. ${validation.reason || "Please scan a medicine box, pill bottle, or pharmaceutical packaging."}`
-                );
-            }
+Analyze this drug package image and return ONLY this JSON structure:
 
-            console.log(
-                `✓ Validation passed (${validation.confidence}% confidence). Proceeding to forensic scan...`
-            );
-
-            // STEP 2: Full forensic analysis
-            const prompt = `You are a pharmaceutical forensic expert analyzing drug packaging for authenticity.
-
-CRITICAL ANALYSIS POINTS:
-1. NAFDAC Registration Number Format
-   - Valid format: NAF-YYYY-NNNNN (e.g., NAF-2023-12345)
-   - Check for printing quality and clarity
-   - Verify number placement and alignment
-
-2. Security Features
-   - Hologram placement and quality
-   - Color-shifting inks
-   - Tamper-evident seals
-   - Microtext and fine printing
-
-3. Packaging Quality
-   - Print clarity and sharpness
-   - Color consistency
-   - Font kerning and spacing
-   - Material quality
-
-4. Suspicious Indicators
-   - Blurred or degraded printing
-   - Misspellings or grammatical errors
-   - Incorrect hologram placement (>2mm deviation)
-   - Missing security features
-   - Inconsistent color reproduction
-
-RESPONSE FORMAT (JSON):
 {
-  "authenticityScore": <0-100>,
-  "drugName": "<extracted drug name>",
-  "nafdacNumber": "<extracted NAFDAC number or 'NOT_FOUND'>",
-  "batchNumber": "<extracted batch number>",
-  "expiryDate": "<extracted expiry date>",
+  "authenticityScore": 85,
+  "drugName": "Drug Name 500mg",
+  "nafdacNumber": "NAF-2023-12345 or NOT_APPLICABLE",
+  "batchNumber": "LOT-2024-001",
+  "expiryDate": "12/2025",
   "findings": [
-    "<specific observation 1>",
-    "<specific observation 2>"
+    "Print quality excellent",
+    "Hologram present",
+    "NAFDAC number valid format"
   ],
-  "riskLevel": "safe" | "suspicious" | "counterfeit",
+  "riskLevel": "safe",
   "thoughtProcess": [
-    "Analyzing hologram structure...",
-    "Checking NAFDAC number format...",
-    "<reasoning step>"
+    "Analyzing package quality",
+    "Checking regulatory marks",
+    "Evaluating security features"
   ]
 }
 
-Analyze this drug package image and provide a detailed forensic assessment.`;
+ANALYSIS GUIDELINES:
+- authenticityScore: 0-100 based on packaging quality, security features, and regulatory marks
+- drugName: Extract drug name and dosage from package
+- nafdacNumber: "NAF-YYYY-NNNNN" if found, or "NOT_APPLICABLE" for non-Nigerian drugs
+- riskLevel: "safe" (85-100%), "suspicious" (60-84%), "counterfeit" (0-59%)
+- findings: 3-5 specific observations about the  package
+- thoughtProcess: 3-4 steps of your analysis
+
+RESPOND WITH ONLY THE JSON OBJECT. NO OTHER TEXT.`;
 
             const imagePart = {
                 inlineData: {
@@ -210,11 +115,22 @@ Analyze this drug package image and provide a detailed forensic assessment.`;
             const response = await result.response;
             const text = response.text();
 
-            // Extract JSON from response
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            console.log("Gemini response received:", text.substring(0, 500)); // Log first 500 chars
+
+            // Extract JSON from response - handle markdown code blocks and commentary
+            let jsonText = text;
+
+            // Remove markdown code blocks if present
+            jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+
+            // Try to find JSON object
+            const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
             if (!jsonMatch) {
-                throw new Error("Failed to extract JSON from Gemini response");
+                console.error("Failed to extract JSON from response:", text);
+                throw new Error("Unable to analyze image. Gemini did not return valid JSON. Please try again.");
             }
+
+            console.log("Extracted JSON:", jsonMatch[0].substring(0, 500));
 
             const analysis = JSON.parse(jsonMatch[0]);
             const validated = ForensicAnalysisSchema.parse(analysis);
@@ -224,10 +140,33 @@ Analyze this drug package image and provide a detailed forensic assessment.`;
 
             return validated;
         } catch (error) {
-            console.error("Forensic Eye scan failed:", error);
-            throw new Error(
-                `Scan failed: ${error instanceof Error ? error.message : "Unknown error"}`
-            );
+            console.error("Forensic Eye scan failed - Full error:", error);
+
+            // Provide user-friendly error messages
+            if (error instanceof Error) {
+                console.error("Error message:", error.message);
+                console.error("Error stack:", error.stack);
+
+                if (error.message.includes("quota") || error.message.includes("429")) {
+                    throw new Error(
+                        "API rate limit reached. Please wait 15 seconds and try again, or enable MOCK_MODE for testing."
+                    );
+                }
+                if (error.message.includes("Unable to analyze")) {
+                    throw error; // Already user-friendly
+                }
+
+                // If it's a Zod validation error, show details
+                if (error.name === "ZodError") {
+                    console.error("Zod validation failed:", JSON.stringify(error, null, 2));
+                    throw new Error("Analysis format invalid. Gemini response didn't match expected format.");
+                }
+
+                // Pass through the actual error for debugging
+                throw new Error(`Scan failed: ${error.message}`);
+            }
+
+            throw new Error("Scan failed. Unknown error occurred.");
         }
     }
 

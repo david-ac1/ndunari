@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import Webcam from "react-webcam";
 import Link from "next/link";
+import { saveScanToHistory, getScanHistory, deleteScanFromHistory, type ScanHistoryItem } from "@/lib/utils/scan-history";
 
 type ScanState = "idle" | "scanning" | "analyzing" | "complete" | "error";
 
@@ -29,7 +30,10 @@ export default function ScanPage() {
     const [currentThought, setCurrentThought] = useState("");
     const [result, setResult] = useState<ScanResult | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [showHistory, setShowHistory] = useState(false);
+    const [scanHistory, setScanHistory] = useState<ScanHistoryItem[]>([]);
     const webcamRef = useRef<Webcam>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const videoConstraints = {
         width: 1920,
@@ -37,15 +41,11 @@ export default function ScanPage() {
         facingMode: "environment", // Use back camera on mobile
     };
 
-    const captureImage = useCallback(async () => {
-        const imageSrc = webcamRef.current?.getScreenshot();
-        if (!imageSrc) {
-            setError("Failed to capture image");
-            return;
-        }
-
+    // Process scan (works for both camera capture and file upload)
+    const processScan = useCallback(async (imageSource: string | Blob) => {
         setScanState("scanning");
         setCurrentThought("Capturing package image...");
+        setError(null);
 
         // Simulate thought progression
         setTimeout(() => setCurrentThought("Analyzing hologram structure..."), 800);
@@ -53,9 +53,23 @@ export default function ScanPage() {
         setTimeout(() => setCurrentThought("Validating security features..."), 2400);
 
         try {
-            // Convert base64 to blob
-            const response = await fetch(imageSrc);
-            const blob = await response.blob();
+            let blob: Blob;
+            let imagePreview: string = "";
+
+            // Convert image source to blob
+            if (typeof imageSource === "string") {
+                const response = await fetch(imageSource);
+                blob = await response.blob();
+                imagePreview = imageSource; // Base64 for preview
+            } else {
+                blob = imageSource;
+                // Convert blob to base64 for preview
+                imagePreview = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.readAsDataURL(blob);
+                });
+            }
 
             // Create FormData
             const formData = new FormData();
@@ -73,7 +87,6 @@ export default function ScanPage() {
             const data = await apiResponse.json();
 
             if (!apiResponse.ok) {
-                // Extract error message from API response
                 const errorMessage = data.error || data.message || "Scan failed";
                 throw new Error(errorMessage);
             }
@@ -81,12 +94,71 @@ export default function ScanPage() {
             setResult(data.data);
             setScanState("complete");
             setCurrentThought("");
+
+            // Save to history
+            const historyItem: ScanHistoryItem = {
+                id: Date.now().toString(),
+                timestamp: Date.now(),
+                drugName: data.data.forensic.drugName,
+                authenticityScore: data.data.forensic.authenticityScore,
+                riskLevel: data.data.forensic.riskLevel,
+                nafdacNumber: data.data.forensic.nafdacNumber,
+                imagePreview: imagePreview.substring(0, 10000), // Limit size
+            };
+            saveScanToHistory(historyItem);
         } catch (err) {
             console.error("Scan error:", err);
             setError(err instanceof Error ? err.message : "Scan failed");
             setScanState("error");
             setCurrentThought("");
         }
+    }, []);
+
+    // Capture image from camera
+    const captureImage = useCallback(async () => {
+        const imageSrc = webcamRef.current?.getScreenshot();
+        if (!imageSrc) {
+            setError("Failed to capture image");
+            setScanState("error");
+            return;
+        }
+        await processScan(imageSrc);
+    }, [processScan]);
+
+    // Handle file upload
+    const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith("image/")) {
+            setError("Please select an image file");
+            setScanState("error");
+            return;
+        }
+
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            setError("Image file too large. Maximum size is 10MB");
+            setScanState("error");
+            return;
+        }
+
+        processScan(file);
+    }, [processScan]);
+
+    // Load scan history
+    const loadHistory = useCallback(() => {
+        const history = getScanHistory();
+        setScanHistory(history);
+        setShowHistory(true);
+    }, []);
+
+    // Delete scan from history
+    const handleDeleteScan = useCallback((scanId: string) => {
+        deleteScanFromHistory(scanId);
+        const history = getScanHistory();
+        setScanHistory(history);
     }, []);
 
     const resetScan = () => {
@@ -195,8 +267,8 @@ export default function ScanPage() {
                 {/* Camera Controls */}
                 <div className="flex items-center justify-between w-full max-w-sm gap-8">
 
-                    {/* Gallery Button */}
-                    <button className="flex flex-col items-center gap-1 group">
+                    {/* History Button */}
+                    <button onClick={loadHistory} className="flex flex-col items-center gap-1 group">
                         <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all">
                             <span className="text-2xl">📁</span>
                         </div>
@@ -225,13 +297,25 @@ export default function ScanPage() {
                         </div>
                     </button>
 
-                    {/* Manual Input Button */}
-                    <button className="flex flex-col items-center gap-1 group">
+                    {/* Manual Upload Button */}
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex flex-col items-center gap-1 group"
+                    >
                         <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all">
-                            <span className="text-2xl">⌨️</span>
+                            <span className="text-2xl">📂</span>
                         </div>
-                        <span className="text-xs font-medium text-white/70">Manual</span>
+                        <span className="text-xs font-medium text-white/70">Upload</span>
                     </button>
+
+                    {/* Hidden File Input */}
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                    />
                 </div>
 
                 {/* Mode Indicator */}
@@ -402,6 +486,117 @@ export default function ScanPage() {
                         >
                             Try Again
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Scan History Modal */}
+            {showHistory && (
+                <div className="absolute inset-0 z-40 bg-black/90 flex items-center justify-center p-6 overflow-y-auto">
+                    <div className="w-full max-w-3xl bg-white dark:bg-gray-800 rounded-2xl p-6 space-y-6 max-h-[90vh] overflow-y-auto">
+
+                        {/* Header */}
+                        <div className="flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 pb-4 border-b border-gray-200 dark:border-gray-700">
+                            <h2 className="text-2xl font-bold text-forest-green dark:text-white">
+                                Scan History
+                            </h2>
+                            <button
+                                onClick={() => setShowHistory(false)}
+                                className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:scale-110 transition-transform"
+                            >
+                                <span className="text-xl">✕</span>
+                            </button>
+                        </div>
+
+                        {/* History List */}
+                        {scanHistory.length === 0 ? (
+                            <div className="text-center py-12">
+                                <span className="text-6xl">📭</span>
+                                <p className="mt-4 text-gray-500 dark:text-gray-400">No scan history yet</p>
+                                <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
+                                    Your scanned drugs will appear here
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {scanHistory.map((scan) => {
+                                    const date = new Date(scan.timestamp);
+                                    const riskColor =
+                                        scan.riskLevel === "safe" ? "bg-access-green/10 border-access-green" :
+                                            scan.riskLevel === "suspicious" ? "bg-watch-orange/10 border-watch-orange" :
+                                                "bg-reserve-red/10 border-reserve-red";
+
+                                    return (
+                                        <div
+                                            key={scan.id}
+                                            className={`flex items-center gap-4 p-4 rounded-xl border-2 ${riskColor}`}
+                                        >
+                                            {/* Image Thumbnail */}
+                                            {scan.imagePreview && (
+                                                <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-gray-700">
+                                                    <img
+                                                        src={scan.imagePreview}
+                                                        alt={scan.drugName}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {/* Details */}
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="font-bold text-forest-green dark:text-white truncate">
+                                                    {scan.drugName}
+                                                </h3>
+                                                <p className="text-sm text-gray-600 dark:text-gray-300">
+                                                    Score: <span className="font-bold">{scan.authenticityScore}%</span>
+                                                    {scan.nafdacNumber && ` • ${scan.nafdacNumber}`}
+                                                </p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                    {date.toLocaleDateString()} {date.toLocaleTimeString()}
+                                                </p>
+                                            </div>
+
+                                            {/* Risk Badge */}
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-2xl">
+                                                    {scan.riskLevel === "safe" ? "✅" :
+                                                        scan.riskLevel === "suspicious" ? "⚠️" : "❌"}
+                                                </span>
+                                                <button
+                                                    onClick={() => handleDeleteScan(scan.id)}
+                                                    className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors"
+                                                >
+                                                    <span className="text-sm">🗑️</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {/* Footer */}
+                        {scanHistory.length > 0 && (
+                            <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                <button
+                                    onClick={() => {
+                                        if (confirm("Are you sure you want to clear all scan history?")) {
+                                            setScanHistory([]);
+                                            localStorage.removeItem("ndunari_scan_history");
+                                        }
+                                    }}
+                                    className="flex-1 py-3 bg-gray-200 dark:bg-gray-700 text-center rounded-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                                >
+                                    Clear All
+                                </button>
+                                <button
+                                    onClick={() => setShowHistory(false)}
+                                    className="flex-1 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-dark transition-colors"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
