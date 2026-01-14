@@ -63,7 +63,7 @@ export async function GET() {
     return NextResponse.json({
         status: "operational",
         service: "Ndunari Prescription Analyzer",
-        model: "gemini-3-flash-preview",
+        model: "gemini-3-pro-preview",
         features: {
             whoAwareClassification: true,
             multilingualCounseling: true,

@@ -11,7 +11,7 @@ export const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === "true";
 
 /**
  * Forensic Eye Model Configuration
- * Using Gemini 3 Flash Preview - high-performance analytical engine
+ * Using Gemini 3 Pro Preview - high-performance analytical engine
  * Temperature 1.0: The sweet spot for nuanced counterfeit detection
  * 
  * FREE TIER LIMITS:
@@ -19,7 +19,7 @@ export const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === "true";
  * - Widely available model
  */
 export const FORENSIC_EYE_CONFIG = {
-    model: "gemini-3-flash-preview", // User-specified bleeding edge model
+    model: "gemini-3-pro-preview", // User-specified bleeding edge model
     generationConfig: {
         temperature: 1.0, // Balanced reasoning
         maxOutputTokens: 2048,
@@ -30,7 +30,7 @@ export const FORENSIC_EYE_CONFIG = {
 
 /**
  * Stewardship Brain Model Configuration
- * Using Gemini 3 Flash Preview for deep clinical reasoning
+ * Using Gemini 3 Pro Preview for deep clinical reasoning
  * Temperature 1.0: Contextually appropriate for medical decisions
  * 
  * FREE TIER LIMITS:
@@ -38,7 +38,7 @@ export const FORENSIC_EYE_CONFIG = {
  * - Only used for text-based prescription analysis
  */
 export const STEWARDSHIP_BRAIN_CONFIG = {
-    model: "gemini-3-flash-preview", // Standardized to user requirement
+    model: "gemini-3-pro-preview", // Standardized to user requirement
     generationConfig: {
         temperature: 1.0, // Precise medical reasoning
         maxOutputTokens: 4096, // For 5 languages + recommendations

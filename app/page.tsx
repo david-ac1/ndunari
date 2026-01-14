@@ -6,7 +6,10 @@ import { getScanHistory, type ScanHistoryItem } from "@/lib/utils/scan-history";
 import { VoiceController } from "@/app/components/VoiceController";
 import { useAuth } from "@/app/components/providers/AuthProvider";
 import { getUserScans } from "@/lib/services/scan-storage.service";
-import { supabase } from "@/lib/supabase/client";
+import { sentinelAgentService, type SentinelDirective } from "@/lib/gemini/sentinel-agent.service";
+import { ThinkingPanel } from "@/app/components/ThinkingPanel";
+import { Shield, Activity, Search, AlertCircle, Zap, TrendingUp, Map as MapIcon, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function HomePage() {
     const { user, profile, loading: authLoading } = useAuth();
@@ -14,21 +17,27 @@ export default function HomePage() {
     const [stats, setStats] = useState({ total: 0, safe: 0, suspicious: 0, counterfeit: 0 });
     const [isSyncing, setIsSyncing] = useState(false);
 
+    // Sentinel State
+    const [directives, setDirectives] = useState<SentinelDirective[]>([]);
+    const [isSentinelThinking, setIsSentinelThinking] = useState(false);
+    const [sentinelThoughts, setSentinelThoughts] = useState<{ id: string, text: string, level: 'forensic' | 'sentinel' | 'system', timestamp: Date }[]>([]);
+
     const displayName = profile?.display_name || user?.email?.split('@')[0] || "Health Guardian";
 
-    const loadHistory = useCallback(async () => {
+    const loadHistoryAndAnalyze = useCallback(async () => {
         setIsSyncing(true);
-        try {
-            // 1. Load from localStorage
-            const localHistory = getScanHistory();
+        setIsSentinelThinking(true);
+        setSentinelThoughts([{ id: '1', text: "Sentinel Node Online. Initiating historical audit...", level: 'system', timestamp: new Date() }]);
 
-            // 2. Load from Supabase
+        try {
+            // 1. Load History
+            const localHistory = getScanHistory();
             let combinedHistory = [...localHistory];
 
             if (user) {
-                const { data: cloudScans, error } = await getUserScans();
-                if (!error && cloudScans) {
-                    const mappedCloudScans: ScanHistoryItem[] = cloudScans.map(s => ({
+                const { data: cloudScans } = await getUserScans();
+                if (cloudScans) {
+                    const mapped = cloudScans.map(s => ({
                         id: s.id,
                         timestamp: new Date(s.created_at).getTime(),
                         drugName: s.drug_name,
@@ -37,342 +46,243 @@ export default function HomePage() {
                         nafdacNumber: s.nafdac_number || undefined,
                         imagePreview: s.image_preview || undefined
                     }));
-
                     const existingIds = new Set(localHistory.map(l => l.id));
-                    const newCloudScans = mappedCloudScans.filter(cs => !existingIds.has(cs.id));
-                    combinedHistory = [...localHistory, ...newCloudScans];
+                    combinedHistory = [...localHistory, ...mapped.filter(cs => !existingIds.has(cs.id))];
                 }
             }
 
             combinedHistory.sort((a, b) => b.timestamp - a.timestamp);
             setScanHistory(combinedHistory.slice(0, 3));
 
-            // Calculate stats (Use profile totals if available for better accuracy, otherwise history)
-            const total = profile?.total_scans || combinedHistory.length;
-            const safe = combinedHistory.filter(s => s.riskLevel === 'safe').length;
-            const suspicious = combinedHistory.filter(s => s.riskLevel === 'suspicious').length;
-            const counterfeit = combinedHistory.filter(s => s.riskLevel === 'counterfeit').length;
+            setStats({
+                total: profile?.total_scans || combinedHistory.length,
+                safe: combinedHistory.filter(s => s.riskLevel === 'safe').length,
+                suspicious: combinedHistory.filter(s => s.riskLevel === 'suspicious').length,
+                counterfeit: combinedHistory.filter(s => s.riskLevel === 'counterfeit').length
+            });
 
-            setStats({ total, safe, suspicious, counterfeit });
+            // 2. Autonomous Sentinel Analysis
+            setSentinelThoughts(prev => [...prev, { id: '2', text: "Identifying regional pattern anomalies...", level: 'sentinel', timestamp: new Date() }]);
+            const historyString = JSON.stringify(combinedHistory.slice(0, 50));
+            const newDirectives = await sentinelAgentService.analyzeSurveillanceLogs(historyString);
+            setDirectives(newDirectives);
+            setSentinelThoughts(prev => [...prev, { id: '3', text: `Audit complete. ${newDirectives.length} directives issued.`, level: 'system', timestamp: new Date() }]);
+
         } catch (error) {
-            console.error('Failed to load history:', error);
+            console.error('Sentinel failure:', error);
         } finally {
             setIsSyncing(false);
+            setIsSentinelThinking(false);
         }
     }, [user, profile]);
 
     useEffect(() => {
-        if (!authLoading) {
-            loadHistory();
-        }
-    }, [user, authLoading, loadHistory]);
+        if (!authLoading) loadHistoryAndAnalyze();
+    }, [user, authLoading, loadHistoryAndAnalyze]);
 
     return (
-        <div className="relative min-h-screen flex flex-col overflow-hidden pb-24 lg:pb-8">
-            {/* Decorative Background Gradients */}
-            <div className="absolute top-0 left-0 w-full h-64 lg:h-96 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none z-0" />
-            <div className="absolute -top-20 -right-20 w-64 h-64 lg:w-96 lg:h-96 bg-primary/20 rounded-full blur-3xl pointer-events-none z-0" />
-            <div className="absolute top-1/2 -left-40 w-80 h-80 bg-mint-leaf/30 rounded-full blur-3xl pointer-events-none z-0 hidden lg:block" />
+        <div className="relative min-h-screen flex flex-col overflow-hidden pb-24 lg:pb-8 bg-background-dark text-white">
+            {/* Background Aesthetics */}
+            <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
+            <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
 
             {/* Header */}
-            <header className="relative z-10 px-6 lg:px-8 xl:px-12 pt-8 lg:pt-12 pb-4 lg:pb-6">
+            <header className="relative z-20 px-6 py-8">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-3 lg:gap-4">
-                        <Link href="/profile" className="h-12 w-12 lg:h-14 lg:w-14 rounded-full border-2 border-white dark:border-forest-green shadow-sm overflow-hidden bg-forest-green relative flex items-center justify-center hover:scale-105 transition-transform">
-                            <span className="text-2xl lg:text-3xl font-bold text-white">
-                                {displayName?.[0] || 'N'}
-                            </span>
+                    <div className="flex items-center gap-4">
+                        <Link href="/profile" className="w-14 h-14 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center font-black text-2xl text-primary hover:scale-105 transition-all">
+                            {displayName?.[0] || 'N'}
                         </Link>
                         <div>
-                            <p className="text-xs lg:text-sm font-medium text-gray-500 dark:text-gray-400">Welcome back,</p>
-                            <h1 className="text-xl lg:text-2xl font-bold leading-tight truncate max-w-[150px] lg:max-w-[250px] flex items-center gap-2">
+                            <h1 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2">
                                 {displayName}
-                                <Link href="/profile" title={profile?.share_data ? "Contributing to Public Health" : "Privacy Protection Active"}>
-                                    {profile?.share_data === false ? (
-                                        <span className="text-sm bg-access-green/20 text-access-green px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
-                                            🛡️ <span className="hidden sm:inline text-[10px]">PRIVATE</span>
-                                        </span>
-                                    ) : (
-                                        <span className="text-sm bg-primary/20 text-primary px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
-                                            📡 <span className="hidden sm:inline text-[10px]">SYNCING</span>
-                                        </span>
-                                    )}
-                                </Link>
+                                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                             </h1>
-                            {user?.is_anonymous && (
-                                <Link href="/login" className="text-[10px] lg:text-xs font-bold text-primary hover:underline flex items-center gap-1">
-                                    <span>🔐</span> Register to save history
-                                </Link>
-                            )}
+                            <p className="text-[10px] font-bold text-white/40 uppercase tracking-[0.3em]">Sentinel Active</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                        {user?.is_anonymous && (
-                            <Link
-                                href="/login"
-                                className="hidden sm:flex px-4 py-2 bg-primary/10 text-primary rounded-lg text-sm font-bold hover:bg-primary/20 transition-colors"
-                            >
-                                Sign In
-                            </Link>
-                        )}
+                    <div className="flex items-center gap-3">
                         <VoiceController />
-                        <button className="glass-panel h-10 w-10 lg:h-12 lg:w-12 flex items-center justify-center rounded-full shadow-sm hover:scale-105 transition-transform relative">
-                            <span className="text-xl lg:text-2xl">🔔</span>
-                            {stats.suspicious + stats.counterfeit > 0 && (
-                                <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-warning-amber border border-white" />
-                            )}
-                        </button>
+                        <Link href="/notifications" className="w-12 h-12 rounded-2xl glass-panel flex items-center justify-center hover:bg-white/10 transition-all">
+                            <Activity size={20} className="text-white/60" />
+                        </Link>
                     </div>
                 </div>
             </header>
 
-            {/* Main Content */}
-            <main className="relative z-10 flex-1 px-6 lg:px-8 xl:px-12 overflow-y-auto no-scrollbar">
-                <div className="max-w-7xl mx-auto pb-6">
+            <main className="relative z-10 flex-1 px-6 max-w-7xl mx-auto w-full space-y-8 pb-10">
 
-                    {/* Alert Chips - Show if suspicious/counterfeit drugs found */}
-                    {(stats.suspicious > 0 || stats.counterfeit > 0) && (
-                        <section className="mb-6">
-                            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
-                                {stats.counterfeit > 0 && (
-                                    <div className="flex-shrink-0 px-4 py-2 rounded-full bg-reserve-red/10 border border-reserve-red/30 flex items-center gap-2">
-                                        <span className="text-reserve-red text-lg">⚠️</span>
-                                        <span className="text-sm font-bold text-reserve-red">
-                                            {stats.counterfeit} Counterfeit{stats.counterfeit > 1 ? 's' : ''} Detected
-                                        </span>
-                                    </div>
-                                )}
-                                {stats.suspicious > 0 && (
-                                    <div className="flex-shrink-0 px-4 py-2 rounded-full bg-watch-orange/10 border border-watch-orange/30 flex items-center gap-2">
-                                        <span className="text-watch-orange text-lg">⚡</span>
-                                        <span className="text-sm font-bold text-watch-orange">
-                                            {stats.suspicious} Suspicious Package{stats.suspicious > 1 ? 's' : ''}
-                                        </span>
-                                    </div>
-                                )}
+                {/* Dashboard Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+                    {/* Primary Flow (8 Columns) */}
+                    <div className="lg:col-span-8 space-y-8">
+
+                        {/* Sentinel Directives (Autonomous Engine Results) */}
+                        <section className="space-y-4">
+                            <div className="flex items-center justify-between px-2">
+                                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-primary">Autonomous Directives</h2>
+                                {isSentinelThinking && <span className="text-[10px] font-bold text-white/30 animate-pulse italic">Sentinel Scanning...</span>}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <AnimatePresence mode="popLayout">
+                                    {directives.length > 0 ? (
+                                        directives.map((directive, idx) => (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                key={idx}
+                                                className={`p-5 rounded-3xl border-2 glass-panel ${directive.type === 'REGIONAL_ALERT' ? 'border-reserve-red/30 bg-reserve-red/5' :
+                                                        directive.type === 'SUPPLY_CHAIN_AUDIT' ? 'border-watch-orange/30 bg-watch-orange/5' :
+                                                            'border-primary/30 bg-primary/5'
+                                                    }`}
+                                            >
+                                                <div className="flex items-start justify-between mb-3">
+                                                    <span className={`px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest ${directive.type === 'REGIONAL_ALERT' ? 'bg-reserve-red text-white' :
+                                                            'bg-primary text-black'
+                                                        }`}>
+                                                        {directive.type.replace('_', ' ')}
+                                                    </span>
+                                                    <div className="text-[10px] font-bold text-white/30">{directive.urgency.toUpperCase()}</div>
+                                                </div>
+                                                <h3 className="text-sm font-black mb-1 line-clamp-1">{directive.title}</h3>
+                                                <p className="text-xs text-white/60 leading-relaxed line-clamp-2">{directive.description}</p>
+                                            </motion.div>
+                                        ))
+                                    ) : (
+                                        <div className="col-span-full h-32 rounded-3xl border-2 border-dashed border-white/5 flex flex-col items-center justify-center grayscale opacity-30">
+                                            <Shield size={32} className="mb-2" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">No Critical Threats Detected</span>
+                                        </div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         </section>
-                    )}
 
-                    {/* Desktop: Two Column Layout, Mobile: Single Column */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-
-                        {/* Left Column: Main Actions (Desktop: 2/3, Mobile: Full) */}
-                        <div className="lg:col-span-2 space-y-6">
-
-                            {/* Health Shield Status */}
-                            <section className="w-full">
-                                <div className="glass-panel p-6 lg:p-8 rounded-2xl shadow-glass relative overflow-hidden group">
-                                    <div className="absolute right-0 top-0 w-32 h-32 lg:w-48 lg:h-48 bg-primary/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-primary/20 transition-all duration-500" />
-                                    <div className="flex justify-between items-start relative z-10">
-                                        <div className="flex flex-col gap-2">
-                                            <div className="flex items-center gap-2 lg:gap-3 mb-2">
-                                                <span className="text-3xl lg:text-4xl">🛡️</span>
-                                                <h2 className="text-xl lg:text-2xl font-bold text-forest-green dark:text-white">Health Shield</h2>
-                                            </div>
-                                            <p className="text-4xl lg:text-5xl font-bold text-primary tracking-tight">Active</p>
-                                            <p className="text-sm lg:text-base text-gray-500 dark:text-gray-400 mt-1">
-                                                {stats.total > 0 ? `${stats.total} scan${stats.total > 1 ? 's' : ''} completed` : 'AI-powered pharmaceutical protection'}
-                                            </p>
-                                        </div>
-                                        <div className="flex items-center justify-center w-20 h-20 lg:w-24 lg:h-24 rounded-full bg-primary/10 text-primary animate-pulse-slow">
-                                            <span className="text-4xl lg:text-5xl">✓</span>
-                                        </div>
+                        {/* Action Nodes */}
+                        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <Link href="/scan" className="group relative h-64 rounded-[2.5rem] bg-primary overflow-hidden transition-all hover:scale-[1.02] active:scale-95 shadow-2xl">
+                                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?auto=format&fit=crop&q=80&w=1000')] bg-cover opacity-20 mix-blend-overlay" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/80 to-transparent" />
+                                <div className="relative h-full p-8 flex flex-col justify-between">
+                                    <div className="w-16 h-16 rounded-3xl bg-white/20 backdrop-blur-xl border border-white/30 flex items-center justify-center shadow-inner">
+                                        <Search size={32} className="text-white" />
                                     </div>
+                                    <div>
+                                        <h3 className="text-3xl font-black text-white leading-none mb-2">FORENSIC<br />SCANNER</h3>
+                                        <p className="text-black/60 font-black text-[10px] uppercase tracking-[0.2em]">Launch Multimodal Eye</p>
+                                    </div>
+                                    <ChevronRight className="absolute top-8 right-8 text-white/40 group-hover:text-white transition-colors" />
+                                </div>
+                            </Link>
+
+                            <Link href="/prescription" className="group relative h-64 rounded-[2.5rem] bg-zinc-900 border-2 border-white/5 overflow-hidden transition-all hover:scale-[1.02] active:scale-95 shadow-2xl">
+                                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" />
+                                <div className="relative h-full p-8 flex flex-col justify-between">
+                                    <div className="w-16 h-16 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                                        <Activity size={32} className="text-primary" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-3xl font-black text-white leading-none mb-2">STEWARDSHIP<br />AUDITOR</h3>
+                                        <p className="text-white/40 font-black text-[10px] uppercase tracking-[0.2em]">BETA v3.0 | AMR Shield</p>
+                                    </div>
+                                    <ChevronRight className="absolute top-8 right-8 text-white/20 group-hover:text-primary transition-colors" />
+                                </div>
+                            </Link>
+                        </section>
+
+                        {/* Recent History Segment */}
+                        {scanHistory.length > 0 && (
+                            <section className="space-y-4">
+                                <div className="flex items-center justify-between px-2">
+                                    <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white/40">Recent Logs</h2>
+                                    <Link href="/history" className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline">View Ledger</Link>
+                                </div>
+                                <div className="space-y-3">
+                                    {scanHistory.map(scan => (
+                                        <div key={scan.id} className="glass-panel p-4 rounded-3xl border border-white/5 flex items-center justify-between group hover:border-primary/40 transition-all">
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${scan.riskLevel === 'safe' ? 'bg-access-green/10 text-access-green' : 'bg-reserve-red/10 text-reserve-red'
+                                                    }`}>
+                                                    {scan.authenticityScore}%
+                                                </div>
+                                                <div>
+                                                    <p className="font-black text-sm uppercase tracking-tight">{scan.drugName}</p>
+                                                    <p className="text-[10px] font-bold text-white/30">{new Date(scan.timestamp).toDateString()}</p>
+                                                </div>
+                                            </div>
+                                            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary/20 group-hover:text-primary transition-all">
+                                                <ChevronRight size={14} />
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </section>
+                        )}
+                    </div>
 
-                            {/* Primary Actions Grid */}
-                            <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
+                    {/* Side Intelligence (4 Columns) */}
+                    <div className="lg:col-span-4 space-y-8">
 
-                                {/* Scan Pack Card */}
-                                <Link href="/scan" className="group relative flex flex-col justify-between h-56 lg:h-64 rounded-2xl p-6 overflow-hidden shadow-soft transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-forest-green">
-                                    <div className="absolute -bottom-10 -right-10 w-32 h-32 lg:w-48 lg:h-48 bg-primary rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity" />
-                                    <div className="relative z-10 w-14 h-14 lg:w-16 lg:h-16 rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-sm border border-white/10">
-                                        <span className="text-3xl lg:text-4xl">📷</span>
-                                    </div>
-                                    <div className="relative z-10 text-left">
-                                        <h3 className="text-white text-2xl lg:text-3xl font-bold leading-tight mb-2">Scan<br />Package</h3>
-                                        <p className="text-white/60 text-sm lg:text-base font-medium">Multi-angle 3D verification</p>
-                                    </div>
-                                    <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <span className="text-primary text-2xl">→</span>
-                                    </div>
-                                </Link>
+                        {/* Thinking Stream */}
+                        <section className="space-y-4">
+                            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white/40 px-2">Thought Signature</h2>
+                            <ThinkingPanel thoughts={sentinelThoughts} isAnalyzing={isSentinelThinking} />
+                        </section>
 
-                                {/* Analyze Prescription Card */}
-                                <Link href="/prescription" className="group relative flex flex-col justify-between h-56 lg:h-64 rounded-2xl p-6 overflow-hidden shadow-soft transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
-                                    <div className="absolute -top-10 -left-10 w-32 h-32 lg:w-48 lg:h-48 bg-blue-500 rounded-full blur-3xl opacity-5 dark:opacity-10" />
-                                    <div className="relative z-10 w-14 h-14 lg:w-16 lg:h-16 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                                        <span className="text-3xl lg:text-4xl">📋</span>
-                                    </div>
-                                    <div className="relative z-10 text-left">
-                                        <h3 className="text-forest-green dark:text-white text-2xl lg:text-3xl font-bold leading-tight mb-2">Analyze<br />Prescription</h3>
-                                        <p className="text-gray-500 dark:text-gray-400 text-sm lg:text-base font-medium">WHO AWaRe classification</p>
-                                    </div>
-                                    <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <span className="text-forest-green dark:text-white text-2xl">→</span>
-                                    </div>
-                                </Link>
-
-                            </section>
-
-                            {/* Recent Activity */}
-                            {scanHistory.length > 0 && (
-                                <section className="space-y-3">
-                                    <div className="flex items-center justify-between">
-                                        <h3 className="text-lg font-bold text-forest-green dark:text-white flex items-center gap-2">
-                                            <span>📊</span> Recent Scans
-                                        </h3>
-                                        <Link href="/history" className="text-sm font-medium text-primary hover:underline">
-                                            View All
-                                        </Link>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {scanHistory.map((scan) => (
-                                            <div
-                                                key={scan.id}
-                                                className="glass-panel p-4 rounded-xl flex items-center gap-4 border border-gray-100 dark:border-gray-700 hover:border-primary/30 transition-colors"
-                                            >
-                                                {scan.imagePreview && (
-                                                    <img
-                                                        src={scan.imagePreview}
-                                                        alt={scan.drugName}
-                                                        className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-                                                    />
-                                                )}
-                                                <div className="flex-1 min-w-0">
-                                                    <h4 className="font-bold text-forest-green dark:text-white truncate">{scan.drugName}</h4>
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                        {new Date(scan.timestamp).toLocaleDateString('en-US', {
-                                                            month: 'short',
-                                                            day: 'numeric',
-                                                            hour: '2-digit',
-                                                            minute: '2-digit'
-                                                        })}
-                                                    </p>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className={`text-sm font-bold ${scan.riskLevel === 'safe' ? 'text-access-green' :
-                                                        scan.riskLevel === 'suspicious' ? 'text-watch-orange' :
-                                                            'text-reserve-red'
-                                                        }`}>
-                                                        {scan.authenticityScore}%
-                                                    </span>
-                                                    <span className="text-lg">
-                                                        {scan.riskLevel === 'safe' ? '✅' :
-                                                            scan.riskLevel === 'suspicious' ? '⚠️' : '❌'}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </section>
-                            )}
-
-                            {/* Secondary Actions */}
-                            <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-                                <Link href="/report" className="flex flex-col lg:flex-row items-center gap-3 p-4 rounded-xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 hover:scale-105 active:scale-95 transition-transform">
-                                    <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
-                                        <span className="text-xl lg:text-2xl">📈</span>
-                                    </div>
-                                    <span className="text-sm lg:text-base font-bold text-forest-green dark:text-white text-center lg:text-left">Report</span>
-                                </Link>
-                                <Link href="/profile" className="flex flex-col lg:flex-row items-center gap-3 p-4 rounded-xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 hover:scale-105 active:scale-95 transition-transform">
-                                    <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-purple-500 flex-shrink-0">
-                                        <span className="text-xl lg:text-2xl">👤</span>
-                                    </div>
-                                    <span className="text-sm lg:text-base font-bold text-forest-green dark:text-white text-center lg:text-left">Profile</span>
-                                </Link>
-                                <Link href="/history" className="flex flex-col lg:flex-row items-center gap-3 p-4 rounded-xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 hover:scale-105 active:scale-95 transition-transform">
-                                    <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-500 flex-shrink-0">
-                                        <span className="text-xl lg:text-2xl">📜</span>
-                                    </div>
-                                    <span className="text-sm lg:text-base font-bold text-forest-green dark:text-white text-center lg:text-left">History</span>
-                                </Link>
-                                <Link href="/map" className="flex flex-col lg:flex-row items-center gap-3 p-4 rounded-xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 hover:scale-105 active:scale-95 transition-transform">
-                                    <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-green-600 flex-shrink-0">
-                                        <span className="text-xl lg:text-2xl">🗺️</span>
-                                    </div>
-                                    <span className="text-sm lg:text-base font-bold text-forest-green dark:text-white text-center lg:text-left">Map</span>
-                                </Link>
-                            </section>
-
-                        </div>
-
-                        {/* Right Column: Info & Stats (Desktop: 1/3, Mobile: Full) */}
-                        <div className="space-y-6 lg:col-span-1">
-
-                            {/* Mission Section */}
-                            <section className="p-5 lg:p-6 rounded-xl bg-mint-leaf dark:bg-primary/10 border border-primary/20 shadow-sm">
-                                <h3 className="font-bold text-base lg:text-lg text-forest-green dark:text-white mb-3 flex items-center gap-2">
-                                    <span className="text-xl">🎯</span> Mission
-                                </h3>
-                                <p className="text-sm lg:text-base text-gray-600 dark:text-gray-300 leading-relaxed">
-                                    Protecting 140M Nigerians from counterfeit drugs and antimicrobial resistance using AI-powered pharmaceutical surveillance.
-                                </p>
-                            </section>
-
-                            {/* Stats Section - Desktop Only */}
-                            <section className="hidden lg:block p-5 lg:p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">
-                                <h3 className="font-bold text-base lg:text-lg text-forest-green dark:text-white mb-4 flex items-center gap-2">
-                                    <span className="text-xl">📊</span> Your Impact
-                                </h3>
+                        {/* Network Stats */}
+                        <section className="glass-panel p-6 rounded-[2.5rem] border border-white/5 space-y-6">
+                            <div>
+                                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white/40 mb-4">Guardian Impact</h2>
                                 <div className="space-y-4">
-                                    <div>
-                                        <p className="text-2xl font-bold text-primary">{stats.total}</p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">Scans Completed</p>
+                                    <div className="flex justify-between items-end">
+                                        <p className="text-[10px] font-black text-white/30 uppercase">Total Verified</p>
+                                        <p className="text-2xl font-black">{stats.total}</p>
                                     </div>
-                                    <div className="h-px bg-gray-200 dark:bg-gray-700" />
-                                    <div>
-                                        <p className="text-2xl font-bold text-access-green">{stats.safe}</p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">Verified Authentic</p>
+                                    <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                                        <div className="h-full bg-primary" style={{ width: `${(stats.safe / Math.max(stats.total, 1)) * 100}%` }} />
                                     </div>
-                                    <div className="h-px bg-gray-200 dark:bg-gray-700" />
-                                    <div>
-                                        <p className="text-2xl font-bold text-reserve-red">{stats.suspicious + stats.counterfeit}</p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">Flagged for Risk</p>
+                                    <div className="flex justify-between text-[10px] font-black uppercase">
+                                        <span className="text-access-green">Safe: {stats.safe}</span>
+                                        <span className="text-reserve-red">Risk: {stats.counterfeit + stats.suspicious}</span>
                                     </div>
                                 </div>
-                            </section>
+                            </div>
 
-                            {/* Quick Links - Desktop Only */}
-                            <section className="hidden lg:block p-5 lg:p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">
-                                <h3 className="font-bold text-base lg:text-lg text-forest-green dark:text-white mb-4 flex items-center gap-2">
-                                    <span className="text-xl">🔗</span> Resources
-                                </h3>
-                                <div className="space-y-2">
-                                    <a href="https://www.who.int/teams/integrated-health-services/antimicrobial-resistance/aware-classification" target="_blank" rel="noopener noreferrer" className="block text-sm text-primary hover:underline">WHO AWaRe Database</a>
-                                    <a href="https://www.nafdac.gov.ng" target="_blank" rel="noopener noreferrer" className="block text-sm text-primary hover:underline">NAFDAC Registry</a>
-                                    <a href="mailto:report@ndunari.health" className="block text-sm text-primary hover:underline">Report Counterfeit</a>
-                                    <Link href="/help" className="block text-sm text-primary hover:underline">Help & Support</Link>
+                            <Link href="/map" className="block p-4 rounded-2xl bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all group">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <MapIcon size={18} className="text-primary" />
+                                        <span className="text-xs font-black uppercase tracking-widest">Surveillance Map</span>
+                                    </div>
+                                    <TrendingUp size={16} className="text-primary group-hover:translate-x-1 transition-transform" />
                                 </div>
-                            </section>
+                            </Link>
+                        </section>
 
-                        </div>
-
+                        {/* AI Research Hub */}
+                        <section className="p-6 rounded-[2.5rem] bg-zinc-900 border border-white/5">
+                            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white/40 mb-4 px-2">Research Hub</h2>
+                            <div className="space-y-3">
+                                <a href="https://www.who.int" className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-[10px] font-black uppercase text-white/60">
+                                    <AlertCircle size={14} className="text-primary" /> WHO AWaRe Database
+                                </a>
+                                <a href="#" className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-[10px] font-black uppercase text-white/60">
+                                    <Zap size={14} className="text-primary" /> Nigerian AMR Trends
+                                </a>
+                            </div>
+                        </section>
                     </div>
                 </div>
             </main>
 
-            {/* Bottom Navigation - Mobile Only */}
+            {/* Mobile Navigation */}
             <nav className="fixed bottom-6 left-6 right-6 z-50 lg:hidden">
-                <div className="glass-panel h-16 rounded-full flex items-center justify-between px-2 shadow-2xl max-w-md mx-auto">
-                    <Link href="/" className="flex flex-col items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary">
-                        <span className="text-2xl">🏠</span>
-                    </Link>
-                    <Link href="/history" className="flex flex-col items-center justify-center w-12 h-12 rounded-full text-gray-400 hover:text-forest-green dark:hover:text-white transition-colors">
-                        <span className="text-2xl">📜</span>
-                    </Link>
-                    <Link href="/scan" className="flex items-center justify-center w-14 h-14 -mt-8 rounded-full bg-forest-green text-white shadow-lg border-4 border-white dark:border-background-dark transform transition-transform active:scale-95 hover:shadow-xl">
-                        <span className="text-3xl">🔍</span>
-                    </Link>
-                    <Link href="/report" className="flex flex-col items-center justify-center w-12 h-12 rounded-full text-gray-400 hover:text-forest-green dark:hover:text-white transition-colors">
-                        <span className="text-2xl">📈</span>
-                    </Link>
-                    <Link href="/profile" className="flex flex-col items-center justify-center w-12 h-12 rounded-full text-gray-400 hover:text-forest-green dark:hover:text-white transition-colors">
-                        <span className="text-2xl">👤</span>
-                    </Link>
+                <div className="glass-panel h-16 rounded-full flex items-center justify-between px-6 shadow-2xl border border-white/10 bg-black/60 backdrop-blur-3xl">
+                    <Link href="/" className="text-primary"><Activity size={24} /></Link>
+                    <Link href="/scan" className="w-14 h-14 -mt-10 rounded-2xl bg-primary flex items-center justify-center shadow-xl border-4 border-background-dark"><Search size={24} className="text-black" /></Link>
+                    <Link href="/map" className="text-white/40"><MapIcon size={24} /></Link>
                 </div>
             </nav>
         </div>

@@ -18,7 +18,7 @@ export const StewardshipAssessmentSchema = z.object({
     awareCategory: z.enum(["ACCESS", "WATCH", "RESERVE", "UNKNOWN"]),
     riskLevel: z.enum(["low", "medium", "high", "critical"]),
     recommendations: z.array(z.string()),
-    alternatives: z.array(z.string()).optional(),
+    regulatoryGuidelines: z.array(z.string()).optional(),
     counseling: z.object({
         english: z.string(),
         pidgin: z.string().optional(),
@@ -34,7 +34,7 @@ export type StewardshipAssessment = z.infer<typeof StewardshipAssessmentSchema>;
 
 /**
  * Stewardship Brain Service
- * Uses Gemini 3 Flash Preview for deep clinical reasoning
+ * Uses Gemini 3 Pro Preview for deep clinical reasoning
  * Temperature 1.0: Contextually appropriate medical decisions
  */
 export class StewardshipBrainService {
@@ -133,12 +133,12 @@ RESPONSE FORMAT (JSON):
   "awareCategory": "ACCESS" | "WATCH" | "RESERVE" | "UNKNOWN",
   "riskLevel": "low" | "medium" | "high" | "critical",
   "recommendations": [
-    "<specific recommendation 1>",
-    "<specific recommendation 2>"
+    "<regulatory recommendation 1>",
+    "<regulatory recommendation 2>"
   ],
-  "alternatives": ["<safer alternative 1>", "<safer alternative 2>"],
+  "regulatoryGuidelines": ["<NCDC/WHO guideline reference 1>", "<NCDC/WHO guideline reference 2>"],
   "counseling": {
-    "english": "<detailed patient counseling>",
+    "english": "<public health narrative on results>",
     "pidgin": "<same message in Nigerian Pidgin>"
   },
   "thoughtProcess": [

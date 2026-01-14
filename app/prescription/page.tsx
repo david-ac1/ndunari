@@ -5,19 +5,17 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/app/components/providers/AuthProvider";
 import { useVoiceGuide } from "@/lib/hooks/use-voice-guide";
 import { savePrescription } from "@/lib/services/prescription-storage.service";
+import { Shield, Search, FileText, AlertTriangle, Info, CheckCircle2 } from "lucide-react";
 
 interface StewardshipResult {
     drugName: string;
     awareCategory: "ACCESS" | "WATCH" | "RESERVE" | "UNKNOWN";
     riskLevel: "low" | "medium" | "high" | "critical";
     recommendations: string[];
-    alternatives?: string[];
+    regulatoryGuidelines?: string[];
     counseling: {
         english: string;
         pidgin?: string;
-        yoruba?: string;
-        hausa?: string;
-        igbo?: string;
     };
     warningFlags: string[];
 }
@@ -26,316 +24,230 @@ export default function PrescriptionPage() {
     const { user } = useAuth();
     const { speak, stop, speaking, enabled } = useVoiceGuide();
     const [drugName, setDrugName] = useState("");
-    const [indication, setIndication] = useState("");
+    const [context, setContext] = useState("");
     const [analyzing, setAnalyzing] = useState(false);
     const [result, setResult] = useState<StewardshipResult | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    // Auto-read result when it arrives
+    const handleReadResult = useCallback((lang: 'english' | 'pidgin' = 'english') => {
+        if (!result) return;
+        const summary = `Stewardship Audit for ${result.drugName}. WHO Classification is ${result.awareCategory}. ${result.counseling[lang as keyof typeof result.counseling] || result.counseling.english}`;
+        speak(summary, lang as any);
+    }, [result, speak]);
+
     useEffect(() => {
         if (result && enabled) {
             handleReadResult('english');
         }
-    }, [result, enabled]);
+    }, [result, enabled, handleReadResult]);
 
-    const handleReadResult = useCallback((lang: 'english' | 'pidgin' = 'english') => {
-        if (!result) return;
-        const summary = `${result.drugName} is classified by WHO as ${result.awareCategory}. The risk level is ${result.riskLevel}. ${result.counseling[lang as keyof typeof result.counseling] || result.counseling.english}`;
-        speak(summary, lang as any);
-    }, [result, speak]);
-
-    const handleAnalyze = async (e: React.FormEvent) => {
+    const handleAudit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        if (!drugName.trim()) {
-            setError("Please enter a drug name");
-            return;
-        }
+        if (!drugName.trim()) return setError("Drug name required for audit");
 
         setAnalyzing(true);
         setError(null);
         setResult(null);
 
         try {
-            const response = await fetch('/api/prescription', {
+            const res = await fetch('/api/prescription', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     drugName: drugName.trim(),
-                    indication: indication.trim() || undefined,
+                    indication: context.trim() || undefined
                 }),
             });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Analysis failed');
-            }
-
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Audit failed');
 
             setResult(data.data);
 
-            // Save to Supabase (Cloud Storage)
-            if (user && data.data) {
+            if (user) {
                 await savePrescription({
                     drugName: data.data.drugName,
-                    indication: indication.trim() || undefined,
+                    indication: context.trim() || undefined,
                     awareCategory: data.data.awareCategory,
                     riskLevel: data.data.riskLevel,
                     recommendations: data.data.recommendations,
-                    alternatives: data.data.alternatives,
                     warningFlags: data.data.warningFlags,
                 });
             }
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to analyze prescription');
+        } catch (err: any) {
+            setError(err.message);
         } finally {
             setAnalyzing(false);
         }
     };
 
-    const handleReset = () => {
-        setDrugName("");
-        setIndication("");
-        setResult(null);
-        setError(null);
-    };
-
-    const getAwaReBadgeColor = (category: string) => {
-        switch (category) {
-            case 'ACCESS': return 'bg-access-green/20 border-access-green text-access-green';
-            case 'WATCH': return 'bg-watch-orange/20 border-watch-orange text-watch-orange';
-            case 'RESERVE': return 'bg-reserve-red/20 border-reserve-red text-reserve-red';
-            default: return 'bg-gray-500/20 border-gray-500 text-gray-500';
-        }
-    };
-
-    const getRiskBadgeColor = (level: string) => {
-        switch (level) {
-            case 'low': return 'bg-access-green/20 border-access-green text-access-green';
-            case 'medium': return 'bg-watch-orange/20 border-watch-orange text-watch-orange';
-            case 'high': return 'bg-reserve-red/20 border-reserve-red text-reserve-red';
-            case 'critical': return 'bg-reserve-red border-reserve-red text-white';
-            default: return 'bg-gray-500/20 border-gray-500 text-gray-500';
+    const getAwaReStyle = (cat: string) => {
+        switch (cat) {
+            case 'ACCESS': return 'text-access-green border-access-green bg-access-green/10';
+            case 'WATCH': return 'text-watch-orange border-watch-orange bg-watch-orange/10';
+            case 'RESERVE': return 'text-reserve-red border-reserve-red bg-reserve-red/10';
+            default: return 'text-gray-400 border-gray-400 bg-gray-400/10';
         }
     };
 
     return (
-        <div className="min-h-screen bg-background-dark">
-            {/* Header */}
-            <header className="sticky top-0 z-20 bg-background-dark/80 backdrop-blur-md border-b border-white/10">
-                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-4">
-                    <Link href="/" className="text-primary hover:text-primary-dark transition-colors">
-                        <span className="text-2xl">←</span>
+        <div className="min-h-screen bg-background-dark text-white">
+            <header className="sticky top-0 z-30 pt-6 px-4 mb-8">
+                <div className="max-w-4xl mx-auto flex items-center justify-between p-4 glass-panel rounded-2xl bg-black/40 backdrop-blur-md border border-white/10">
+                    <Link href="/" className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors">
+                        <span className="text-xl">←</span>
                     </Link>
-                    <div>
-                        <h1 className="text-2xl font-bold text-white">Prescription Analyzer</h1>
-                        <p className="text-sm text-white/70">WHO AWaRe Classification & Stewardship</p>
+                    <div className="text-center">
+                        <h1 className="text-sm font-black tracking-[0.2em] uppercase italic">AMR Stewardship Auditor</h1>
+                        <p className="text-[10px] text-primary font-bold uppercase tracking-widest">Regulatory Intelligence Node</p>
                     </div>
+                    <div className="w-10" />
                 </div>
             </header>
 
-            <main className="max-w-4xl mx-auto px-6 py-8">
+            <main className="max-w-4xl mx-auto px-6 pb-20">
+                {/* Audit Form */}
+                <section className="glass-panel p-8 rounded-3xl border border-white/10 mb-8 bg-black/20">
+                    <div className="flex items-center gap-3 mb-6">
+                        <Shield className="text-primary" size={24} />
+                        <h2 className="text-lg font-black uppercase tracking-tight text-white/90">Audit Parameters</h2>
+                    </div>
 
-                {/* Input Form */}
-                <section className="glass-panel p-6 lg:p-8 rounded-2xl mb-8 border border-white/10">
-                    <form onSubmit={handleAnalyze} className="space-y-6">
-                        {/* Drug Name */}
-                        <div>
-                            <label htmlFor="drugName" className="block text-sm font-bold text-white mb-2">
-                                Drug Name <span className="text-reserve-red">*</span>
-                            </label>
-                            <input
-                                id="drugName"
-                                type="text"
-                                value={drugName}
-                                onChange={(e) => setDrugName(e.target.value)}
-                                placeholder="e.g., Ciprofloxacin, Amoxicillin, Azithromycin"
-                                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/50 focus:border-primary focus:outline-none"
-                                disabled={analyzing}
-                            />
-                        </div>
-
-                        {/* Indication (Optional) */}
-                        <div>
-                            <label htmlFor="indication" className="block text-sm font-bold text-white mb-2">
-                                Medical Indication <span className="text-white/50">(Optional)</span>
-                            </label>
-                            <input
-                                id="indication"
-                                type="text"
-                                value={indication}
-                                onChange={(e) => setIndication(e.target.value)}
-                                placeholder="e.g., Urinary tract infection, Pneumonia"
-                                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/50 focus:border-primary focus:outline-none"
-                                disabled={analyzing}
-                            />
-                        </div>
-
-                        {/* Error Message */}
-                        {error && (
-                            <div className="p-4 rounded-xl bg-reserve-red/10 border border-reserve-red/30">
-                                <p className="text-sm text-reserve-red font-medium">{error}</p>
+                    <form onSubmit={handleAudit} className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-white/50 px-1">Antibiotic Molecule</label>
+                                <input
+                                    value={drugName}
+                                    onChange={e => setDrugName(e.target.value)}
+                                    placeholder="e.g. Meropenem, Amoxicillin"
+                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 focus:border-primary outline-none transition-all placeholder:text-white/20"
+                                />
                             </div>
-                        )}
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-white/50 px-1">Justification/Context</label>
+                                <input
+                                    value={context}
+                                    onChange={e => setContext(e.target.value)}
+                                    placeholder="e.g. Hospital use, Community circulation"
+                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 focus:border-primary outline-none transition-all placeholder:text-white/20"
+                                />
+                            </div>
+                        </div>
 
-                        {/* Submit Button */}
+                        {error && <p className="text-reserve-red text-xs font-bold px-1">{error}</p>}
+
                         <button
-                            type="submit"
-                            disabled={analyzing || !drugName.trim()}
-                            className="w-full py-4 bg-primary text-white rounded-xl font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            disabled={analyzing}
+                            className="w-full py-5 bg-primary rounded-2xl font-black uppercase tracking-widest text-sm hover:shadow-[0_0_20px_rgba(56,189,248,0.4)] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                         >
                             {analyzing ? (
-                                <>
-                                    <span className="animate-spin">⏳</span>
-                                    Analyzing...
-                                </>
+                                <><span className="animate-spin">🔄</span> Generating Audit Directive...</>
                             ) : (
-                                <>
-                                    <span>🔍</span>
-                                    Analyze Prescription
-                                </>
+                                <><Search size={18} /> Run Stewardship Audit</>
                             )}
                         </button>
                     </form>
                 </section>
 
-                {/* Results */}
+                {/* Audit Result View */}
                 {result && (
-                    <div className="space-y-6">
-                        {/* Classification Header */}
-                        <section className="glass-panel p-6 lg:p-8 rounded-2xl border border-white/10">
-                            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-4 mb-2">
-                                        <h2 className="text-3xl font-bold text-white">{result.drugName}</h2>
-                                        <button
-                                            onClick={() => speaking ? stop() : handleReadResult('english')}
-                                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${speaking ? 'bg-primary animate-pulse text-white' : 'bg-white/10 text-primary hover:bg-primary/20'}`}
-                                            title="Read Result (English)"
-                                        >
-                                            {speaking ? '⏹️' : '🔊'}
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        {/* Summary Card */}
+                        <div className="glass-panel p-8 rounded-3xl border-2 border-white/10 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4">
+                                <CheckCircle2 className="text-primary opacity-20" size={80} />
+                            </div>
+
+                            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                <div>
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <h2 className="text-3xl font-black uppercase tracking-tighter">{result.drugName}</h2>
+                                        <button onClick={() => speaking ? stop() : handleReadResult()} className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-all">
+                                            {speaking ? <span className="animate-pulse">⏹️</span> : <Info size={16} />}
                                         </button>
-                                        {result.counseling.pidgin && (
-                                            <button
-                                                onClick={() => speaking ? stop() : handleReadResult('pidgin')}
-                                                className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold text-white/60 flex items-center gap-1.5 transition-colors"
-                                                title="Read in Pidgin"
-                                            >
-                                                🇳🇬 Pidgin
-                                            </button>
-                                        )}
                                     </div>
-                                    <p className="text-white/70">Antibiotic Stewardship Assessment</p>
+                                    <p className="text-sm font-bold text-white/50 uppercase tracking-widest">Regulatory Classification Report</p>
                                 </div>
-                                <div className="flex gap-3">
-                                    {/* AWaRe Badge */}
-                                    <div className={`px-6 py-3 rounded-xl border-2 ${getAwaReBadgeColor(result.awareCategory)}`}>
-                                        <p className="text-xs font-bold uppercase mb-1">WHO AWaRe</p>
-                                        <p className="text-2xl font-bold">{result.awareCategory}</p>
+
+                                <div className="flex gap-4">
+                                    <div className={`px-6 py-4 rounded-2xl border-2 ${getAwaReStyle(result.awareCategory)}`}>
+                                        <p className="text-[10px] font-black uppercase mb-1">WHO AWaRe</p>
+                                        <p className="text-xl font-black">{result.awareCategory}</p>
                                     </div>
-                                    {/* Risk Badge */}
-                                    <div className={`px-6 py-3 rounded-xl border-2 ${getRiskBadgeColor(result.riskLevel)}`}>
-                                        <p className="text-xs font-bold uppercase mb-1">Risk Level</p>
-                                        <p className="text-2xl font-bold capitalize">{result.riskLevel}</p>
+                                    <div className="px-6 py-4 rounded-2xl border-2 border-white/10 bg-white/5">
+                                        <p className="text-[10px] font-black uppercase mb-1">Risk Rating</p>
+                                        <p className="text-xl font-black capitalize">{result.riskLevel}</p>
                                     </div>
                                 </div>
                             </div>
-                        </section>
+                        </div>
 
-                        {/* Warning Flags */}
-                        {result.warningFlags && result.warningFlags.length > 0 && (
-                            <section className="p-6 rounded-xl bg-reserve-red/10 border-2 border-reserve-red/30">
-                                <h3 className="font-bold text-lg text-reserve-red mb-4 flex items-center gap-2">
-                                    <span className="text-2xl">⚠️</span> Warning Flags
+                        {/* Regulatory Alerts */}
+                        {result.warningFlags.length > 0 && (
+                            <div className="bg-reserve-red/10 border-2 border-reserve-red/30 p-6 rounded-3xl space-y-4">
+                                <h3 className="flex items-center gap-2 text-reserve-red font-black uppercase text-sm">
+                                    <AlertTriangle size={18} /> Stewardship Red Flags
                                 </h3>
-                                <ul className="space-y-2">
+                                <ul className="space-y-3">
                                     {result.warningFlags.map((flag, i) => (
-                                        <li key={i} className="text-white/90 flex items-start gap-2">
-                                            <span className="text-reserve-red mt-1">•</span>
-                                            <span>{flag}</span>
+                                        <li key={i} className="text-sm font-medium text-white/80 flex items-start gap-3">
+                                            <span className="text-reserve-red mt-1 text-lg">•</span>
+                                            {flag}
                                         </li>
                                     ))}
                                 </ul>
-                            </section>
+                            </div>
                         )}
 
-                        {/* Recommendations */}
-                        <section className="glass-panel p-6 rounded-xl border border-white/10">
-                            <h3 className="font-bold text-lg text-white mb-4 flex items-center gap-2">
-                                <span className="text-xl">💡</span> Recommendations
-                            </h3>
-                            <ul className="space-y-3">
-                                {result.recommendations.map((rec, i) => (
-                                    <li key={i} className="text-white/90 flex items-start gap-3">
-                                        <span className="text-primary mt-1">✓</span>
-                                        <span>{rec}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </section>
-
-                        {/* Safer Alternatives */}
-                        {result.alternatives && result.alternatives.length > 0 && (
-                            <section className="glass-panel p-6 rounded-xl border border-access-green/30">
-                                <h3 className="font-bold text-lg text-white mb-4 flex items-center gap-2">
-                                    <span className="text-xl">🔄</span> Safer Alternatives
+                        {/* Stewardship Framework */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="glass-panel p-6 rounded-3xl border border-white/10 bg-black/20">
+                                <h3 className="flex items-center gap-2 text-primary font-black uppercase text-xs mb-4">
+                                    <FileText size={16} /> Audit Directives
                                 </h3>
-                                <div className="flex flex-wrap gap-2">
-                                    {result.alternatives.map((alt, i) => (
-                                        <span
-                                            key={i}
-                                            className="px-4 py-2 rounded-full bg-access-green/10 border border-access-green/30 text-access-green font-medium text-sm"
-                                        >
-                                            {alt}
-                                        </span>
+                                <ul className="space-y-3">
+                                    {result.recommendations.map((rec, i) => (
+                                        <li key={i} className="text-xs font-medium text-white/70 leading-relaxed border-l-2 border-primary/30 pl-3">
+                                            {rec}
+                                        </li>
                                     ))}
-                                </div>
-                            </section>
-                        )}
-
-                        {/* Multilingual Counseling */}
-                        <section className="space-y-4">
-                            <h3 className="font-bold text-lg text-white flex items-center gap-2">
-                                <span className="text-xl">🗣️</span> Patient Counseling
-                            </h3>
-
-                            {/* English */}
-                            <div className="glass-panel p-6 rounded-xl border border-white/10">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <span className="text-2xl">🇬🇧</span>
-                                    <h4 className="font-bold text-white">English</h4>
-                                </div>
-                                <p className="text-white/90 leading-relaxed">{result.counseling.english}</p>
+                                </ul>
                             </div>
 
-                            {/* Nigerian Pidgin */}
-                            {result.counseling.pidgin && (
-                                <div className="glass-panel p-6 rounded-xl border border-white/10">
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <span className="text-2xl">🇳🇬</span>
-                                        <h4 className="font-bold text-white">Nigerian Pidgin</h4>
-                                    </div>
-                                    <p className="text-white/90 leading-relaxed">{result.counseling.pidgin}</p>
+                            <div className="glass-panel p-6 rounded-3xl border border-white/10 bg-black/20">
+                                <h3 className="flex items-center gap-2 text-white/50 font-black uppercase text-xs mb-4">
+                                    <Shield size={16} /> Regulatory Guidelines
+                                </h3>
+                                <ul className="space-y-3">
+                                    {result.regulatoryGuidelines?.map((guide, i) => (
+                                        <li key={i} className="text-xs font-bold text-white/40 italic flex gap-2">
+                                            <span>§</span> {guide}
+                                        </li>
+                                    )) || <li className="text-xs text-white/20 italic">No specific regional guidelines found.</li>}
+                                </ul>
+                            </div>
+                        </div>
+
+                        {/* Public Health Narrative */}
+                        <section className="space-y-4">
+                            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/30 ml-2">Public Health Signal (Multilingual)</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="glass-panel p-6 rounded-3xl border border-white/10">
+                                    <p className="text-[10px] font-black uppercase text-primary mb-3">English Narrative</p>
+                                    <p className="text-sm text-white/80 leading-relaxed font-medium">{result.counseling.english}</p>
                                 </div>
-                            )}
+                                {result.counseling.pidgin && (
+                                    <div className="glass-panel p-6 rounded-3xl border border-white/10">
+                                        <p className="text-[10px] font-black uppercase text-primary mb-3">Pidgin Narrative</p>
+                                        <p className="text-sm text-white/80 leading-relaxed font-medium">{result.counseling.pidgin}</p>
+                                    </div>
+                                )}
+                            </div>
                         </section>
 
-                        {/* Action Buttons */}
-                        <div className="flex gap-4">
-                            <button
-                                onClick={handleReset}
-                                className="flex-1 py-3 bg-white/10 text-white rounded-xl font-bold hover:bg-white/20 transition-colors"
-                            >
-                                Analyze Another
-                            </button>
-                            <Link
-                                href="/"
-                                className="flex-1 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-dark transition-colors text-center"
-                            >
-                                Back to Home
-                            </Link>
-                        </div>
+                        <button onClick={handleReset} className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-white/10 transition-all">
+                            Initiate New Audit Cycle
+                        </button>
                     </div>
                 )}
             </main>

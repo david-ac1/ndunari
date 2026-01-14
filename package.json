@@ -1,7 +1,7 @@
 {
   "name": "ndunari-health-shield",
   "version": "1.0.0",
-  "description": "Decentralized Pharmaceutical Surveillance Network powered by gemini-3-flash-preview",
+  "description": "Decentralized Pharmaceutical Surveillance Network powered by gemini-3-pro-preview",
   "private": true,
   "scripts": {
     "dev": "next dev",
