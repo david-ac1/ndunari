@@ -1,11 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Supabase client for browser (uses anon key)
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('Supabase credentials not found. Database features will be disabled.');
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    if (process.env.NODE_ENV === 'development') {
+        console.warn('Supabase credentials not found. Database features will be disabled.');
+    }
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -15,6 +17,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
         detectSessionInUrl: true,
     },
 });
+
 
 // Database types
 export interface UserProfile {

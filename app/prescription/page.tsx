@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/app/components/providers/AuthProvider";
 import { useVoiceGuide } from "@/lib/hooks/use-voice-guide";
 import { savePrescription } from "@/lib/services/prescription-storage.service";
@@ -24,12 +24,19 @@ interface StewardshipResult {
 
 export default function PrescriptionPage() {
     const { user } = useAuth();
-    const { speak, stop, speaking } = useVoiceGuide();
+    const { speak, stop, speaking, enabled } = useVoiceGuide();
     const [drugName, setDrugName] = useState("");
     const [indication, setIndication] = useState("");
     const [analyzing, setAnalyzing] = useState(false);
     const [result, setResult] = useState<StewardshipResult | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    // Auto-read result when it arrives
+    useEffect(() => {
+        if (result && enabled) {
+            handleReadResult('english');
+        }
+    }, [result, enabled]);
 
     const handleReadResult = (lang: 'english' | 'pidgin' = 'english') => {
         if (!result) return;

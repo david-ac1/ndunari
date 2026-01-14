@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Webcam from "react-webcam";
 import Link from "next/link";
 import { saveScanToHistory, getScanHistory, deleteScanFromHistory, type ScanHistoryItem } from "@/lib/utils/scan-history";
@@ -36,7 +36,7 @@ interface ScanResult {
 
 export default function ScanPage() {
     const { user } = useAuth();
-    const { speak, stop, speaking } = useVoiceGuide();
+    const { speak, stop, speaking, enabled } = useVoiceGuide();
     const [scanState, setScanState] = useState<ScanState>("mode_select");
     const [scanMode, setScanMode] = useState<ScanMode | null>(null);
     const [multiAngleSession, setMultiAngleSession] = useState<MultiAngleScanSession | null>(null);
@@ -47,6 +47,13 @@ export default function ScanPage() {
     const [scanHistory, setScanHistory] = useState<ScanHistoryItem[]>([]);
     const webcamRef = useRef<Webcam>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Auto-read results when they arrive
+    useEffect(() => {
+        if (scanState === 'complete' && result && enabled) {
+            handleReadScanResults();
+        }
+    }, [scanState, result, enabled]);
 
     const handleReadScanResults = () => {
         if (!result) return;
