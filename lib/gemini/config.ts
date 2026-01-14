@@ -1,11 +1,10 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-if (!process.env.GEMINI_API_KEY) {
-    throw new Error("GEMINI_API_KEY environment variable is required");
-}
+// Get API key (will be validated at runtime when actually used)
+const API_KEY = process.env.GEMINI_API_KEY || '';
 
-// Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// Initialize Gemini AI (lazy initialization will happen when models are requested)
+const genAI = new GoogleGenerativeAI(API_KEY);
 
 // Mock mode for development/testing when hitting rate limits
 export const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === "true";
@@ -53,6 +52,9 @@ export const STEWARDSHIP_BRAIN_CONFIG = {
  * Used for 99% of scans (<$0.001/scan, 2-3 seconds)
  */
 export function getForensicEyeModel() {
+    if (!API_KEY && !MOCK_MODE) {
+        throw new Error("GEMINI_API_KEY environment variable is required");
+    }
     return genAI.getGenerativeModel({
         model: FORENSIC_EYE_CONFIG.model,
         generationConfig: FORENSIC_EYE_CONFIG.generationConfig,
@@ -65,6 +67,9 @@ export function getForensicEyeModel() {
  * Escalated only for: Reserve drugs, suspicious packages, NAFDAC failures
  */
 export function getStewardshipBrainModel() {
+    if (!API_KEY && !MOCK_MODE) {
+        throw new Error("GEMINI_API_KEY environment variable is required");
+    }
     return genAI.getGenerativeModel({
         model: STEWARDSHIP_BRAIN_CONFIG.model,
         generationConfig: STEWARDSHIP_BRAIN_CONFIG.generationConfig,
