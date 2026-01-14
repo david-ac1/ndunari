@@ -317,9 +317,9 @@ export default function ScanPage() {
             {/* Header */}
             <header className="relative z-30 pt-6 px-4">
                 <div className="flex items-center justify-between p-4 glass-panel rounded-2xl bg-black/40 backdrop-blur-md border border-white/10">
-                    <button onClick={resetScan} className="w-10 h-10 rounded-full hover:bg-white/10 text-white flex items-center justify-center">
+                    <Link href="/" className="w-10 h-10 rounded-full hover:bg-white/10 text-white flex items-center justify-center transition-colors">
                         <span className="text-xl">←</span>
-                    </button>
+                    </Link>
                     <div className="text-center">
                         <h1 className="text-sm font-black tracking-[0.2em] text-white uppercase italic">Ndunari Sentinel</h1>
                         <p className="text-[10px] text-primary font-bold uppercase tracking-widest">Guardian Live Enabled</p>

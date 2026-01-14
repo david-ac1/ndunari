@@ -9,6 +9,7 @@ import {
     getNextAngle,
     isSessionComplete,
 } from "@/lib/utils/scan-angles";
+import Link from "next/link";
 
 interface MultiAngleCaptureProps {
     session: MultiAngleScanSession;
@@ -98,13 +99,18 @@ export default function MultiAngleCapture({
             {/* Top Header */}
             <header className="absolute top-0 left-0 w-full z-30 pt-safe-top">
                 <div className="flex items-center justify-between px-6 py-4 glass-panel mx-4 mt-4 rounded-xl bg-black/40 backdrop-blur-md border border-white/10">
-                    <button
-                        onClick={onCancel}
-                        className="flex items-center gap-2 text-white hover:text-white/70 transition-colors"
-                    >
-                        <span className="text-2xl">←</span>
-                        <span className="text-sm font-medium">Cancel</span>
-                    </button>
+                    <div className="flex items-center gap-4">
+                        <Link href="/" className="w-10 h-10 rounded-full hover:bg-white/10 text-white flex items-center justify-center transition-colors">
+                            <span className="text-xl">🏠</span>
+                        </Link>
+                        <button
+                            onClick={onCancel}
+                            className="flex items-center gap-2 text-white/70 hover:text-white transition-colors"
+                        >
+                            <span className="text-xl">←</span>
+                            <span className="text-sm font-medium">Reset</span>
+                        </button>
+                    </div>
 
                     <div className="text-center">
                         <h1 className="text-base font-bold tracking-wide text-white uppercase">
@@ -208,10 +214,10 @@ export default function MultiAngleCapture({
                         <div
                             key={angle.id}
                             className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${session.capturedAngles.has(angle.id)
-                                    ? 'bg-access-green/20 border-access-green'
-                                    : angle.id === currentAngle
-                                        ? 'bg-primary/20 border-primary animate-pulse'
-                                        : 'bg-white/5 border-white/20'
+                                ? 'bg-access-green/20 border-access-green'
+                                : angle.id === currentAngle
+                                    ? 'bg-primary/20 border-primary animate-pulse'
+                                    : 'bg-white/5 border-white/20'
                                 }`}
                         >
                             <span className="text-lg">{angle.icon}</span>

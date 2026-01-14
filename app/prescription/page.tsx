@@ -80,6 +80,14 @@ export default function PrescriptionPage() {
         }
     };
 
+    const handleReset = () => {
+        setResult(null);
+        setDrugName("");
+        setContext("");
+        setError(null);
+        stop();
+    };
+
     const getAwaReStyle = (cat: string) => {
         switch (cat) {
             case 'ACCESS': return 'text-access-green border-access-green bg-access-green/10';

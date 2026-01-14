@@ -1,6 +1,7 @@
 "use client";
 
 import { type AngleType, SCAN_ANGLES } from "@/lib/utils/scan-angles";
+import Link from "next/link";
 
 interface CapturedImageReviewProps {
     capturedImages: Map<AngleType, string>;
@@ -45,10 +46,10 @@ export default function CapturedImageReview({
                             <div
                                 key={angle.id}
                                 className={`relative rounded-2xl overflow-hidden border-2 ${isCaptured
-                                        ? 'border-access-green'
-                                        : angle.required
-                                            ? 'border-reserve-red/50'
-                                            : 'border-white/20'
+                                    ? 'border-access-green'
+                                    : angle.required
+                                        ? 'border-reserve-red/50'
+                                        : 'border-white/20'
                                     }`}
                             >
                                 {/* Image or Placeholder */}
@@ -127,11 +128,17 @@ export default function CapturedImageReview({
 
                 {/* Action Buttons */}
                 <div className="flex gap-3">
+                    <Link
+                        href="/"
+                        className="flex-1 py-4 bg-white/5 border border-white/10 text-white rounded-xl font-bold hover:bg-white/10 transition-colors flex items-center justify-center"
+                    >
+                        Go Home
+                    </Link>
                     <button
                         onClick={onCancel}
                         className="flex-1 py-4 bg-gray-700 text-white rounded-xl font-bold hover:bg-gray-600 transition-colors"
                     >
-                        Cancel
+                        Reset
                     </button>
                     <button
                         onClick={onProceed}

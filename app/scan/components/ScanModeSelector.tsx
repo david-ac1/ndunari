@@ -1,6 +1,7 @@
 "use client";
 
 import { ScanMode } from "@/lib/utils/scan-angles";
+import Link from "next/link";
 
 interface ScanModeSelectorProps {
     onSelectMode: (mode: ScanMode) => void;
@@ -11,7 +12,10 @@ export default function ScanModeSelector({ onSelectMode }: ScanModeSelectorProps
         <div className="min-h-screen bg-background-dark flex items-center justify-center p-6">
             <div className="w-full max-w-md space-y-6">
                 {/* Header */}
-                <div className="text-center mb-8">
+                <div className="text-center mb-8 relative">
+                    <Link href="/" className="absolute -top-12 left-0 text-white/40 hover:text-white flex items-center gap-2 text-xs font-bold uppercase tracking-widest transition-colors mb-4">
+                        <span>← Back to Dashboard</span>
+                    </Link>
                     <h1 className="text-3xl font-bold text-white mb-2">
                         How would you like to scan?
                     </h1>
