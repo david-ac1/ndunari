@@ -9,6 +9,7 @@ import ScanModeSelector from "./components/ScanModeSelector";
 import MultiAngleCapture from "./components/MultiAngleCapture";
 import CapturedImageReview from "./components/CapturedImageReview";
 import { useAuth } from "@/app/components/providers/AuthProvider";
+import { useVoiceGuide } from "@/lib/hooks/use-voice-guide";
 import { saveScan } from "@/lib/services/scan-storage.service";
 
 type ScanState = "mode_select" | "idle" | "multi_angle" | "review" | "scanning" | "analyzing" | "complete" | "error";
@@ -35,6 +36,7 @@ interface ScanResult {
 
 export default function ScanPage() {
     const { user } = useAuth();
+    const { speak, stop, speaking } = useVoiceGuide();
     const [scanState, setScanState] = useState<ScanState>("mode_select");
     const [scanMode, setScanMode] = useState<ScanMode | null>(null);
     const [multiAngleSession, setMultiAngleSession] = useState<MultiAngleScanSession | null>(null);
@@ -45,6 +47,17 @@ export default function ScanPage() {
     const [scanHistory, setScanHistory] = useState<ScanHistoryItem[]>([]);
     const webcamRef = useRef<Webcam>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleReadScanResults = () => {
+        if (!result) return;
+        const statusText = result.forensic.riskLevel === 'safe' ? 'is verified as safe' :
+            result.forensic.riskLevel === 'suspicious' ? 'is suspicious and requires manual verification' :
+                'is a suspected counterfeit';
+
+        let text = `${result.forensic.drugName} ${statusText}. Our findings include: `;
+        result.forensic.findings.forEach(f => text += `${f}. `);
+        speak(text);
+    };
 
     // High quality video constraints
     const videoConstraints = {
@@ -515,9 +528,18 @@ export default function ScanPage() {
                 <div className="absolute inset-0 z-40 bg-black/90 flex items-center justify-center p-6 overflow-y-auto">
                     <div className="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl p-6 space-y-6">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-2xl font-bold text-forest-green dark:text-white">
-                                Scan Results
-                            </h2>
+                            <div className="flex items-center gap-3">
+                                <h2 className="text-2xl font-bold text-forest-green dark:text-white">
+                                    Scan Results
+                                </h2>
+                                <button
+                                    onClick={() => speaking ? stop() : handleReadScanResults()}
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${speaking ? 'bg-primary animate-pulse text-white' : 'bg-primary/10 text-primary hover:bg-primary/20'}`}
+                                    title="Read Results"
+                                >
+                                    {speaking ? '⏹️' : '🔊'}
+                                </button>
+                            </div>
                             <button
                                 onClick={resetScan}
                                 className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:scale-110 transition-transform"

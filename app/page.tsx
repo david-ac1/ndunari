@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { getScanHistory, type ScanHistoryItem } from "@/lib/utils/scan-history";
+import { VoiceController } from "@/app/components/VoiceController";
 import { useAuth } from "@/app/components/providers/AuthProvider";
 import { getUserScans } from "@/lib/services/scan-storage.service";
 import { supabase } from "@/lib/supabase/client";
@@ -114,6 +115,7 @@ export default function HomePage() {
                                 Sign In
                             </Link>
                         )}
+                        <VoiceController />
                         <button className="glass-panel h-10 w-10 lg:h-12 lg:w-12 flex items-center justify-center rounded-full shadow-sm hover:scale-105 transition-transform relative">
                             <span className="text-xl lg:text-2xl">🔔</span>
                             {stats.suspicious + stats.counterfeit > 0 && (

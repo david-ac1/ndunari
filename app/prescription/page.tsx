@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/app/components/providers/AuthProvider";
+import { useVoiceGuide } from "@/lib/hooks/use-voice-guide";
 import { savePrescription } from "@/lib/services/prescription-storage.service";
 
 interface StewardshipResult {
@@ -23,11 +24,18 @@ interface StewardshipResult {
 
 export default function PrescriptionPage() {
     const { user } = useAuth();
+    const { speak, stop, speaking } = useVoiceGuide();
     const [drugName, setDrugName] = useState("");
     const [indication, setIndication] = useState("");
     const [analyzing, setAnalyzing] = useState(false);
     const [result, setResult] = useState<StewardshipResult | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    const handleReadResult = (lang: 'english' | 'pidgin' = 'english') => {
+        if (!result) return;
+        const summary = `${result.drugName} is classified by WHO as ${result.awareCategory}. The risk level is ${result.riskLevel}. ${result.counseling[lang as keyof typeof result.counseling] || result.counseling.english}`;
+        speak(summary, lang as any);
+    };
 
     const handleAnalyze = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -192,7 +200,25 @@ export default function PrescriptionPage() {
                         <section className="glass-panel p-6 lg:p-8 rounded-2xl border border-white/10">
                             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
                                 <div className="flex-1">
-                                    <h2 className="text-3xl font-bold text-white mb-2">{result.drugName}</h2>
+                                    <div className="flex items-center gap-4 mb-2">
+                                        <h2 className="text-3xl font-bold text-white">{result.drugName}</h2>
+                                        <button
+                                            onClick={() => speaking ? stop() : handleReadResult('english')}
+                                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${speaking ? 'bg-primary animate-pulse text-white' : 'bg-white/10 text-primary hover:bg-primary/20'}`}
+                                            title="Read Result (English)"
+                                        >
+                                            {speaking ? '⏹️' : '🔊'}
+                                        </button>
+                                        {result.counseling.pidgin && (
+                                            <button
+                                                onClick={() => speaking ? stop() : handleReadResult('pidgin')}
+                                                className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold text-white/60 flex items-center gap-1.5 transition-colors"
+                                                title="Read in Pidgin"
+                                            >
+                                                🇳🇬 Pidgin
+                                            </button>
+                                        )}
+                                    </div>
                                     <p className="text-white/70">Antibiotic Stewardship Assessment</p>
                                 </div>
                                 <div className="flex gap-3">

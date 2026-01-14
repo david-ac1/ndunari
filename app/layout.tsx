@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Manrope } from "next/font/google";
-import Link from "next/link";
+import { PWAUpdater } from "@/app/components/PWAUpdater";
 import { AuthProvider } from "@/app/components/providers/AuthProvider";
 import "./globals.css";
 
@@ -28,6 +28,10 @@ export const metadata: Metadata = {
     description: "Decentralized Pharmaceutical Surveillance Network - Combating counterfeit drugs and AMR in Nigeria",
     keywords: ["pharmaceutical", "counterfeit detection", "antimicrobial resistance", "Nigeria", "NAFDAC", "drug safety"],
     authors: [{ name: "Ndunari Team" }],
+    icons: {
+        icon: "/icon.png",
+        apple: "/icon.png",
+    },
     openGraph: {
         title: "Ndunari Health Shield",
         description: "AI-powered pharmaceutical surveillance to protect 140M Nigerians",
@@ -47,8 +51,9 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en" className="light">
+        <html lang="en" className="dark">
             <body className={`${inter.variable} ${manrope.variable} font-sans`}>
+                <PWAUpdater />
                 <AuthProvider>
                     {children}
                 </AuthProvider>

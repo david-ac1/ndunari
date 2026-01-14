@@ -192,3 +192,54 @@ async function updateUserStats(userId: string, type: 'scan' | 'prescription') {
         }
     }
 }
+
+/**
+ * Get global surveillance data (De-identified)
+ * Used for the health map
+ */
+export async function getGlobalSurveillanceData(): Promise<{
+    region: string;
+    safe: number;
+    suspicious: number;
+    counterfeit: number;
+    total: number;
+    lastDetected: string;
+}[]> {
+    const { data, error } = await supabase
+        .from('scans')
+        .select('region, risk_level, created_at');
+
+    if (error || !data) {
+        console.error('Error fetching surveillance data:', error);
+        return [];
+    }
+
+    // Group by region
+    const regionalData: Record<string, any> = {};
+
+    data.forEach(scan => {
+        const region = scan.region || 'Unknown';
+        if (!regionalData[region]) {
+            regionalData[region] = {
+                region,
+                safe: 0,
+                suspicious: 0,
+                counterfeit: 0,
+                total: 0,
+                lastDetected: scan.created_at,
+            };
+        }
+
+        regionalData[region].total++;
+        if (scan.risk_level === 'safe') regionalData[region].safe++;
+        else if (scan.risk_level === 'suspicious') regionalData[region].suspicious++;
+        else if (scan.risk_level === 'counterfeit') regionalData[region].counterfeit++;
+
+        if (new Date(scan.created_at) > new Date(regionalData[region].lastDetected)) {
+            regionalData[region].lastDetected = scan.created_at;
+        }
+    });
+
+    return Object.values(regionalData).sort((a, b) => b.total - a.total);
+}
+

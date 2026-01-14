@@ -59,9 +59,30 @@ export async function signInWithEmail(email: string, password: string) {
     return { user: data.user, session: data.session, error: null };
 }
 
+
+/**
+ * Sign in with OAuth provider (Google, GitHub, etc.)
+ */
+export async function signInWithOAuth(provider: 'google' | 'github') {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+            redirectTo: `${window.location.origin}/auth/callback`,
+        }
+    });
+
+    if (error) {
+        console.error('OAuth sign-in error:', error);
+        return { data: null, error };
+    }
+
+    return { data, error: null };
+}
+
 /**
  * Sign out current user
  */
+
 export async function signOut() {
     const { error } = await supabase.auth.signOut();
 
