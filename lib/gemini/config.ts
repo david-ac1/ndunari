@@ -7,13 +7,21 @@ if (!process.env.GEMINI_API_KEY) {
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+// Mock mode for development/testing when hitting rate limits
+export const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === "true";
+
 /**
  * Forensic Eye Model Configuration
- * Uses Gemini 2.0 Flash for fast, cost-effective drug authentication
+ * Uses Gemini 2.0 Flash (Gemini 3) - Latest experimental model
  * Temperature 1.0: The sweet spot for nuanced counterfeit detection
+ * 
+ * FREE TIER LIMITS:
+ * - 15 requests/minute
+ * - 1,500 requests/day
+ * - Use MOCK_MODE=true in .env.local if you hit limits during dev
  */
 export const FORENSIC_EYE_CONFIG = {
-    model: "gemini-2.0-flash-exp",
+    model: "gemini-2.0-flash-exp", // Gemini 3 for hackathon
     generationConfig: {
         temperature: 1.0, // Balanced reasoning per GEMINI3_TECHNICAL.md
         maxOutputTokens: 2048,
@@ -24,11 +32,15 @@ export const FORENSIC_EYE_CONFIG = {
 
 /**
  * Stewardship Brain Model Configuration
- * Uses Gemini 2.0 Flash Thinking for clinical-grade medical reasoning
+ * Uses Gemini 2.0 Flash Thinking (Gemini 3 with extended reasoning)
  * Temperature 1.0: Contextually appropriate for medical decisions
+ * 
+ * FREE TIER LIMITS:
+ * - 15 requests/minute (same as Flash)
+ * - Use sparingly - only for Reserve drugs and suspicious packages
  */
 export const STEWARDSHIP_BRAIN_CONFIG = {
-    model: "gemini-2.0-flash-thinking-exp-1219",
+    model: "gemini-2.0-flash-thinking-exp-1219", // Gemini 3 Thinking mode
     generationConfig: {
         temperature: 1.0, // Precise medical reasoning
         maxOutputTokens: 4096, // For 5 languages + recommendations
@@ -58,6 +70,43 @@ export function getStewardshipBrainModel() {
         model: STEWARDSHIP_BRAIN_CONFIG.model,
         generationConfig: STEWARDSHIP_BRAIN_CONFIG.generationConfig,
     });
+}
+
+/**
+ * Retry with exponential backoff for rate limit errors
+ */
+export async function retryWithBackoff<T>(
+    fn: () => Promise<T>,
+    maxRetries = 3,
+    initialDelay = 1000
+): Promise<T> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            return await fn();
+        } catch (error: any) {
+            lastError = error;
+
+            // Check if it's a rate limit error
+            if (error?.status === 429 || error?.message?.includes("429")) {
+                const delay = initialDelay * Math.pow(2, attempt);
+                console.log(`Rate limit hit. Retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})...`);
+
+                // Extract retry delay from error if available
+                const retryMatch = error.message?.match(/retry in (\\d+\\.?\\d*)s/);
+                const suggestedDelay = retryMatch ? parseFloat(retryMatch[1]) * 1000 : delay;
+
+                await new Promise(resolve => setTimeout(resolve, Math.min(suggestedDelay, delay)));
+                continue;
+            }
+
+            // If it's not a rate limit error, throw immediately
+            throw error;
+        }
+    }
+
+    throw lastError || new Error("Max retries exceeded");
 }
 
 /**
