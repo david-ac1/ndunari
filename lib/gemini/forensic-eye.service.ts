@@ -74,7 +74,7 @@ Analyze this drug package image and return ONLY this JSON structure:
 {
   "authenticityScore": 85,
   "drugName": "Drug Name 500mg",
-  "nafdacNumber": "NAF-2023-12345 or NOT_APPLICABLE",
+  "nafdacNumber": "NAF-2023-12345",
   "batchNumber": "LOT-2024-001",
   "expiryDate": "12/2025",
   "findings": [
@@ -90,12 +90,37 @@ Analyze this drug package image and return ONLY this JSON structure:
   ]
 }
 
+CRITICAL INSTRUCTIONS FOR NAFDAC NUMBER:
+1. Look for text that says "NAFDAC No:" or "NAFDAC REG. No:" or "NAFDAC Reg:" or similar
+2. NAFDAC numbers can be in TWO formats:
+   
+   A) NEW FORMAT (2019+): NAF-YYYY-NNNNN
+      - NAF- prefix (uppercase)
+      - 4-digit year (e.g., 2019, 2023)
+      - Hyphen
+      - 5-digit number (e.g., 12345)
+      - Example: NAF-2019-45678
+   
+   B) OLD FORMAT (pre-2019): [LETTER][NUMBER]-[NUMBER]
+      - 1-2 uppercase letters (e.g., A, B4, C7)
+      - Hyphen
+      - 4-5 digit number
+      - Examples: B4-6269, A1-1234, C7-12345
+   
+3. DO NOT guess or make up NAFDAC numbers
+4. Read the EXACT text after "NAFDAC REG. No:" or similar label
+5. Double-check every character - OCR accuracy is critical
+6. If you cannot clearly read the NAFDAC number, return "NOT_FOUND"
+7. If no NAFDAC number present (imported drug), return "NOT_APPLICABLE"
+
 ANALYSIS GUIDELINES:
 - authenticityScore: 0-100 based on packaging quality, security features, and regulatory marks
-- drugName: Extract drug name and dosage from package
-- nafdacNumber: "NAF-YYYY-NNNNN" if found, or "NOT_APPLICABLE" for non-Nigerian drugs
+- drugName: Extract exact drug name and dosage from package (read carefully)
+- nafdacNumber: Follow CRITICAL INSTRUCTIONS above
+- batchNumber: Look for "Batch", "Lot", or "B/N" text
+- expiryDate: Look for "EXP", "Expiry", or "Use before" text
 - riskLevel: "safe" (85-100%), "suspicious" (60-84%), "counterfeit" (0-59%)
-- findings: 3-5 specific observations about the  package
+- findings: 3-5 specific observations about the package
 - thoughtProcess: 3-4 steps of your analysis
 
 RESPOND WITH ONLY THE JSON OBJECT. NO OTHER TEXT.`;
@@ -133,10 +158,32 @@ RESPOND WITH ONLY THE JSON OBJECT. NO OTHER TEXT.`;
             console.log("Extracted JSON:", jsonMatch[0].substring(0, 500));
 
             const analysis = JSON.parse(jsonMatch[0]);
+
+            // Validate NAFDAC number format if present
+            if (analysis.nafdacNumber &&
+                analysis.nafdacNumber !== 'NOT_FOUND' &&
+                analysis.nafdacNumber !== 'NOT_APPLICABLE') {
+                // New format: NAF-2023-12345
+                const newFormat = /^NAF-\d{4}-\d{5}$/;
+                // Old format: B4-6269, A1-1234, C7-12345
+                const oldFormat = /^[A-Z]{1,2}\d{0,2}-\d{4,5}$/;
+
+                if (!newFormat.test(analysis.nafdacNumber) && !oldFormat.test(analysis.nafdacNumber)) {
+                    console.warn(`Invalid NAFDAC format detected: ${analysis.nafdacNumber}`);
+                    analysis.findings.unshift(
+                        `⚠️ NAFDAC number format unclear: "${analysis.nafdacNumber}" - please verify manually`
+                    );
+                } else {
+                    const formatType = newFormat.test(analysis.nafdacNumber) ? 'new (NAF-YYYY-NNNNN)' : 'old (pre-2019)';
+                    console.log(`✓ Valid NAFDAC number (${formatType}): ${analysis.nafdacNumber}`);
+                }
+            }
+
             const validated = ForensicAnalysisSchema.parse(analysis);
 
             const duration = Date.now() - startTime;
             console.log(`Forensic scan completed in ${duration}ms`);
+
 
             return validated;
         } catch (error) {
