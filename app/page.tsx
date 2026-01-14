@@ -63,8 +63,7 @@ export default function HomePage() {
 
             // 2. Autonomous Sentinel Analysis
             setSentinelThoughts(prev => [...prev, { id: '2', text: "Identifying regional pattern anomalies...", level: 'sentinel', timestamp: new Date() }]);
-            const historyString = JSON.stringify(combinedHistory.slice(0, 50));
-            const newDirectives = await sentinelAgentService.analyzeSurveillanceLogs(historyString);
+            const newDirectives = await sentinelAgentService.analyzeSurveillanceLogs(combinedHistory.slice(0, 50));
             setDirectives(newDirectives);
             setSentinelThoughts(prev => [...prev, { id: '3', text: `Audit complete. ${newDirectives.length} directives issued.`, level: 'system', timestamp: new Date() }]);
 
@@ -134,20 +133,20 @@ export default function HomePage() {
                                                 animate={{ opacity: 1, y: 0 }}
                                                 key={idx}
                                                 className={`p-5 rounded-3xl border-2 glass-panel ${directive.type === 'REGIONAL_ALERT' ? 'border-reserve-red/30 bg-reserve-red/5' :
-                                                        directive.type === 'SUPPLY_CHAIN_AUDIT' ? 'border-watch-orange/30 bg-watch-orange/5' :
-                                                            'border-primary/30 bg-primary/5'
+                                                    directive.type === 'SUPPLY_CHAIN_AUDIT' ? 'border-watch-orange/30 bg-watch-orange/5' :
+                                                        'border-primary/30 bg-primary/5'
                                                     }`}
                                             >
                                                 <div className="flex items-start justify-between mb-3">
                                                     <span className={`px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest ${directive.type === 'REGIONAL_ALERT' ? 'bg-reserve-red text-white' :
-                                                            'bg-primary text-black'
+                                                        'bg-primary text-black'
                                                         }`}>
                                                         {directive.type.replace('_', ' ')}
                                                     </span>
-                                                    <div className="text-[10px] font-bold text-white/30">{directive.urgency.toUpperCase()}</div>
+                                                    <div className="text-[10px] font-bold text-white/30">{directive.priority.toUpperCase()}</div>
                                                 </div>
-                                                <h3 className="text-sm font-black mb-1 line-clamp-1">{directive.title}</h3>
-                                                <p className="text-xs text-white/60 leading-relaxed line-clamp-2">{directive.description}</p>
+                                                <h3 className="text-sm font-black mb-1 line-clamp-1">{directive.rationale}</h3>
+                                                <p className="text-xs text-white/60 leading-relaxed line-clamp-2">{directive.proposedAction}</p>
                                             </motion.div>
                                         ))
                                     ) : (
