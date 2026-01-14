@@ -34,7 +34,7 @@ export type StewardshipAssessment = z.infer<typeof StewardshipAssessmentSchema>;
 
 /**
  * Stewardship Brain Service
- * Uses Gemini 2.0 Flash Thinking for deep clinical reasoning
+ * Uses Gemini 3 Flash Preview for deep clinical reasoning
  * Temperature 1.0: Contextually appropriate medical decisions
  */
 export class StewardshipBrainService {

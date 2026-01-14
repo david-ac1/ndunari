@@ -11,7 +11,7 @@ export const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === "true";
 
 /**
  * Forensic Eye Model Configuration
- * Using Gemini Pro - base model available on all API keys
+ * Using Gemini 3 Flash Preview - high-performance analytical engine
  * Temperature 1.0: The sweet spot for nuanced counterfeit detection
  * 
  * FREE TIER LIMITS:
@@ -19,7 +19,7 @@ export const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === "true";
  * - Widely available model
  */
 export const FORENSIC_EYE_CONFIG = {
-    model: "gemini-1.5-flash", // Stable, high-speed model for forensic scans
+    model: "gemini-3-flash-preview", // User-specified bleeding edge model
     generationConfig: {
         temperature: 1.0, // Balanced reasoning
         maxOutputTokens: 2048,
@@ -30,7 +30,7 @@ export const FORENSIC_EYE_CONFIG = {
 
 /**
  * Stewardship Brain Model Configuration
- * Using Gemini Pro for clinical reasoning (no vision needed for escalation)
+ * Using Gemini 3 Flash Preview for deep clinical reasoning
  * Temperature 1.0: Contextually appropriate for medical decisions
  * 
  * FREE TIER LIMITS:
@@ -38,7 +38,7 @@ export const FORENSIC_EYE_CONFIG = {
  * - Only used for text-based prescription analysis
  */
 export const STEWARDSHIP_BRAIN_CONFIG = {
-    model: "gemini-1.5-flash", // Consistent high-speed reasoning
+    model: "gemini-3-flash-preview", // Standardized to user requirement
     generationConfig: {
         temperature: 1.0, // Precise medical reasoning
         maxOutputTokens: 4096, // For 5 languages + recommendations
@@ -46,6 +46,7 @@ export const STEWARDSHIP_BRAIN_CONFIG = {
         topK: 40,
     },
 } as const;
+
 
 /**
  * Get Forensic Eye model instance

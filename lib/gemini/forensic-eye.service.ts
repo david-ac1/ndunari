@@ -19,7 +19,7 @@ export type ForensicAnalysis = z.infer<typeof ForensicAnalysisSchema>;
 
 /**
  * Forensic Eye Service
- * Uses Gemini 2.0 Flash with high-resolution image processing
+ * Uses Gemini 3 Flash Preview with high-resolution image processing
  * NO image compression - full resolution for microscopic detail detection
  */
 export class ForensicEyeService {
