@@ -1,0 +1,68 @@
+{
+    "metadata": {
+        "source": "NCDC & WHO GLASS Reports 2023",
+        "region": "Nigeria",
+        "description": "Antimicrobial resistance surveillance data for Nigeria"
+    },
+    "resistanceRates": {
+        "ciprofloxacin": {
+            "drug": "Ciprofloxacin",
+            "organism": "E. coli",
+            "resistanceRate": "68%",
+            "context": "Urinary tract infections",
+            "notes": "Very high resistance - avoid as first-line for UTI"
+        },
+        "amoxicillin": {
+            "drug": "Amoxicillin",
+            "organism": "S. pneumoniae",
+            "resistanceRate": "15%",
+            "context": "Respiratory infections",
+            "notes": "Still effective for community-acquired pneumonia"
+        },
+        "azithromycin": {
+            "drug": "Azithromycin",
+            "organism": "S. pneumoniae",
+            "resistanceRate": "42%",
+            "context": "Respiratory infections",
+            "notes": "Resistance rising due to overuse"
+        },
+        "ceftriaxone": {
+            "drug": "Ceftriaxone",
+            "organism": "N. gonorrhoeae",
+            "resistanceRate": "8%",
+            "context": "Gonorrhea",
+            "notes": "Still effective but monitor trends"
+        },
+        "meropenem": {
+            "drug": "Meropenem",
+            "organism": "Klebsiella pneumoniae",
+            "resistanceRate": "23%",
+            "context": "Hospital-acquired infections",
+            "notes": "Carbapenem resistance emerging - critical concern"
+        }
+    },
+    "recommendations": {
+        "uti": {
+            "condition": "Urinary Tract Infection (Uncomplicated)",
+            "firstLine": "Nitrofurantoin",
+            "avoid": [
+                "Ciprofloxacin",
+                "Levofloxacin"
+            ],
+            "reason": "High fluoroquinolone resistance in Nigeria"
+        },
+        "cap": {
+            "condition": "Community-Acquired Pneumonia",
+            "firstLine": "Amoxicillin",
+            "alternative": "Doxycycline",
+            "avoid": "Azithromycin as monotherapy",
+            "reason": "Amoxicillin resistance still low"
+        },
+        "skin": {
+            "condition": "Skin and Soft Tissue Infections",
+            "firstLine": "Cloxacillin or Flucloxacillin",
+            "avoid": "Broad-spectrum antibiotics",
+            "reason": "Preserve Reserve antibiotics"
+        }
+    }
+}

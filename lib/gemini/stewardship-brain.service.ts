@@ -62,10 +62,40 @@ export class StewardshipBrainService {
         const startTime = Date.now();
 
         try {
-            const prompt = `You are an infectious disease specialist and antibiotic stewardship expert with deep knowledge of Nigerian healthcare challenges and WHO guidelines.
+            // STEP 1: Look up drug in databases (WHO, NAFDAC, AMR)
+            const { comprehensiveDrugLookup } = await import('@/lib/services/pharma-data.service');
+            const dbData = comprehensiveDrugLookup(drugName, indication);
 
-DRUG TO ANALYZE: ${drugName}
-${indication ? `MEDICAL INDICATION: ${indication}` : ""}
+            // STEP 2: Build database context for AI
+            const databaseContext = dbData.dataAvailable ? `
+=== DATABASE FACTS (Ground Truth) ===
+
+${dbData.who ? `WHO AWaRe: ${dbData.who.category}
+Class: ${dbData.who.class}
+Indications: ${dbData.who.indications.join(', ')}
+${dbData.who.warnings ? `Warnings: ${dbData.who.warnings.join('; ')}` : ''}` : ''}
+
+${dbData.nafdac ? `NAFDAC: ${dbData.nafdac.registrationNumber} (${dbData.nafdac.status})
+Brands: ${dbData.nafdac.commonBrands.join(', ')}` : ''}
+
+${dbData.amr ? `NIGERIAN RESISTANCE: ${dbData.amr.resistanceRate} in ${dbData.amr.organism}
+Notes: ${dbData.amr.notes}` : ''}
+
+${dbData.clinicalRecommendation ? `NIGERIAN GUIDELINE:
+First-line: ${dbData.clinicalRecommendation.firstLine}
+${dbData.clinicalRecommendation.avoid ? `Avoid: ${JSON.stringify(dbData.clinicalRecommendation.avoid)}` : ''}
+Reason: ${dbData.clinicalRecommendation.reason}` : ''}
+` : '';
+
+            // STEP 3: AI analyzes with database facts
+            const prompt = `You are an infectious disease specialist. Analyze this prescription using the provided DATABASE FACTS.
+
+DRUG: ${drugName}
+${indication ? `INDICATION: ${indication}` : ''}
+
+${databaseContext}
+
+Based on the facts above, provide JSON assessment:
 ${forensicData ? `FORENSIC ANALYSIS: Authenticity Score ${forensicData.authenticityScore}%, Risk Level: ${forensicData.riskLevel}` : ""}
 
 CRITICAL ANALYSIS FRAMEWORK:
@@ -139,7 +169,12 @@ Provide a comprehensive stewardship assessment for this drug.`;
             const validated = StewardshipAssessmentSchema.parse(assessment);
 
             const duration = Date.now() - startTime;
-            console.log(`Stewardship analysis completed in ${duration}ms`);
+            console.log(`Stewardship analysis completed in ${duration}ms`, {
+                databaseUsed: dbData.dataAvailable,
+                whoData: !!dbData.who,
+                nafdacData: !!dbData.nafdac,
+                amrData: !!dbData.amr,
+            });
 
             return validated;
         } catch (error) {
