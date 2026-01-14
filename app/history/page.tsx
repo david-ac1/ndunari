@@ -1,19 +1,67 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { getScanHistory, deleteScanFromHistory, clearScanHistory, type ScanHistoryItem } from "@/lib/utils/scan-history";
+import { useAuth } from "@/app/components/providers/AuthProvider";
+import { getUserScans, deleteScan, deleteAllScans } from "@/lib/services/scan-storage.service";
+import { type Scan } from "@/lib/supabase/client";
 
 export default function HistoryPage() {
+    const { user, loading } = useAuth();
     const [scanHistory, setScanHistory] = useState<ScanHistoryItem[]>([]);
     const [filteredHistory, setFilteredHistory] = useState<ScanHistoryItem[]>([]);
     const [filter, setFilter] = useState<'all' | 'safe' | 'suspicious' | 'counterfeit'>('all');
     const [sortBy, setSortBy] = useState<'recent' | 'score'>('recent');
     const [showClearConfirm, setShowClearConfirm] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
+
+    const loadHistory = useCallback(async () => {
+        setIsSyncing(true);
+        try {
+            // 1. Load from localStorage (Legacy)
+            const localHistory = getScanHistory();
+
+            // 2. Load from Supabase (Cloud)
+            let combinedHistory = [...localHistory];
+
+            if (user) {
+                const { data: cloudScans, error } = await getUserScans();
+                if (!error && cloudScans) {
+                    // Map cloud scans to local format
+                    const mappedCloudScans: ScanHistoryItem[] = cloudScans.map(s => ({
+                        id: s.id, // Supabase UUID
+                        timestamp: new Date(s.created_at).getTime(),
+                        drugName: s.drug_name,
+                        authenticityScore: s.authenticity_score,
+                        riskLevel: s.risk_level,
+                        nafdacNumber: s.nafdac_number || undefined,
+                        imagePreview: s.image_preview || undefined
+                    }));
+
+                    // Simple de-duplication (heuristic: same drug, same score, same timestamp within 5s)
+                    const existingIds = new Set(localHistory.map(l => l.id));
+                    const newCloudScans = mappedCloudScans.filter(cs => !existingIds.has(cs.id));
+
+                    combinedHistory = [...localHistory, ...newCloudScans];
+                }
+            }
+
+            // Sort by timestamp initially
+            combinedHistory.sort((a, b) => b.timestamp - a.timestamp);
+            setScanHistory(combinedHistory);
+        } catch (error) {
+            console.error('Failed to load history:', error);
+        } finally {
+            setIsSyncing(false);
+        }
+    }, [user]);
 
     useEffect(() => {
-        loadHistory();
-    }, []);
+        if (!loading) {
+            loadHistory();
+        }
+    }, [user, loading, loadHistory]);
 
     useEffect(() => {
         // Apply filters
@@ -33,18 +81,28 @@ export default function HistoryPage() {
         setFilteredHistory(filtered);
     }, [scanHistory, filter, sortBy]);
 
-    const loadHistory = () => {
-        const history = getScanHistory();
-        setScanHistory(history);
-    };
-
-    const handleDelete = (scanId: string) => {
+    const handleDelete = async (scanId: string) => {
+        // 1. Delete from localStorage (if it exists there)
         deleteScanFromHistory(scanId);
+
+        // 2. Delete from Supabase (if it's a UUID)
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{10,12}$/i.test(scanId);
+        if (isUuid && user) {
+            await deleteScan(scanId);
+        }
+
         loadHistory();
     };
 
-    const handleClearAll = () => {
+    const handleClearAll = async () => {
+        // 1. Clear local
         clearScanHistory();
+
+        // 2. Clear cloud
+        if (user) {
+            await deleteAllScans();
+        }
+
         loadHistory();
         setShowClearConfirm(false);
     };

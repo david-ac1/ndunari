@@ -1,8 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { getScanHistory, type ScanHistoryItem } from "@/lib/utils/scan-history";
+import { useAuth } from "@/app/components/providers/AuthProvider";
+import { getUserScans } from "@/lib/services/scan-storage.service";
+import { getUserPrescriptions } from "@/lib/services/prescription-storage.service";
+import { type Scan } from "@/lib/supabase/client";
 
 interface DrugStats {
     name: string;
@@ -12,43 +16,102 @@ interface DrugStats {
 }
 
 export default function ReportPage() {
+    const { user, profile, loading: authLoading } = useAuth();
     const [scanHistory, setScanHistory] = useState<ScanHistoryItem[]>([]);
+    const [prescriptions, setPrescriptions] = useState<any[]>([]);
     const [safetyIndex, setSafetyIndex] = useState(0);
     const [topDrugs, setTopDrugs] = useState<DrugStats[]>([]);
+    const [awareStats, setAwareStats] = useState({ access: 0, watch: 0, reserve: 0 });
+    const [isSyncing, setIsSyncing] = useState(false);
+
+    const loadData = useCallback(async () => {
+        setIsSyncing(true);
+        try {
+            // 1. Load from localStorage
+            const localHistory = getScanHistory();
+
+            // 2. Load from Supabase
+            let combinedHistory = [...localHistory];
+
+            if (user) {
+                const { data: cloudScans, error: scanError } = await getUserScans();
+                if (!scanError && cloudScans) {
+                    const mappedCloudScans: ScanHistoryItem[] = cloudScans.map(s => ({
+                        id: s.id,
+                        timestamp: new Date(s.created_at).getTime(),
+                        drugName: s.drug_name,
+                        authenticityScore: s.authenticity_score,
+                        riskLevel: s.risk_level as any,
+                        nafdacNumber: s.nafdac_number || undefined,
+                        imagePreview: s.image_preview || undefined
+                    }));
+
+                    const existingIds = new Set(localHistory.map(l => l.id));
+                    const newCloudScans = mappedCloudScans.filter(cs => !existingIds.has(cs.id));
+                    combinedHistory = [...localHistory, ...newCloudScans];
+                }
+
+                const { data: cloudPrescriptions, error: presError } = await getUserPrescriptions();
+                if (!presError && cloudPrescriptions) {
+                    setPrescriptions(cloudPrescriptions);
+
+                    // Calculate AWaRe stats
+                    const stats = cloudPrescriptions.reduce((acc: any, p: any) => {
+                        const cat = p.aware_category?.toLowerCase();
+                        if (acc[cat] !== undefined) acc[cat]++;
+                        return acc;
+                    }, { access: 0, watch: 0, reserve: 0 });
+                    setAwareStats(stats);
+                }
+            }
+
+            setScanHistory(combinedHistory);
+
+            // Calculate safety index (Personalized + Aggregated estimate)
+            const scanAvg = combinedHistory.length > 0
+                ? combinedHistory.reduce((sum, scan) => sum + scan.authenticityScore, 0) / combinedHistory.length
+                : 100;
+
+            const presAvg = prescriptions.length > 0
+                ? prescriptions.reduce((sum, p) => sum + (p.risk_level === 'low' ? 95 : p.risk_level === 'medium' ? 60 : 30), 0) / prescriptions.length
+                : 100;
+
+            setSafetyIndex(Math.round((scanAvg + presAvg) / 2));
+
+            // Calculate top scanned drugs
+            const drugMap = new Map<string, { count: number; totalScore: number; riskLevel: string }>();
+            combinedHistory.forEach(scan => {
+                const existing = drugMap.get(scan.drugName) || { count: 0, totalScore: 0, riskLevel: scan.riskLevel };
+                drugMap.set(scan.drugName, {
+                    count: existing.count + 1,
+                    totalScore: existing.totalScore + scan.authenticityScore,
+                    riskLevel: scan.riskLevel,
+                });
+            });
+
+            const drugs = Array.from(drugMap.entries())
+                .map(([name, data]) => ({
+                    name,
+                    count: data.count,
+                    avgScore: Math.round(data.totalScore / data.count),
+                    riskLevel: data.riskLevel as "safe" | "suspicious" | "counterfeit",
+                }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 5);
+
+            setTopDrugs(drugs);
+        } catch (error) {
+            console.error('Failed to load report data:', error);
+        } finally {
+            setIsSyncing(false);
+        }
+    }, [user]);
 
     useEffect(() => {
-        const history = getScanHistory();
-        setScanHistory(history);
-
-        // Calculate safety index (0-100)
-        if (history.length > 0) {
-            const avgScore = history.reduce((sum, scan) => sum + scan.authenticityScore, 0) / history.length;
-            setSafetyIndex(Math.round(avgScore));
+        if (!authLoading) {
+            loadData();
         }
-
-        // Calculate top scanned drugs
-        const drugMap = new Map<string, { count: number; totalScore: number; riskLevel: string }>();
-        history.forEach(scan => {
-            const existing = drugMap.get(scan.drugName) || { count: 0, totalScore: 0, riskLevel: scan.riskLevel };
-            drugMap.set(scan.drugName, {
-                count: existing.count + 1,
-                totalScore: existing.totalScore + scan.authenticityScore,
-                riskLevel: scan.riskLevel,
-            });
-        });
-
-        const drugs = Array.from(drugMap.entries())
-            .map(([name, data]) => ({
-                name,
-                count: data.count,
-                avgScore: Math.round(data.totalScore / data.count),
-                riskLevel: data.riskLevel as "safe" | "suspicious" | "counterfeit",
-            }))
-            .sort((a, b) => b.count - a.count)
-            .slice(0, 5);
-
-        setTopDrugs(drugs);
-    }, []);
+    }, [user, authLoading, loadData]);
 
     const stats = {
         total: scanHistory.length,
@@ -105,8 +168,8 @@ export default function ReportPage() {
                                         <h2 className="text-lg font-bold text-white/70 mb-2">Community Safety Index</h2>
                                         <div className="flex items-baseline gap-2">
                                             <span className={`text-6xl font-bold ${safetyIndex >= 85 ? 'text-access-green' :
-                                                    safetyIndex >= 60 ? 'text-watch-orange' :
-                                                        'text-reserve-red'
+                                                safetyIndex >= 60 ? 'text-watch-orange' :
+                                                    'text-reserve-red'
                                                 }`}>
                                                 {safetyIndex}
                                             </span>
@@ -143,26 +206,35 @@ export default function ReportPage() {
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm text-white/70">ACCESS (First-line)</span>
-                                        <span className="text-access-green font-bold">Preferred</span>
+                                        <span className="text-access-green font-bold">{awareStats.access} Drugs</span>
                                     </div>
                                     <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                                        <div className="h-full bg-access-green" style={{ width: '70%' }} />
+                                        <div
+                                            className="h-full bg-access-green transition-all duration-1000"
+                                            style={{ width: `${prescriptions.length > 0 ? (awareStats.access / prescriptions.length) * 100 : 0}%` }}
+                                        />
                                     </div>
 
                                     <div className="flex items-center justify-between mt-4">
                                         <span className="text-sm text-white/70">WATCH (Second-line)</span>
-                                        <span className="text-watch-orange font-bold">Monitor</span>
+                                        <span className="text-watch-orange font-bold">{awareStats.watch} Drugs</span>
                                     </div>
                                     <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                                        <div className="h-full bg-watch-orange" style={{ width: '25%' }} />
+                                        <div
+                                            className="h-full bg-watch-orange transition-all duration-1000"
+                                            style={{ width: `${prescriptions.length > 0 ? (awareStats.watch / prescriptions.length) * 100 : 0}%` }}
+                                        />
                                     </div>
 
                                     <div className="flex items-center justify-between mt-4">
                                         <span className="text-sm text-white/70">RESERVE (Last resort)</span>
-                                        <span className="text-reserve-red font-bold">Restrict</span>
+                                        <span className="text-reserve-red font-bold">{awareStats.reserve} Drugs</span>
                                     </div>
                                     <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                                        <div className="h-full bg-reserve-red" style={{ width: '5%' }} />
+                                        <div
+                                            className="h-full bg-reserve-red transition-all duration-1000"
+                                            style={{ width: `${prescriptions.length > 0 ? (awareStats.reserve / prescriptions.length) * 100 : 0}%` }}
+                                        />
                                     </div>
                                 </div>
                             </section>
@@ -173,17 +245,27 @@ export default function ReportPage() {
                                     <span className="text-xl">⚠️</span> AMR Risk Alerts
                                 </h3>
                                 <div className="space-y-3 text-sm">
-                                    <div className="p-3 rounded-lg bg-reserve-red/10 border border-reserve-red/30">
-                                        <p className="font-bold text-reserve-red mb-1">High Resistance</p>
-                                        <p className="text-white/70">Ciprofloxacin: 68% resistant in UTIs</p>
-                                    </div>
-                                    <div className="p-3 rounded-lg bg-watch-orange/10 border border-watch-orange/30">
-                                        <p className="font-bold text-watch-orange mb-1">Rising Concern</p>
-                                        <p className="text-white/70">Azithromycin: 42% resistance trend</p>
-                                    </div>
+                                    {topDrugs.length > 0 ? (
+                                        <>
+                                            <div className="p-3 rounded-lg bg-reserve-red/10 border border-reserve-red/30">
+                                                <p className="font-bold text-reserve-red mb-1">Local Concern: {topDrugs[0]?.name}</p>
+                                                <p className="text-white/70">Authenticity Score: {topDrugs[0]?.avgScore}% - Stay vigilant.</p>
+                                            </div>
+                                            {topDrugs[1] && (
+                                                <div className="p-3 rounded-lg bg-watch-orange/10 border border-watch-orange/30">
+                                                    <p className="font-bold text-watch-orange mb-1">Monitor: {topDrugs[1]?.name}</p>
+                                                    <p className="text-white/70">Trending in your scans with {topDrugs[1]?.avgScore}% typical score.</p>
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <div className="p-3 rounded-lg bg-white/5 border border-white/10 italic text-white/50 text-center">
+                                            Scanning activity required for local risk mapping.
+                                        </div>
+                                    )}
                                     <div className="p-3 rounded-lg bg-access-green/10 border border-access-green/30">
-                                        <p className="font-bold text-access-green mb-1">Still Effective</p>
-                                        <p className="text-white/70">Amoxicillin: 15% resistance only</p>
+                                        <p className="font-bold text-access-green mb-1">System Health</p>
+                                        <p className="text-white/70">Vigilance active. Global surveillance data synced.</p>
                                     </div>
                                 </div>
                             </section>
@@ -229,8 +311,8 @@ export default function ReportPage() {
                                                 <p className="text-xs text-white/70">{drug.count} scans</p>
                                             </div>
                                             <div className={`px-4 py-2 rounded-full text-sm font-bold ${drug.riskLevel === 'safe' ? 'bg-access-green/20 text-access-green' :
-                                                    drug.riskLevel === 'suspicious' ? 'bg-watch-orange/20 text-watch-orange' :
-                                                        'bg-reserve-red/20 text-reserve-red'
+                                                drug.riskLevel === 'suspicious' ? 'bg-watch-orange/20 text-watch-orange' :
+                                                    'bg-reserve-red/20 text-reserve-red'
                                                 }`}>
                                                 {drug.avgScore}% avg
                                             </div>
@@ -245,16 +327,21 @@ export default function ReportPage() {
                             <h3 className="font-bold text-lg text-white mb-4 flex items-center gap-2">
                                 <span className="text-xl">🤖</span> AI-Powered Insights
                             </h3>
-                            <div className="space-y-3 text-white/90">
+                            <div className="space-y-4 text-white/90">
                                 <p className="leading-relaxed">
                                     <strong className="text-primary">Community Impact:</strong> Your {stats.total} scans contribute to Nigeria's pharmaceutical surveillance network.
                                     {stats.counterfeit > 0 && ` You've helped identify ${stats.counterfeit} potentially counterfeit product${stats.counterfeit > 1 ? 's' : ''}.`}
                                 </p>
                                 <p className="leading-relaxed">
-                                    <strong className="text-primary">AMR Awareness:</strong> By choosing ACCESS antibiotics over WATCH/RESERVE drugs, you help combat antimicrobial resistance and preserve last-resort treatments for future generations.
+                                    <strong className="text-primary">Data Privacy:</strong>
+                                    {user?.is_anonymous ?
+                                        " You are currently sharing de-identified data as a guest. Register to manage your personal surveillance contributions." :
+                                        " Your data sharing preferences are active. Your contributions help NAFDAC and WHO track regional risks while maintaining your privacy."
+                                    }
+                                    <Link href="/profile" className="text-primary hover:underline ml-1">Update settings in your profile.</Link>
                                 </p>
                                 <p className="leading-relaxed">
-                                    <strong className="text-primary">Next Steps:</strong> Continue scanning drug packages and analyzing prescriptions. Share this tool with your community to expand our pharmaceutical safety network.
+                                    <strong className="text-primary">AMR Awareness:</strong> By choosing ACCESS antibiotics over WATCH/RESERVE drugs, you help combat antimicrobial resistance and preserve last-resort treatments for future generations.
                                 </p>
                             </div>
                         </section>

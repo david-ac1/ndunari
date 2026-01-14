@@ -1,26 +1,70 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { getScanHistory, type ScanHistoryItem } from "@/lib/utils/scan-history";
+import { useAuth } from "@/app/components/providers/AuthProvider";
+import { getUserScans } from "@/lib/services/scan-storage.service";
+import { supabase } from "@/lib/supabase/client";
 
 export default function HomePage() {
+    const { user, profile, loading: authLoading } = useAuth();
     const [scanHistory, setScanHistory] = useState<ScanHistoryItem[]>([]);
     const [stats, setStats] = useState({ total: 0, safe: 0, suspicious: 0, counterfeit: 0 });
+    const [isSyncing, setIsSyncing] = useState(false);
+
+    const displayName = profile?.display_name || user?.email?.split('@')[0] || "Health Guardian";
+
+    const loadHistory = useCallback(async () => {
+        setIsSyncing(true);
+        try {
+            // 1. Load from localStorage
+            const localHistory = getScanHistory();
+
+            // 2. Load from Supabase
+            let combinedHistory = [...localHistory];
+
+            if (user) {
+                const { data: cloudScans, error } = await getUserScans();
+                if (!error && cloudScans) {
+                    const mappedCloudScans: ScanHistoryItem[] = cloudScans.map(s => ({
+                        id: s.id,
+                        timestamp: new Date(s.created_at).getTime(),
+                        drugName: s.drug_name,
+                        authenticityScore: s.authenticity_score,
+                        riskLevel: s.risk_level,
+                        nafdacNumber: s.nafdac_number || undefined,
+                        imagePreview: s.image_preview || undefined
+                    }));
+
+                    const existingIds = new Set(localHistory.map(l => l.id));
+                    const newCloudScans = mappedCloudScans.filter(cs => !existingIds.has(cs.id));
+                    combinedHistory = [...localHistory, ...newCloudScans];
+                }
+            }
+
+            combinedHistory.sort((a, b) => b.timestamp - a.timestamp);
+            setScanHistory(combinedHistory.slice(0, 3));
+
+            // Calculate stats (Use profile totals if available for better accuracy, otherwise history)
+            const total = profile?.total_scans || combinedHistory.length;
+            const safe = combinedHistory.filter(s => s.riskLevel === 'safe').length;
+            const suspicious = combinedHistory.filter(s => s.riskLevel === 'suspicious').length;
+            const counterfeit = combinedHistory.filter(s => s.riskLevel === 'counterfeit').length;
+
+            setStats({ total, safe, suspicious, counterfeit });
+        } catch (error) {
+            console.error('Failed to load history:', error);
+        } finally {
+            setIsSyncing(false);
+        }
+    }, [user, profile]);
 
     useEffect(() => {
-        // Load scan history
-        const history = getScanHistory();
-        setScanHistory(history.slice(0, 3)); // Latest 3 scans
-
-        // Calculate stats
-        const total = history.length;
-        const safe = history.filter(s => s.riskLevel === 'safe').length;
-        const suspicious = history.filter(s => s.riskLevel === 'suspicious').length;
-        const counterfeit = history.filter(s => s.riskLevel === 'counterfeit').length;
-
-        setStats({ total, safe, suspicious, counterfeit });
-    }, []);
+        if (!authLoading) {
+            loadHistory();
+        }
+    }, [user, authLoading, loadHistory]);
 
     return (
         <div className="relative min-h-screen flex flex-col overflow-hidden pb-24 lg:pb-8">
@@ -33,20 +77,50 @@ export default function HomePage() {
             <header className="relative z-10 px-6 lg:px-8 xl:px-12 pt-8 lg:pt-12 pb-4 lg:pb-6">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3 lg:gap-4">
-                        <div className="h-12 w-12 lg:h-14 lg:w-14 rounded-full border-2 border-white dark:border-forest-green shadow-sm overflow-hidden bg-forest-green relative flex items-center justify-center">
-                            <span className="text-2xl lg:text-3xl font-bold text-white">N</span>
-                        </div>
+                        <Link href="/profile" className="h-12 w-12 lg:h-14 lg:w-14 rounded-full border-2 border-white dark:border-forest-green shadow-sm overflow-hidden bg-forest-green relative flex items-center justify-center hover:scale-105 transition-transform">
+                            <span className="text-2xl lg:text-3xl font-bold text-white">
+                                {displayName?.[0] || 'N'}
+                            </span>
+                        </Link>
                         <div>
                             <p className="text-xs lg:text-sm font-medium text-gray-500 dark:text-gray-400">Welcome back,</p>
-                            <h1 className="text-xl lg:text-2xl font-bold leading-tight">Health Guardian</h1>
+                            <h1 className="text-xl lg:text-2xl font-bold leading-tight truncate max-w-[150px] lg:max-w-[250px] flex items-center gap-2">
+                                {displayName}
+                                <Link href="/profile" title={profile?.share_data ? "Contributing to Public Health" : "Privacy Protection Active"}>
+                                    {profile?.share_data === false ? (
+                                        <span className="text-sm bg-access-green/20 text-access-green px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
+                                            🛡️ <span className="hidden sm:inline text-[10px]">PRIVATE</span>
+                                        </span>
+                                    ) : (
+                                        <span className="text-sm bg-primary/20 text-primary px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
+                                            📡 <span className="hidden sm:inline text-[10px]">SYNCING</span>
+                                        </span>
+                                    )}
+                                </Link>
+                            </h1>
+                            {user?.is_anonymous && (
+                                <Link href="/login" className="text-[10px] lg:text-xs font-bold text-primary hover:underline flex items-center gap-1">
+                                    <span>🔐</span> Register to save history
+                                </Link>
+                            )}
                         </div>
                     </div>
-                    <button className="glass-panel h-10 w-10 lg:h-12 lg:w-12 flex items-center justify-center rounded-full shadow-sm hover:scale-105 transition-transform relative">
-                        <span className="text-xl lg:text-2xl">🔔</span>
-                        {stats.suspicious + stats.counterfeit > 0 && (
-                            <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-warning-amber border border-white" />
+                    <div className="flex items-center gap-4">
+                        {user?.is_anonymous && (
+                            <Link
+                                href="/login"
+                                className="hidden sm:flex px-4 py-2 bg-primary/10 text-primary rounded-lg text-sm font-bold hover:bg-primary/20 transition-colors"
+                            >
+                                Sign In
+                            </Link>
                         )}
-                    </button>
+                        <button className="glass-panel h-10 w-10 lg:h-12 lg:w-12 flex items-center justify-center rounded-full shadow-sm hover:scale-105 transition-transform relative">
+                            <span className="text-xl lg:text-2xl">🔔</span>
+                            {stats.suspicious + stats.counterfeit > 0 && (
+                                <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-warning-amber border border-white" />
+                            )}
+                        </button>
+                    </div>
                 </div>
             </header>
 
@@ -178,8 +252,8 @@ export default function HomePage() {
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <span className={`text-sm font-bold ${scan.riskLevel === 'safe' ? 'text-access-green' :
-                                                            scan.riskLevel === 'suspicious' ? 'text-watch-orange' :
-                                                                'text-reserve-red'
+                                                        scan.riskLevel === 'suspicious' ? 'text-watch-orange' :
+                                                            'text-reserve-red'
                                                         }`}>
                                                         {scan.authenticityScore}%
                                                     </span>

@@ -8,6 +8,8 @@ import { type ScanMode, type AngleType, createScanSession, type MultiAngleScanSe
 import ScanModeSelector from "./components/ScanModeSelector";
 import MultiAngleCapture from "./components/MultiAngleCapture";
 import CapturedImageReview from "./components/CapturedImageReview";
+import { useAuth } from "@/app/components/providers/AuthProvider";
+import { saveScan } from "@/lib/services/scan-storage.service";
 
 type ScanState = "mode_select" | "idle" | "multi_angle" | "review" | "scanning" | "analyzing" | "complete" | "error";
 
@@ -32,6 +34,7 @@ interface ScanResult {
 }
 
 export default function ScanPage() {
+    const { user } = useAuth();
     const [scanState, setScanState] = useState<ScanState>("mode_select");
     const [scanMode, setScanMode] = useState<ScanMode | null>(null);
     const [multiAngleSession, setMultiAngleSession] = useState<MultiAngleScanSession | null>(null);
@@ -149,7 +152,7 @@ export default function ScanPage() {
             setScanState('complete');
             setCurrentThought('');
 
-            // Save to history
+            // Save to history (Legacy localStorage)
             const historyItem: ScanHistoryItem = {
                 id: Date.now().toString(),
                 timestamp: Date.now(),
@@ -160,6 +163,20 @@ export default function ScanPage() {
                 imagePreview: Array.from(multiAngleSession.capturedAngles.values())[0]?.substring(0, 10000),
             };
             saveScanToHistory(historyItem);
+
+            // Save to Supabase (Cloud Storage)
+            if (user) {
+                await saveScan({
+                    drugName: data.data.forensic.drugName,
+                    nafdacNumber: data.data.forensic.nafdacNumber,
+                    authenticityScore: data.data.forensic.authenticityScore,
+                    riskLevel: data.data.forensic.riskLevel,
+                    findings: data.data.forensic.findings,
+                    scanMode: 'multi',
+                    anglesScanned: multiAngleSession.completedCount,
+                    imagePreview: Array.from(multiAngleSession.capturedAngles.values())[0],
+                });
+            }
         } catch (err) {
             console.error('Scan error:', err);
             setError(err instanceof Error ? err.message : 'Scan failed');
@@ -232,6 +249,20 @@ export default function ScanPage() {
                 imagePreview: imagePreview.substring(0, 10000),
             };
             saveScanToHistory(historyItem);
+
+            // Save to Supabase (Cloud Storage)
+            if (user) {
+                await saveScan({
+                    drugName: data.data.forensic.drugName,
+                    nafdacNumber: data.data.forensic.nafdacNumber,
+                    authenticityScore: data.data.forensic.authenticityScore,
+                    riskLevel: data.data.forensic.riskLevel,
+                    findings: data.data.forensic.findings,
+                    scanMode: 'single',
+                    anglesScanned: 1,
+                    imagePreview: imagePreview,
+                });
+            }
         } catch (err) {
             console.error('Scan error:', err);
             setError(err instanceof Error ? err.message : 'Scan failed');

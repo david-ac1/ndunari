@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useAuth } from "@/app/components/providers/AuthProvider";
+import { savePrescription } from "@/lib/services/prescription-storage.service";
 
 interface StewardshipResult {
     drugName: string;
@@ -20,6 +22,7 @@ interface StewardshipResult {
 }
 
 export default function PrescriptionPage() {
+    const { user } = useAuth();
     const [drugName, setDrugName] = useState("");
     const [indication, setIndication] = useState("");
     const [analyzing, setAnalyzing] = useState(false);
@@ -54,7 +57,21 @@ export default function PrescriptionPage() {
                 throw new Error(data.error || 'Analysis failed');
             }
 
+
             setResult(data.data);
+
+            // Save to Supabase (Cloud Storage)
+            if (user && data.data) {
+                await savePrescription({
+                    drugName: data.data.drugName,
+                    indication: indication.trim() || undefined,
+                    awareCategory: data.data.awareCategory,
+                    riskLevel: data.data.riskLevel,
+                    recommendations: data.data.recommendations,
+                    alternatives: data.data.alternatives,
+                    warningFlags: data.data.warningFlags,
+                });
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to analyze prescription');
         } finally {

@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Manrope } from "next/font/google";
+import Link from "next/link";
+import { AuthProvider } from "@/app/components/providers/AuthProvider";
 import "./globals.css";
 
 const inter = Inter({
@@ -47,7 +49,9 @@ export default function RootLayout({
     return (
         <html lang="en" className="light">
             <body className={`${inter.variable} ${manrope.variable} font-sans`}>
-                {children}
+                <AuthProvider>
+                    {children}
+                </AuthProvider>
             </body>
         </html>
     );
