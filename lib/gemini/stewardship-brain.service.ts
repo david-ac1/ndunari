@@ -38,7 +38,14 @@ export type StewardshipAssessment = z.infer<typeof StewardshipAssessmentSchema>;
  * Temperature 1.0: Contextually appropriate medical decisions
  */
 export class StewardshipBrainService {
-    private model = getStewardshipBrainModel();
+    private _model: ReturnType<typeof getStewardshipBrainModel> | null = null;
+
+    private get model() {
+        if (!this._model) {
+            this._model = getStewardshipBrainModel();
+        }
+        return this._model;
+    }
 
     /**
      * Analyze prescription for antibiotic stewardship

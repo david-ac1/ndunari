@@ -23,7 +23,14 @@ export type ForensicAnalysis = z.infer<typeof ForensicAnalysisSchema>;
  * NO image compression - full resolution for microscopic detail detection
  */
 export class ForensicEyeService {
-    private model = getForensicEyeModel();
+    private _model: ReturnType<typeof getForensicEyeModel> | null = null;
+
+    private get model() {
+        if (!this._model) {
+            this._model = getForensicEyeModel();
+        }
+        return this._model;
+    }
 
     /**
      * Scan drug package for authenticity
