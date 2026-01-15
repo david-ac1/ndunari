@@ -8,7 +8,7 @@ import { useAuth } from "@/app/components/providers/AuthProvider";
 import { getUserScans } from "@/lib/services/scan-storage.service";
 import { sentinelAgentService, type SentinelDirective } from "@/lib/gemini/sentinel-agent.service";
 import { ThinkingPanel } from "@/app/components/ThinkingPanel";
-import { Shield, Activity, Search, AlertCircle, Zap, TrendingUp, Map as MapIcon, ChevronRight, Users } from "lucide-react";
+import { Shield, Activity, Search, AlertCircle, Zap, TrendingUp, Map as MapIcon, ChevronRight, Users, Globe, Database, BookOpen } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function HomePage() {
@@ -35,8 +35,13 @@ export default function HomePage() {
             let combinedHistory = [...localHistory];
 
             if (user) {
-                const { data: cloudScans } = await getUserScans();
-                if (cloudScans) {
+                setSentinelThoughts(prev => [...prev, { id: 'cloud-sync', text: "Synchronizing with National Cloud Ledger...", level: 'primary', timestamp: new Date() }]);
+                const { data: cloudScans, error: cloudError } = await getUserScans();
+
+                if (cloudError) {
+                    console.error('Cloud sync failed:', cloudError);
+                    setSentinelThoughts(prev => [...prev, { id: 'sync-err', text: "Cloud Ledger unreachable. Check network/config.", level: 'system', timestamp: new Date() }]);
+                } else if (cloudScans) {
                     const mapped = cloudScans.map(s => ({
                         id: s.id,
                         timestamp: new Date(s.created_at).getTime(),
@@ -47,8 +52,12 @@ export default function HomePage() {
                         imagePreview: s.image_preview || undefined
                     }));
                     const existingIds = new Set(localHistory.map(l => l.id));
-                    combinedHistory = [...localHistory, ...mapped.filter(cs => !existingIds.has(cs.id))];
+                    const newItems = mapped.filter(cs => !existingIds.has(cs.id));
+                    combinedHistory = [...localHistory, ...newItems];
+                    setSentinelThoughts(prev => [...prev, { id: 'sync-ok', text: `Integrated ${newItems.length} records from cloud.`, level: 'system', timestamp: new Date() }]);
                 }
+            } else {
+                setSentinelThoughts(prev => [...prev, { id: 'guest-warn', text: "Operating in Restricted Guest Mode. Sign in for global sync.", level: 'system', timestamp: new Date() }]);
             }
 
             combinedHistory.sort((a, b) => b.timestamp - a.timestamp);
@@ -272,13 +281,19 @@ export default function HomePage() {
 
                         {/* AI Research Hub */}
                         <section className="p-6 rounded-[2.5rem] bg-zinc-900 border border-white/5">
-                            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white/40 mb-4 px-2">Research Hub</h2>
+                            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white/40 mb-4 px-2">National Research Hub</h2>
                             <div className="space-y-3">
-                                <a href="https://www.who.int" className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-[10px] font-black uppercase text-white/60">
-                                    <AlertCircle size={14} className="text-primary" /> WHO AWaRe Database
+                                <a href="https://www.who.int/groups/aware/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-[10px] font-black uppercase text-white/60">
+                                    <Globe size={14} className="text-primary" /> WHO AWaRe Portal
                                 </a>
-                                <a href="#" className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-[10px] font-black uppercase text-white/60">
-                                    <Zap size={14} className="text-primary" /> Nigerian AMR Trends
+                                <a href="https://greenbook.nafdac.gov.ng/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-[10px] font-black uppercase text-white/60">
+                                    <Database size={14} className="text-primary" /> NAFDAC Greenbook
+                                </a>
+                                <a href="https://ncdc.gov.ng/diseases/sitreps/?cat=15&name=Antimicrobial%20Resistance" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-[10px] font-black uppercase text-white/60">
+                                    <Activity size={14} className="text-primary" /> Nigeria AMR Strategy
+                                </a>
+                                <a href="https://dashboard.globalamrhub.org/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-[10px] font-black uppercase text-white/60">
+                                    <BookOpen size={14} className="text-primary" /> Global AMR Intelligence
                                 </a>
                             </div>
                         </section>
