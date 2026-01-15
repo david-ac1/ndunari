@@ -19,6 +19,7 @@ export default function AdminPage() {
     const [loading, setLoading] = useState(true);
     const [seeding, setSeeding] = useState(false);
     const [activeTab, setActiveTab] = useState('overview');
+    const [analyzing, setAnalyzing] = useState(false);
 
     // Security Guard: Redirect non-admins
     useEffect(() => {
@@ -27,15 +28,17 @@ export default function AdminPage() {
         }
     }, [profile, authLoading, router]);
 
-    const fetchStats = async () => {
+    const fetchStats = async (deep = false) => {
+        if (deep) setAnalyzing(true);
         try {
-            const res = await fetch('/api/admin/stats');
+            const res = await fetch(`/api/admin/stats${deep ? '?deep=true' : ''}`);
             const json = await res.json();
             if (json.success) setData(json.data);
         } catch (error) {
             console.error("Admin stats fetch failed:", error);
         } finally {
             setLoading(false);
+            if (deep) setAnalyzing(false);
         }
     };
 
@@ -141,7 +144,7 @@ export default function AdminPage() {
                         )}
 
                         <div className="flex gap-2 p-1 rounded-2xl bg-white/5 border border-white/5">
-                            {['overview', 'forensics', 'stewardship'].map((tab) => (
+                            {['overview', 'forensics', 'recalls'].map((tab) => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
@@ -168,25 +171,26 @@ export default function AdminPage() {
                         sub="Cross-Account Telemetry"
                     />
                     <StatCard
-                        title="Counterfeit Detections"
-                        value={stats.counterfeitScans}
-                        icon={<AlertTriangle size={20} />}
-                        color="text-reserve-red"
-                        sub="Verified Forensic Failures"
-                    />
-                    <StatCard
-                        title="Stewardship Audits"
-                        value={stats.totalPrescriptions}
-                        icon={<Activity size={20} />}
-                        color="text-access-green"
-                        sub="AMR Policy Checks"
-                    />
-                    <StatCard
-                        title="Reserve Antibiotics"
-                        value={stats.awareDistribution.reserve}
-                        icon={<Zap size={20} />}
+                        title="AI Risk Masks"
+                        value={data?.riskMasks?.length || 0}
+                        icon={<Globe size={20} />}
                         color="text-watch-orange"
-                        sub="National High-Risk Usage"
+                        sub="Autonomous Geo-Fencing"
+                    />
+                    <StatCard
+                        title="Drafted Recalls"
+                        value={data?.recallNotices?.length || 0}
+                        icon={<Shield size={20} />}
+                        color="text-reserve-red"
+                        sub="Regulatory Interventions"
+                    />
+                    <StatCard
+                        title="Vigilance Score"
+                        value={Math.round((stats.safeScans / (stats.totalScans || 1)) * 100)}
+                        icon={<Zap size={20} />}
+                        color="text-access-green"
+                        sub="National Safety Rating"
+                        isPercentage
                     />
                 </div>
 
@@ -195,70 +199,182 @@ export default function AdminPage() {
                     {/* 2. Main Intelligence Loop (Left/Center) */}
                     <div className="lg:col-span-8 space-y-8">
 
-                        {/* Live Forensic Stream */}
-                        <section className="glass-panel rounded-[2.5rem] border-2 border-white/5 overflow-hidden">
-                            <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-2xl bg-primary/20 flex items-center justify-center">
-                                        <Activity className="text-primary" size={20} />
+                        {/* Conditional Views based on Tabs */}
+                        {activeTab === 'overview' && (
+                            <div className="space-y-8">
+                                {/* National Command Radar (Map Overlay Simulated) */}
+                                <section className="glass-panel rounded-[2.5rem] border-2 border-primary/20 bg-black/40 relative overflow-hidden h-[400px]">
+                                    <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] pointer-events-none" />
+                                    <div className="absolute top-8 left-8 z-10">
+                                        <h2 className="text-sm font-black uppercase tracking-widest flex items-center gap-3">
+                                            <Globe className="text-primary animate-spin-slow" size={20} />
+                                            National Command Radar
+                                        </h2>
+                                        <p className="text-[10px] text-white/30 font-bold uppercase tracking-tight mt-1">Autonomous Regional Monitoring Active</p>
                                     </div>
-                                    <div>
-                                        <h2 className="text-sm font-black uppercase tracking-widest">Live Forensic Signal Stream</h2>
-                                        <p className="text-[10px] text-white/30 font-bold uppercase tracking-tight">Real-time Cross-Market Surveillance</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                                    <span className="text-[10px] font-black uppercase text-primary tracking-widest">Live Feed active</span>
-                                </div>
-                            </div>
 
-                            <div className="p-2 overflow-x-auto">
-                                <table className="w-full text-left border-collapse min-w-[700px]">
-                                    <thead className="text-[10px] font-black uppercase text-white/20">
-                                        <tr>
-                                            <th className="p-4">Timestamp</th>
-                                            <th className="p-4">Drug Item</th>
-                                            <th className="p-4">Region</th>
-                                            <th className="p-4 text-center">Risk</th>
-                                            <th className="p-4 text-right">Authenticity</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="text-xs">
-                                        {data?.feed?.map((item: any) => (
-                                            <tr key={item.id} className="border-t border-white/5 hover:bg-white/[0.02] transition-colors group">
-                                                <td className="p-4 text-white/40 font-mono">
-                                                    {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                                </td>
-                                                <td className="p-4">
-                                                    <div className="font-bold text-white group-hover:text-primary transition-colors">{item.drug_name}</div>
-                                                    <div className="text-[10px] text-white/30 font-mono">Batch: {item.batch_number || 'UNKNOWN'}</div>
-                                                </td>
-                                                <td className="p-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <Globe size={12} className="text-white/20" />
-                                                        <span className="font-bold uppercase tracking-tight">{item.region || 'National'}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="p-4">
-                                                    <div className="flex justify-center">
-                                                        <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${item.risk_level === 'counterfeit' ? 'bg-reserve-red/20 text-reserve-red' :
-                                                                item.risk_level === 'suspicious' ? 'bg-watch-orange/20 text-watch-orange' :
-                                                                    'bg-access-green/20 text-access-green'
-                                                            }`}>
-                                                            {item.risk_level}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="p-4 text-right font-black italic text-sm text-white/80">
-                                                    {item.authenticity_score}%
-                                                </td>
-                                            </tr>
+                                    {/* Mock Map Background */}
+                                    <div className="absolute inset-0 flex items-center justify-center grayscale opacity-10">
+                                        <Globe size={300} strokeWidth={1} />
+                                    </div>
+
+                                    {/* Animated Risk Masks */}
+                                    <div className="absolute inset-0">
+                                        {data?.riskMasks?.map((mask: any, i: number) => (
+                                            <motion.div
+                                                key={mask.id}
+                                                initial={{ scale: 0, opacity: 0 }}
+                                                animate={{ scale: 1, opacity: 1 }}
+                                                className="absolute border-2 border-reserve-red rounded-full flex items-center justify-center group cursor-help"
+                                                style={{
+                                                    top: `${40 + (i * 15)}%`,
+                                                    left: `${30 + (i * 20)}%`,
+                                                    width: `${mask.radius * 2}px`,
+                                                    height: `${mask.radius * 2}px`,
+                                                    backgroundColor: `rgba(239, 68, 68, ${mask.intensity * 0.2})`,
+                                                    boxShadow: '0 0 20px rgba(239, 68, 68, 0.4)'
+                                                }}
+                                            >
+                                                <div className="absolute -top-8 bg-reserve-red text-white text-[8px] font-black px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                                    THREAT: {mask.detectedThreat}
+                                                </div>
+                                                <div className="w-2 h-2 bg-reserve-red rounded-full animate-ping" />
+                                            </motion.div>
                                         ))}
-                                    </tbody>
-                                </table>
+
+                                        {!data?.riskMasks?.length && (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center space-y-4">
+                                                <p className="text-[10px] text-white/20 font-black uppercase tracking-[0.3em]">No Active Risk Masks</p>
+                                                <button
+                                                    onClick={() => fetchStats(true)}
+                                                    disabled={analyzing}
+                                                    className="px-6 py-3 bg-primary/10 border border-primary/20 rounded-2xl text-primary text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary/20 transition-all flex items-center gap-3"
+                                                >
+                                                    {analyzing ? <Activity className="animate-spin" size={14} /> : <Zap size={14} />}
+                                                    {analyzing ? "Sentinel Reasoning..." : "Run Deep Sentinel Analysis"}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </section>
+
+                                {/* Live Forensic Stream */}
+                                <section className="glass-panel rounded-[2.5rem] border-2 border-white/5 overflow-hidden">
+                                    <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-2xl bg-primary/20 flex items-center justify-center">
+                                                <Activity className="text-primary" size={20} />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-sm font-black uppercase tracking-widest">Live Forensic Signal Stream</h2>
+                                                <p className="text-[10px] text-white/30 font-bold uppercase tracking-tight">Real-time Cross-Market Surveillance</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-2 overflow-x-auto">
+                                        <table className="w-full text-left border-collapse min-w-[700px]">
+                                            <thead className="text-[10px] font-black uppercase text-white/20">
+                                                <tr>
+                                                    <th className="p-4">Timestamp</th>
+                                                    <th className="p-4">Drug Item</th>
+                                                    <th className="p-4">Region</th>
+                                                    <th className="p-4 text-center">Risk</th>
+                                                    <th className="p-4 text-right">Authenticity</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="text-xs">
+                                                {data?.feed?.map((item: any) => (
+                                                    <tr key={item.id} className="border-t border-white/5 hover:bg-white/[0.02] transition-colors group">
+                                                        <td className="p-4 text-white/40 font-mono">
+                                                            {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                                        </td>
+                                                        <td className="p-4">
+                                                            <div className="font-bold text-white group-hover:text-primary transition-colors">{item.drug_name}</div>
+                                                            <div className="text-[10px] text-white/30 font-mono">Batch: {item.batch_number || 'UNKNOWN'}</div>
+                                                        </td>
+                                                        <td className="p-4">
+                                                            <div className="flex items-center gap-2">
+                                                                <Globe size={12} className="text-white/20" />
+                                                                <span className="font-bold uppercase tracking-tight">{item.region || 'National'}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-4">
+                                                            <div className="flex justify-center">
+                                                                <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${item.risk_level === 'counterfeit' ? 'bg-reserve-red/20 text-reserve-red' :
+                                                                    item.risk_level === 'suspicious' ? 'bg-watch-orange/20 text-watch-orange' :
+                                                                        'bg-access-green/20 text-access-green'
+                                                                    }`}>
+                                                                    {item.risk_level}
+                                                                </span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-4 text-right font-black italic text-sm text-white/80">
+                                                            {item.authenticity_score}%
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </section>
                             </div>
-                        </section>
+                        )}
+
+                        {activeTab === 'recalls' && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {data?.recallNotices?.length > 0 ? (
+                                    data.recallNotices.map((recall: any) => (
+                                        <motion.div
+                                            key={recall.id}
+                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            className="glass-panel p-8 rounded-[2.5rem] border-2 border-reserve-red/20 space-y-4 relative overflow-hidden"
+                                        >
+                                            <div className="absolute top-0 right-0 px-4 py-2 bg-reserve-red text-white text-[8px] font-black uppercase tracking-widest italic">
+                                                AI-Drafted Recall
+                                            </div>
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <h3 className="text-xl font-black text-white italic">{recall.drugName}</h3>
+                                                    <p className="text-[10px] text-reserve-red font-black uppercase tracking-widest">BATCH: {recall.batchNumber}</p>
+                                                </div>
+                                                <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest bg-reserve-red/10 text-reserve-red border border-reserve-red/20`}>
+                                                    {recall.severity}
+                                                </div>
+                                            </div>
+                                            <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-2">
+                                                <p className="text-[10px] text-white/60 font-medium leading-relaxed italic line-clamp-3">"{recall.reason}"</p>
+                                            </div>
+                                            <div className="flex justify-between items-center pt-4">
+                                                <div className="text-[9px] text-white/30 font-bold uppercase tracking-widest">SCOPE: {recall.scope}</div>
+                                                <button className="px-4 py-2 bg-white text-black text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-primary transition-all">
+                                                    Publish Notice
+                                                </button>
+                                            </div>
+                                        </motion.div>
+                                    ))
+                                ) : (
+                                    <div className="col-span-2 h-[400px] rounded-[3rem] border-2 border-dashed border-white/5 flex flex-col items-center justify-center space-y-6 grayscale opacity-30">
+                                        <div className="w-20 h-20 rounded-full border-4 border-white/10 flex items-center justify-center animate-pulse">
+                                            <Shield size={40} />
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-xs font-black uppercase tracking-[0.3em] mb-2">No Active Recall Directives</p>
+                                            <p className="text-[9px] font-bold uppercase tracking-widest text-white/60">Sentinel Agent has not detected critical supply chain fractures.</p>
+                                        </div>
+                                        <button
+                                            onClick={() => fetchStats(true)}
+                                            disabled={analyzing}
+                                            className="px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-white text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white/10 transition-all flex items-center gap-3"
+                                        >
+                                            {analyzing ? <Activity className="animate-spin" size={14} /> : <Zap size={14} />}
+                                            {analyzing ? "Running Intelligence Cycle..." : "Verify Supply Chain Integrity"}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* AMR Stewardship Scorecard */}
                         <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -394,7 +510,7 @@ export default function AdminPage() {
     );
 }
 
-function StatCard({ title, value, icon, color, sub }: { title: string, value: number, icon: any, color: string, sub: string }) {
+function StatCard({ title, value, icon, color, sub, isPercentage }: { title: string, value: number, icon: any, color: string, sub: string, isPercentage?: boolean }) {
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -408,7 +524,7 @@ function StatCard({ title, value, icon, color, sub }: { title: string, value: nu
                 <TrendingUp size={16} className="text-white/10 group-hover:text-white/40 transition-colors" />
             </div>
             <div className={`text-5xl font-black tracking-tighter mb-2 relative z-10 italic ${color}`}>
-                {value.toLocaleString()}
+                {value.toLocaleString()}{isPercentage ? '%' : ''}
             </div>
             <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1 relative z-10">{title}</div>
             <div className="text-[8px] font-bold uppercase tracking-widest text-white/20 italic relative z-10">{sub}</div>

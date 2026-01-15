@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../supabase/admin';
+import { sentinelAgentService, type RiskMask, type RecallNotice } from '../gemini/sentinel-agent.service';
 
 export interface AdminStats {
     totalScans: number;
@@ -97,6 +98,34 @@ export class AdminIntelligenceService {
 
         if (error) throw error;
         return data;
+    }
+
+    /**
+     * Generate national risk masks using Gemini 3
+     */
+    async getNationalRiskMasks(): Promise<RiskMask[]> {
+        const { data: scans, error } = await supabaseAdmin
+            .from('scans')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(100);
+
+        if (error) throw error;
+        return sentinelAgentService.generateRiskMasks(scans || []);
+    }
+
+    /**
+     * Generate autonomous recall notices using Gemini 3
+     */
+    async getAutonomousRecallNotices(): Promise<RecallNotice[]> {
+        const { data: scans, error } = await supabaseAdmin
+            .from('scans')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(100);
+
+        if (error) throw error;
+        return sentinelAgentService.generateRecallNotices(scans || []);
     }
 }
 

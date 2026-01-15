@@ -20,6 +20,35 @@ export const SentinelDirectiveSchema = z.object({
 export type SentinelDirective = z.infer<typeof SentinelDirectiveSchema>;
 
 /**
+ * Risk Mask Schema (Geo-fenced threat layer)
+ */
+export const RiskMaskSchema = z.object({
+    id: z.string(),
+    region: z.string(),
+    center: z.object({ lat: z.number(), lng: z.number() }),
+    radius: z.number(), // in km
+    intensity: z.number().min(0).max(1), // 0 to 1
+    detectedThreat: z.string(),
+});
+
+export type RiskMask = z.infer<typeof RiskMaskSchema>;
+
+/**
+ * Recall Notice Schema
+ */
+export const RecallNoticeSchema = z.object({
+    id: z.string(),
+    drugName: z.string(),
+    batchNumber: z.string(),
+    reason: z.string(),
+    severity: z.enum(["low", "medium", "high", "critical"]),
+    scope: z.string(), // "Regional" or "National"
+    publishedAt: z.string(),
+});
+
+export type RecallNotice = z.infer<typeof RecallNoticeSchema>;
+
+/**
  * Sentinel Agent Service
  * The "Orchestrator" that plans and executes surveillance tasks
  */
@@ -86,20 +115,117 @@ export class SentinelAgentService {
     }
 
     /**
-     * Generate real-time "Guardian Guidance" for the camera view
+     * Generate risk masks for the national map
      */
-    async generateLiveGuidance(currentFrameContext: string): Promise<string> {
-        const prompt = `You are a Forensic Director guiding a field worker through a drug scan.
-        CONTEXT: ${currentFrameContext}
-        Provide ONE short, proactive instruction (max 10 words).
-        Example: "Hold steady, scanning NAFDAC hologram now..."
-        Example: "Tilt slightly left to capture expiry date."`;
+    async generateRiskMasks(scanLogs: any[]): Promise<RiskMask[]> {
+        const logContext = JSON.stringify(scanLogs.slice(0, 50));
+        const prompt = `You are a Geo-Spatial Epidemiologist. Analyze these drug scan results and identify regional hotspots for counterfeit activity.
+        
+        DATA: ${logContext}
+        
+        TASK:
+        Generate 2-3 "Risk Masks" (circular threat areas) for Nigeria.
+        For each mask, provide center coordinates (approximate for Nigeria states) and radius.
+        
+        NIGERIA COORD HINTS:
+        - Lagos: {lat: 6.5244, lng: 3.3792}
+        - Abuja: {lat: 9.0765, lng: 7.3986}
+        - Kano: {lat: 12.0022, lng: 8.5920}
+        - Port Harcourt: {lat: 4.8156, lng: 7.0498}
+        
+        RESPONSE FORMAT (JSON Array):
+        [{
+          "id": "MASK-001",
+          "region": "State Name",
+          "center": {"lat": number, "lng": number},
+          "radius": number (km),
+          "intensity": 0.0-1.0,
+          "detectedThreat": "Brief description of the threat at this cluster"
+        }]`;
 
         try {
             const result = await this.model.generateContent(prompt);
+            const text = result.response.text();
+            const jsonText = text.match(/\[[\s\S]*\]/)?.[0] || "[]";
+            return JSON.parse(jsonText);
+        } catch (error) {
+            console.error("Sentinel Risk Mask failure:", error);
+            return [];
+        }
+    }
+
+    /**
+     * Generate official AI-drafted recall notices
+     */
+    async generateRecallNotices(scanLogs: any[]): Promise<RecallNotice[]> {
+        const suspiciousLogs = scanLogs.filter(s => s.risk_level === 'counterfeit' || s.risk_level === 'suspicious');
+        if (suspiciousLogs.length === 0) return [];
+
+        const logContext = JSON.stringify(suspiciousLogs.slice(0, 30));
+        const prompt = `You are the NAFDAC Autonomous Recall Orchestrator.
+        
+        EVIDENCE LOGS: ${logContext}
+        
+        TASK:
+        Draft formal Pharmaceutical Recall Notices for drugs with high-confidence counterfeit signatures.
+        
+        RESPONSE FORMAT (JSON Array):
+        [{
+          "id": "RECALL-2024-NNN",
+          "drugName": "Exact Drug Name",
+          "batchNumber": "Batch/Lot",
+          "reason": "Detailed forensic reason for recall",
+          "severity": "low" | "medium" | "high" | "critical",
+          "scope": "Regional" | "National",
+          "publishedAt": "ISO Date"
+        }]`;
+
+        try {
+            const result = await this.model.generateContent(prompt);
+            const text = result.response.text();
+            const jsonText = text.match(/\[[\s\S]*\]/)?.[0] || "[]";
+            return JSON.parse(jsonText);
+        } catch (error) {
+            console.error("Sentinel Recall Notice failure:", error);
+            return [];
+        }
+    }
+
+    /**
+     * Generate real-time "Guardian Guidance" for the camera view
+     * This uses multimodal vision to "see" the live frame
+     */
+    async generateLiveGuidance(base64Image: string): Promise<string> {
+        const prompt = `You are a Forensic Director guiding a field worker through a drug scan. 
+        Look at this camera frame and provide ONE short, proactive instruction (max 10 words) to help them get a perfect scan.
+        
+        Focus on:
+        - Positioning (closer/further)
+        - Alignment (center the package)
+        - Lighting (glare/shadows)
+        - Forensic features (hologram, expiry, batch code)
+        
+        Example: "Hold steady, scanning NAFDAC hologram now..."
+        Example: "Tilt slightly left to capture the expiry date."
+        Example: "Move closer to focus on the batch code."`;
+
+        try {
+            // Remove header if present
+            const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, "");
+
+            const result = await this.model.generateContent([
+                prompt,
+                {
+                    inlineData: {
+                        data: cleanBase64,
+                        mimeType: "image/jpeg"
+                    }
+                }
+            ]);
             return result.response.text();
-        } catch {
-            return "Scanning package details...";
+        } catch (error) {
+            console.error("Live Guidance failed:", error);
+            return "Positioning package...";
         }
     }
 }

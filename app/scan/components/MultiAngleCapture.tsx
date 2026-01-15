@@ -12,6 +12,11 @@ import {
     isOptimalSessionComplete
 } from "@/lib/utils/scan-angles";
 import Link from "next/link";
+import { useEffect } from "react";
+import { sentinelAgentService } from "@/lib/gemini/sentinel-agent.service";
+import { useVoiceGuide } from "@/lib/hooks/use-voice-guide";
+import { motion, AnimatePresence } from "framer-motion";
+import { Zap, Eye, Mic2 } from "lucide-react";
 
 interface MultiAngleCaptureProps {
     session: MultiAngleScanSession;
@@ -28,6 +33,10 @@ export default function MultiAngleCapture({
 }: MultiAngleCaptureProps) {
     const webcamRef = useRef<Webcam>(null);
     const [capturing, setCapturing] = useState(false);
+    const [guardianGuidance, setGuardianGuidance] = useState<string>("Align package to start...");
+    const [isAnalyzingFrame, setIsAnalyzingFrame] = useState(false);
+    const { speak, enabled: voiceEnabled } = useVoiceGuide();
+    const lastGuidanceRef = useRef<string>("");
 
     const currentAngle = session.currentAngle;
     const angleConfig = currentAngle ? SCAN_ANGLES[currentAngle] : null;
@@ -63,6 +72,41 @@ export default function MultiAngleCapture({
             }
         }, 300);
     }, [currentAngle, capturing, onCaptureAngle, session, onComplete]);
+
+    // GUARDIAN LIVE: Intelligent Polling Loop
+    useEffect(() => {
+        let isMounted = true;
+        let intervalId: NodeJS.Timeout;
+
+        const runGuidanceCycle = async () => {
+            if (!webcamRef.current || capturing || isAnalyzingFrame) return;
+
+            const frame = webcamRef.current.getScreenshot({ width: 640, height: 480 }); // Low res for speed
+            if (!frame) return;
+
+            setIsAnalyzingFrame(true);
+            try {
+                const guidance = await sentinelAgentService.generateLiveGuidance(frame);
+                if (isMounted && guidance && guidance !== lastGuidanceRef.current) {
+                    setGuardianGuidance(guidance);
+                    lastGuidanceRef.current = guidance;
+                    if (voiceEnabled) speak(guidance);
+                }
+            } catch (error) {
+                console.error("Guardian Live Cycle failed:", error);
+            } finally {
+                if (isMounted) setIsAnalyzingFrame(false);
+            }
+        };
+
+        // Poll every 4 seconds to balance real-time feel with rate limits
+        intervalId = setInterval(runGuidanceCycle, 4000);
+
+        return () => {
+            isMounted = false;
+            clearInterval(intervalId);
+        };
+    }, [capturing, voiceEnabled, speak]);
 
     const handleSkip = useCallback(() => {
         if (!currentAngle) return;
@@ -171,13 +215,47 @@ export default function MultiAngleCapture({
                     </div>
                 </div>
 
-                {/* Help Text */}
-                <div className="mt-8 pointer-events-auto max-w-md">
-                    <div className="glass-panel px-6 py-4 rounded-xl bg-black/60 backdrop-blur-md border border-primary/30">
-                        <p className="text-white text-center font-medium mb-2">
-                            {angleConfig.description}
-                        </p>
-                        <p className="text-white/70 text-sm text-center">
+                {/* Guardian Live HUD */}
+                <div className="mt-8 pointer-events-auto max-w-md w-full px-6">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={guardianGuidance}
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -10, scale: 1.05 }}
+                            className="glass-panel p-6 rounded-[2rem] bg-black/60 backdrop-blur-xl border-2 border-primary/30 relative overflow-hidden group"
+                        >
+                            {/* AI Pulse indicator */}
+                            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary/50 to-transparent">
+                                {isAnalyzingFrame && <motion.div
+                                    animate={{ x: ["-100%", "100%"] }}
+                                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                                    className="w-1/3 h-full bg-primary shadow-[0_0_15px_rgba(56,189,248,0.8)]"
+                                />}
+                            </div>
+
+                            <div className="flex items-start gap-4">
+                                <div className={`mt-1 p-2 rounded-xl border-2 transition-all ${isAnalyzingFrame ? 'bg-primary/20 border-primary animate-pulse' : 'bg-white/5 border-white/10'}`}>
+                                    {isAnalyzingFrame ? <Eye size={18} className="text-primary" /> : <Zap size={18} className="text-primary/60" />}
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">Forensic Director</span>
+                                        {voiceEnabled && <Mic2 size={12} className="text-access-green animate-pulse" />}
+                                    </div>
+                                    <p className="text-white text-lg font-black italic leading-tight">
+                                        "{guardianGuidance}"
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Corner Accents */}
+                            <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-2 border-r-2 border-primary/40 rounded-br-xl" />
+                        </motion.div>
+                    </AnimatePresence>
+
+                    <div className="mt-4 glass-panel px-6 py-3 rounded-2xl bg-black/40 border border-white/5 text-center">
+                        <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest italic">
                             💡 {angleConfig.helpText}
                         </p>
                     </div>

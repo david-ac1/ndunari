@@ -12,9 +12,10 @@ import CapturedImageReview from "./components/CapturedImageReview";
 import { useAuth } from "@/app/components/providers/AuthProvider";
 import { useVoiceGuide } from "@/lib/hooks/use-voice-guide";
 import { saveScan, saveScanEvidence } from "@/lib/services/scan-storage.service";
-import { forensicEyeService } from "@/lib/gemini/forensic-eye.service";
+import { forensicEyeService, type EvidenceBox } from "@/lib/gemini/forensic-eye.service";
 import { sentinelAgentService } from "@/lib/gemini/sentinel-agent.service";
 import { ThinkingPanel } from "@/app/components/ThinkingPanel";
+import ForensicEvidenceOverlay from "./components/ForensicEvidenceOverlay";
 
 type ScanState = "mode_select" | "idle" | "multi_angle" | "review" | "scanning" | "analyzing" | "complete" | "error";
 
@@ -26,6 +27,7 @@ interface ScanResult {
         riskLevel: "safe" | "suspicious" | "counterfeit";
         findings: string[];
         thoughtProcess: string[];
+        evidenceBoxes?: EvidenceBox[];
     };
     stewardship?: {
         awareCategory: string;
@@ -51,6 +53,7 @@ export default function ScanPage() {
     const [scanHistory, setScanHistory] = useState<ScanHistoryItem[]>([]);
     const [thoughts, setThoughts] = useState<{ id: string, text: string, level: 'forensic' | 'sentinel' | 'system', timestamp: Date }[]>([]);
     const [isThinking, setIsThinking] = useState(false);
+    const [lastScanPreview, setLastScanPreview] = useState<string | null>(null);
 
     const webcamRef = useRef<Webcam>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -153,6 +156,7 @@ export default function ScanPage() {
         setError(null);
         setCurrentThought('');
         setIsThinking(false);
+        setLastScanPreview(null);
     };
 
     // Core Analysis logic
@@ -179,6 +183,7 @@ export default function ScanPage() {
             if (!apiRes.ok) throw new Error(data.error || 'Forensic analysis failed');
 
             setResult({ ...data.data, scanMode: 'multi', anglesScanned: multiAngleSession.completedCount });
+            setLastScanPreview(multiAngleSession.capturedAngles.get('front') || Array.from(multiAngleSession.capturedAngles.values())[0]);
             setScanState('complete');
 
             // Background save logic
@@ -238,6 +243,7 @@ export default function ScanPage() {
             if (!apiRes.ok) throw new Error(data.error || 'Scan failed');
 
             setResult({ ...data.data, scanMode: 'single', anglesScanned: 1 });
+            setLastScanPreview(preview);
             setScanState('complete');
 
             const historyItem: ScanHistoryItem = {
@@ -431,6 +437,23 @@ export default function ScanPage() {
                                 ))}
                             </ul>
                         </div>
+
+                        {/* Forensic Evidence Visualizer (Wow Factor) */}
+                        {lastScanPreview && result.forensic.evidenceBoxes && result.forensic.evidenceBoxes.length > 0 && (
+                            <div className="space-y-3">
+                                <h3 className="text-xs font-bold uppercase text-white/40 tracking-widest">Forensic Evidence</h3>
+                                <div className="relative aspect-video rounded-2xl overflow-hidden border-2 border-primary/30 group">
+                                    <img src={lastScanPreview} className="w-full h-full object-cover" alt="Evidence" />
+                                    <ForensicEvidenceOverlay boxes={result.forensic.evidenceBoxes} />
+                                    <div className="absolute top-2 right-2 bg-primary/20 backdrop-blur-md px-2 py-1 rounded-lg border border-primary/30">
+                                        <p className="text-[8px] text-primary font-black uppercase tracking-tighter">AI Annotated</p>
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-white/40 font-medium italic text-center">
+                                    * Gemini 3 has pinpointed security feature anomalies above
+                                </p>
+                            </div>
+                        )}
 
                         <div className="flex gap-4">
                             <button onClick={() => speaking ? stop() : handleReadScanResults()} className="flex-1 py-4 bg-primary/10 text-primary font-black rounded-2xl border-2 border-primary/20">

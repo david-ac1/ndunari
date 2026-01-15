@@ -1,12 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase/client";
 import { adminIntelligenceService } from "@/lib/services/admin-intelligence.service";
+import { type RiskMask, type RecallNotice } from "@/lib/gemini/sentinel-agent.service";
 
 /**
  * GET /api/admin/stats
  * Gateway to national public health intelligence
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
         // 1. Verify Authentication & Role
         const { data: { user } } = await supabase.auth.getUser();
@@ -30,12 +31,27 @@ export async function GET() {
         const liveFeed = await adminIntelligenceService.getLiveForensicStream(15);
         const alerts = await adminIntelligenceService.getActiveAlertClusters();
 
+        // Optional: Fetch autonomous interventions (marathon tasks)
+        const includeDirectives = request.nextUrl.searchParams.get('deep') === 'true';
+        let riskMasks: RiskMask[] = [];
+        let recallNotices: RecallNotice[] = [];
+
+        if (includeDirectives) {
+            console.log("Admin API: Triggering deep autonomous analysis...");
+            [riskMasks, recallNotices] = await Promise.all([
+                adminIntelligenceService.getNationalRiskMasks(),
+                adminIntelligenceService.getAutonomousRecallNotices()
+            ]);
+        }
+
         return NextResponse.json({
             success: true,
             data: {
                 summary: stats,
                 feed: liveFeed,
-                alerts: alerts
+                alerts: alerts,
+                riskMasks: riskMasks,
+                recallNotices: recallNotices
             },
             timestamp: new Date().toISOString()
         });

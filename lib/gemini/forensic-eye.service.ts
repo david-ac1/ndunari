@@ -2,6 +2,16 @@ import { getForensicEyeModel, MOCK_MODE, retryWithBackoff } from "./config";
 import { z } from "zod";
 
 /**
+ * Forensic Evidence Bounding Box
+ */
+export const EvidenceBoxSchema = z.object({
+    box_2d: z.array(z.number()), // [ymin, xmin, ymax, xmax]
+    label: z.string(),
+});
+
+export type EvidenceBox = z.infer<typeof EvidenceBoxSchema>;
+
+/**
  * Forensic Analysis Result Schema
  */
 export const ForensicAnalysisSchema = z.object({
@@ -13,6 +23,7 @@ export const ForensicAnalysisSchema = z.object({
     findings: z.array(z.string()),
     riskLevel: z.enum(["safe", "suspicious", "counterfeit"]),
     thoughtProcess: z.array(z.string()),
+    evidenceBoxes: z.array(EvidenceBoxSchema).optional(),
 });
 
 export type ForensicAnalysis = z.infer<typeof ForensicAnalysisSchema>;
@@ -63,6 +74,10 @@ export class ForensicEyeService {
                     "Evaluating print quality...",
                     "Detecting security feature anomalies",
                 ],
+                evidenceBoxes: [
+                    { box_2d: [450, 200, 550, 400], label: "Misaligned Hologram" },
+                    { box_2d: [100, 100, 200, 300], label: "Degraded Printing" }
+                ]
             };
         }
 
@@ -94,8 +109,17 @@ Analyze this drug package image and return ONLY this JSON structure:
     "Analyzing package quality",
     "Checking regulatory marks",
     "Evaluating security features"
+  ],
+  "evidenceBoxes": [
+    { "box_2d": [ymin, xmin, ymax, xmax], "label": "Feature Name" }
   ]
 }
+
+CRITICAL INSTRUCTIONS FOR OBJECT DETECTION:
+1. Identify key forensic features and anomalies in the image.
+2. For each feature, provide the bounding box in [ymin, xmin, ymax, xmax] format.
+3. Coordinates MUST be normalized to 0-1000.
+4. Focus on: Holograms, NAFDAC numbers, Batch/Lot codes, Expiry dates, and Printing errors.
 
 CRITICAL INSTRUCTIONS FOR NAFDAC NUMBER:
 1. Look for text that says "NAFDAC No:" or "NAFDAC REG. No:" or "NAFDAC Reg:" or similar
