@@ -55,7 +55,6 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...your-service-role-key...
    - `counterfeit_alerts`
 
 ## Step 6: Enable Anonymous Auth (Optional but Recommended)
-
 1. Click **Authentication** → **Providers**
 2. Find **Anonymous Sign-Ins**
 3. Toggle **Enable Anonymous Sign-Ins** to ON

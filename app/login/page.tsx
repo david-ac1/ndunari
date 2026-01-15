@@ -178,33 +178,6 @@ function LoginContent() {
                         </button>
                     </form>
 
-                    <div className="mt-6">
-                        <div className="relative">
-                            <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-white/10"></div>
-                            </div>
-                            <div className="relative flex justify-center text-xs">
-                                <span className="px-2 bg-background-dark text-white/40 uppercase font-bold tracking-widest">Or continue with</span>
-                            </div>
-                        </div>
-
-                        <div className="mt-6 grid grid-cols-2 gap-4">
-                            <button
-                                onClick={() => handleSocialLogin('google')}
-                                className="flex items-center justify-center gap-2 py-3 px-4 bg-white/5 border border-white/10 rounded-xl text-white font-bold hover:bg-white/10 transition-all"
-                            >
-                                <span className="text-lg">G</span>
-                                <span className="text-sm">Google</span>
-                            </button>
-                            <button
-                                onClick={() => handleSocialLogin('github')}
-                                className="flex items-center justify-center gap-2 py-3 px-4 bg-white/5 border border-white/10 rounded-xl text-white font-bold hover:bg-white/10 transition-all"
-                            >
-                                <span className="text-lg">🐙</span>
-                                <span className="text-sm">GitHub</span>
-                            </button>
-                        </div>
-                    </div>
 
 
                     <div className="mt-6 flex flex-col gap-4">
