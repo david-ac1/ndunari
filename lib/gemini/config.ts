@@ -1,7 +1,8 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Get API key (will be validated at runtime when actually used)
-const API_KEY = process.env.GEMINI_API_KEY || '';
+// Support both client-side and server-side environment variables
+const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
 
 // Initialize Gemini AI (lazy initialization will happen when models are requested)
 const genAI = new GoogleGenerativeAI(API_KEY);
