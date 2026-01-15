@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/app/components/providers/AuthProvider";
 import { useVoiceGuide } from "@/lib/hooks/use-voice-guide";
 import { savePrescription } from "@/lib/services/prescription-storage.service";
-import { Shield, Search, FileText, AlertTriangle, Info, CheckCircle2 } from "lucide-react";
+import { Shield, Search, FileText, AlertTriangle, Info, CheckCircle2, TrendingUp, Users, Activity } from "lucide-react";
 
 interface StewardshipResult {
     drugName: string;
@@ -18,6 +18,11 @@ interface StewardshipResult {
         pidgin?: string;
     };
     warningFlags: string[];
+    futureImpact?: {
+        projection2030: string;
+        communityRisk: string;
+        publicHealthSafetyScore: number;
+    };
 }
 
 export default function PrescriptionPage() {
@@ -235,6 +240,70 @@ export default function PrescriptionPage() {
                                 </ul>
                             </div>
                         </div>
+
+                        {/* Predictive AMR Simulator */}
+                        {result.futureImpact && (
+                            <section className="space-y-4">
+                                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/30 ml-2">Predictive AMR Simulator (Projected 2030)</h3>
+                                <div className="glass-panel p-8 rounded-[2.5rem] border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent relative overflow-hidden group">
+                                    {/* Animated grid background */}
+                                    <div className="absolute inset-0 opacity-10 pointer-events-none"
+                                        style={{ backgroundImage: 'radial-gradient(circle, #38bdf8 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+
+                                    <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8">
+                                        <div className="flex flex-col items-center justify-center text-center p-4">
+                                            <div className="relative w-24 h-24 mb-4">
+                                                <svg className="w-full h-full transform -rotate-90">
+                                                    <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
+                                                    <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent"
+                                                        strokeDasharray={251.2}
+                                                        strokeDashoffset={251.2 - (251.2 * result.futureImpact.publicHealthSafetyScore) / 100}
+                                                        className="text-primary transition-all duration-1000 ease-out"
+                                                    />
+                                                </svg>
+                                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                    <span className="text-2xl font-black">{result.futureImpact.publicHealthSafetyScore}</span>
+                                                    <span className="text-[8px] font-black uppercase text-white/40">Safety</span>
+                                                </div>
+                                            </div>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-primary/60">Community Safety Score</p>
+                                        </div>
+
+                                        <div className="md:col-span-2 space-y-6">
+                                            <div>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <TrendingUp size={14} className="text-reserve-red" />
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-white/60">Resistance Projection</span>
+                                                    </div>
+                                                    <span className="text-sm font-black text-reserve-red">{result.futureImpact.projection2030}</span>
+                                                </div>
+                                                <div className="h-3 bg-white/5 rounded-full overflow-hidden border border-white/10">
+                                                    <div className="h-full bg-gradient-to-r from-primary to-reserve-red animate-pulse" style={{ width: '70%' }} />
+                                                </div>
+                                            </div>
+
+                                            <div className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/10">
+                                                <div className="p-2 rounded-xl bg-primary/10 h-fit">
+                                                    <Users size={20} className="text-primary" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">Community Risk Simulation</p>
+                                                    <p className="text-xs font-medium text-white/80 leading-relaxed italic">
+                                                        "{result.futureImpact.communityRisk}"
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Action HUD Accent */}
+                                    <div className="absolute top-0 right-0 p-4">
+                                        <Activity size={24} className="text-primary/20 animate-pulse" />
+                                    </div>
+                                </div>
+                            </section>
+                        )}
 
                         {/* Public Health Narrative */}
                         <section className="space-y-4">

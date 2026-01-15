@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '../supabase/admin';
-import { sentinelAgentService, type RiskMask, type RecallNotice } from '../gemini/sentinel-agent.service';
+import { sentinelAgentService, type RiskMask, type RecallNotice, type ForensicCluster } from '../gemini/sentinel-agent.service';
 
 export interface AdminStats {
     totalScans: number;
@@ -126,6 +126,17 @@ export class AdminIntelligenceService {
 
         if (error) throw error;
         return sentinelAgentService.generateRecallNotices(scans || []);
+    }
+
+    async getForensicClusters(): Promise<ForensicCluster[]> {
+        const { data: scans, error } = await supabaseAdmin
+            .from('scans')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(100);
+
+        if (error) throw error;
+        return sentinelAgentService.detectForensicClusters(scans || []);
     }
 }
 

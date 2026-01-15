@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase/client";
 import { adminIntelligenceService } from "@/lib/services/admin-intelligence.service";
-import { type RiskMask, type RecallNotice } from "@/lib/gemini/sentinel-agent.service";
+import { type RiskMask, type RecallNotice, type ForensicCluster } from "@/lib/gemini/sentinel-agent.service";
 
 /**
  * GET /api/admin/stats
@@ -35,12 +35,14 @@ export async function GET(request: NextRequest) {
         const includeDirectives = request.nextUrl.searchParams.get('deep') === 'true';
         let riskMasks: RiskMask[] = [];
         let recallNotices: RecallNotice[] = [];
+        let forensicClusters: ForensicCluster[] = [];
 
         if (includeDirectives) {
             console.log("Admin API: Triggering deep autonomous analysis...");
-            [riskMasks, recallNotices] = await Promise.all([
+            [riskMasks, recallNotices, forensicClusters] = await Promise.all([
                 adminIntelligenceService.getNationalRiskMasks(),
-                adminIntelligenceService.getAutonomousRecallNotices()
+                adminIntelligenceService.getAutonomousRecallNotices(),
+                adminIntelligenceService.getForensicClusters()
             ]);
         }
 
@@ -51,7 +53,8 @@ export async function GET(request: NextRequest) {
                 feed: liveFeed,
                 alerts: alerts,
                 riskMasks: riskMasks,
-                recallNotices: recallNotices
+                recallNotices: recallNotices,
+                forensicClusters: forensicClusters
             },
             timestamp: new Date().toISOString()
         });

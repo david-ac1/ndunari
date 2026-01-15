@@ -9,7 +9,7 @@ import {
     Shield, Activity, Globe, AlertTriangle,
     ArrowLeft, TrendingUp, Search, Layers,
     MessageSquare, Zap, BarChart3, Database,
-    Download, AlertCircle
+    Download, AlertCircle, Fingerprint, Microscope, Users
 } from "lucide-react";
 
 export default function AdminPage() {
@@ -144,7 +144,7 @@ export default function AdminPage() {
                         )}
 
                         <div className="flex gap-2 p-1 rounded-2xl bg-white/5 border border-white/5">
-                            {['overview', 'forensics', 'recalls'].map((tab) => (
+                            {['overview', 'forensics', 'recalls', 'detective'].map((tab) => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
@@ -376,8 +376,112 @@ export default function AdminPage() {
                             </div>
                         )}
 
+                        {activeTab === 'detective' && (
+                            <div className="space-y-8">
+                                <section className="glass-panel p-8 rounded-[2.5rem] border-2 border-primary/10 bg-black/20">
+                                    <div className="flex items-center justify-between mb-8">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                                                <Microscope className="text-primary" size={24} />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-sm font-black uppercase tracking-widest">Forensic Detective Board</h2>
+                                                <p className="text-[10px] text-white/30 font-bold uppercase tracking-tight">AI-Identified Manufacturing Signature Clusters</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => fetchStats(true)}
+                                            className="px-4 py-2 bg-primary/20 border border-primary/30 rounded-xl text-primary text-[10px] font-black uppercase tracking-widest hover:bg-primary/30 transition-all flex items-center gap-2"
+                                        >
+                                            <Zap size={14} /> Refresh Clusters
+                                        </button>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {data?.forensicClusters?.length > 0 ? (
+                                            data.forensicClusters.map((cluster: any) => (
+                                                <motion.div
+                                                    key={cluster.id}
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    className="glass-panel p-6 rounded-3xl border border-white/10 hover:border-primary/30 transition-all relative overflow-hidden group bg-white/5"
+                                                >
+                                                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                                        <Fingerprint size={60} className="text-primary" />
+                                                    </div>
+
+                                                    <div className="relative z-10 space-y-4">
+                                                        <div className="flex justify-between items-start">
+                                                            <div>
+                                                                <h3 className="text-lg font-black italic text-white">{cluster.title}</h3>
+                                                                <div className="flex gap-2 mt-1">
+                                                                    {cluster.affectedBrands.map((brand: string) => (
+                                                                        <span key={brand} className="text-[8px] font-black uppercase text-primary/60 border border-primary/20 px-1.5 py-0.5 rounded">
+                                                                            {brand}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                            <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${cluster.threatLevel === 'critical' ? 'bg-reserve-red text-white' :
+                                                                cluster.threatLevel === 'high' ? 'bg-reserve-red/20 text-reserve-red' :
+                                                                    'bg-watch-orange/20 text-watch-orange'
+                                                                }`}>
+                                                                {cluster.threatLevel}
+                                                            </span>
+                                                        </div>
+
+                                                        <div className="p-4 rounded-2xl bg-black/40 border border-white/5">
+                                                            <div className="text-[8px] font-black uppercase text-white/30 mb-1">Evidence Signature</div>
+                                                            <p className="text-[11px] text-white/80 font-medium leading-relaxed italic">
+                                                                "{cluster.evidenceSignature}"
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="flex justify-between items-end">
+                                                            <div className="space-y-1">
+                                                                <div className="flex items-center gap-2 text-[9px] text-white/40 font-bold uppercase">
+                                                                    <Globe size={10} /> {cluster.geoConcentration}
+                                                                </div>
+                                                                <div className="flex items-center gap-2 text-[9px] text-white/40 font-bold uppercase">
+                                                                    <Users size={10} /> {cluster.scanCount} Independent Scans
+                                                                </div>
+                                                            </div>
+                                                            <button className="p-2 rounded-xl bg-white/5 hover:bg-primary/20 text-white/40 hover:text-primary transition-all">
+                                                                <Search size={16} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            ))
+                                        ) : (
+                                            <div className="col-span-2 h-64 border-2 border-dashed border-white/5 rounded-[2rem] flex flex-col items-center justify-center space-y-4 grayscale opacity-40">
+                                                <Microscope size={40} />
+                                                <div className="text-center">
+                                                    <p className="text-[10px] font-black uppercase tracking-widest mb-1">No Forensic Clusters Detected</p>
+                                                    <p className="text-[8px] font-bold uppercase tracking-widest text-white/30">Run deep analysis to connect the dots across the federation.</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </section>
+
+                                {/* System Reasoning Node */}
+                                <section className="glass-panel p-8 rounded-[2.5rem] border-2 border-primary/20 bg-primary/5 flex items-center gap-6">
+                                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
+                                        <Zap className="text-primary" size={32} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-black uppercase tracking-widest italic text-primary">Cross-Scan Context Engine Active</h3>
+                                        <p className="text-[11px] text-white/60 font-medium leading-relaxed mt-1">
+                                            The Sentinel Agent is currently performing multi-document reasoning over {stats.totalScans} scans. It is searching for shared manufacturing signatures, batch pattern fractures, and systematic forensic anomalies across 36 regional nodes.
+                                        </p>
+                                    </div>
+                                </section>
+                            </div>
+                        )}
+
                         {/* AMR Stewardship Scorecard */}
-                        <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
                             <div className="glass-panel p-8 rounded-[2.5rem] border-2 border-white/5">
                                 <div className="flex items-center gap-3 mb-6">
                                     <BarChart3 className="text-watch-orange" size={20} />

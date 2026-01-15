@@ -20,6 +20,23 @@ export const SentinelDirectiveSchema = z.object({
 export type SentinelDirective = z.infer<typeof SentinelDirectiveSchema>;
 
 /**
+ * Forensic Cluster Schema
+ * Represents a group of related suspicious scans
+ */
+export const ForensicClusterSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    threatLevel: z.enum(["low", "medium", "high", "critical"]),
+    evidenceSignature: z.string(), // Description of the shared anomaly
+    affectedBrands: z.array(z.string()),
+    geoConcentration: z.string(),
+    scanCount: z.number(),
+    reasoning: z.string(),
+});
+
+export type ForensicCluster = z.infer<typeof ForensicClusterSchema>;
+
+/**
  * Risk Mask Schema (Geo-fenced threat layer)
  */
 export const RiskMaskSchema = z.object({
@@ -226,6 +243,41 @@ export class SentinelAgentService {
         } catch (error) {
             console.error("Live Guidance failed:", error);
             return "Positioning package...";
+        }
+    }
+
+    /**
+     * Detect systematic forensic clusters across multiple scans
+     */
+    async detectForensicClusters(scanLogs: any[]): Promise<ForensicCluster[]> {
+        const prompt = `You are a Global Forensic Lead. Review these national scan logs and identify "Forensic Clusters"—groups of independent scans that share the SAME anomaly or manufacturing defect (e.g., identical label typos, hologram shifts, or batch patterns).
+        
+        DATA: ${JSON.stringify(scanLogs.slice(0, 50))} 
+        
+        Based on the data, return a JSON array of clusters:
+        [
+          {
+            "id": "cluster-<unique>",
+            "title": "<short descriptive title>",
+            "threatLevel": "low" | "medium" | "high" | "critical",
+            "evidenceSignature": "<detailed shared anomaly, e.g. 'Kerning error in Amoxicillin label v2.1'>",
+            "affectedBrands": ["<brand1>", "<brand2>"],
+            "geoConcentration": "<region names>",
+            "scanCount": <number of related scans>,
+            "reasoning": "<why these scans are linked>"
+          }
+        ]
+        
+        If no clear clusters exist, return an empty array. Focus on pattern matching across DIFFERENT user accounts.`;
+
+        try {
+            const result = await this.model.generateContent(prompt);
+            const text = result.response.text();
+            const jsonMatch = text.match(/\[[\s\S]*\]/);
+            return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+        } catch (error) {
+            console.error("Cluster detection failed:", error);
+            return [];
         }
     }
 }

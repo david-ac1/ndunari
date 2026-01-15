@@ -28,6 +28,11 @@ export const StewardshipAssessmentSchema = z.object({
     }),
     thoughtProcess: z.array(z.string()),
     warningFlags: z.array(z.string()),
+    futureImpact: z.object({
+        projection2030: z.string(), // E.g. "+15% resistance"
+        communityRisk: z.string(),   // Narrative on local impact
+        publicHealthSafetyScore: z.number().min(0).max(100), // 0-100 safety score
+    }).optional(),
 });
 
 export type StewardshipAssessment = z.infer<typeof StewardshipAssessmentSchema>;
@@ -150,7 +155,12 @@ RESPONSE FORMAT (JSON):
   "warningFlags": [
     "<warning 1 if applicable>",
     "<warning 2 if applicable>"
-  ]
+  ],
+  "futureImpact": {
+    "projection2030": "<e.g. +12% resistance in local E.coli strains>",
+    "communityRisk": "<Simulation of how this misuse profile affects local community health by 2030>",
+    "publicHealthSafetyScore": 0-100
+  }
 }
 
 Provide a comprehensive stewardship assessment for this drug.`;
