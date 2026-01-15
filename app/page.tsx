@@ -8,7 +8,7 @@ import { useAuth } from "@/app/components/providers/AuthProvider";
 import { getUserScans } from "@/lib/services/scan-storage.service";
 import { sentinelAgentService, type SentinelDirective } from "@/lib/gemini/sentinel-agent.service";
 import { ThinkingPanel } from "@/app/components/ThinkingPanel";
-import { Shield, Activity, Search, AlertCircle, Zap, TrendingUp, Map as MapIcon, ChevronRight } from "lucide-react";
+import { Shield, Activity, Search, AlertCircle, Zap, TrendingUp, Map as MapIcon, ChevronRight, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function HomePage() {
@@ -95,12 +95,22 @@ export default function HomePage() {
                         <div>
                             <h1 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2">
                                 {displayName}
-                                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                <span className={`w-2 h-2 rounded-full animate-pulse ${user ? 'bg-primary' : 'bg-white/20'}`} />
                             </h1>
-                            <p className="text-[10px] font-bold text-white/40 uppercase tracking-[0.3em]">Sentinel Active</p>
+                            <p className="text-[10px] font-bold text-white/40 uppercase tracking-[0.3em]">
+                                {user ? 'Sentinel Active' : 'Guest Mode'}
+                            </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
+                        {!user && (
+                            <Link
+                                href="/login"
+                                className="px-6 py-3 rounded-2xl bg-primary text-black text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(56,189,248,0.3)]"
+                            >
+                                Sign In
+                            </Link>
+                        )}
                         <VoiceController />
                         <Link href="/notifications" className="w-12 h-12 rounded-2xl glass-panel flex items-center justify-center hover:bg-white/10 transition-all">
                             <Activity size={20} className="text-white/60" />
@@ -280,8 +290,10 @@ export default function HomePage() {
             <nav className="fixed bottom-6 left-6 right-6 z-50 lg:hidden">
                 <div className="glass-panel h-16 rounded-full flex items-center justify-between px-6 shadow-2xl border border-white/10 bg-black/60 backdrop-blur-3xl">
                     <Link href="/" className="text-primary"><Activity size={24} /></Link>
-                    <Link href="/scan" className="w-14 h-14 -mt-10 rounded-2xl bg-primary flex items-center justify-center shadow-xl border-4 border-background-dark"><Search size={24} className="text-black" /></Link>
                     <Link href="/map" className="text-white/40"><MapIcon size={24} /></Link>
+                    <Link href="/scan" className="w-14 h-14 -mt-10 rounded-2xl bg-primary flex items-center justify-center shadow-xl border-4 border-background-dark"><Search size={24} className="text-black" /></Link>
+                    <Link href="/history" className="text-white/40"><TrendingUp size={24} /></Link>
+                    <Link href="/profile" className="text-white/40"><Users size={24} /></Link>
                 </div>
             </nav>
         </div>

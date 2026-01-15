@@ -1,46 +1,48 @@
 # Ndunari: Autonomous Health Guardian Network
 
-**Ndunari** is a high-fidelity, autonomous public health sentinel designed for the **Action Era** of AI. Powered by **Gemini 3 Pro**, it transforms drug verification and antibiotic stewardship into a proactive, national defense system against counterfeits and antimicrobial resistance (AMR).
-
-🚀 **Winning Hackathon Showcase: [View Walkthrough](file:///c:/Users/david/.gemini/antigravity/brain/0022c8f0-3f94-446a-affa-04b507dbb986/walkthrough.md)**
+**Ndunari** is a proactive public health defense system designed for the **Action Era** of AI. Powered by **Gemini 3 Pro**, it transforms drug verification and antibiotic stewardship from a manual check into an autonomous national sentinel.
 
 ---
 
-## 🌟 The "Wow Factors" (Gemini 3 Pro Elevation)
+## ⚖️ Judging Criteria Alignment
 
-### 1. Sentinel Agent: Autonomous National Intelligence
-The **Sentinel Agent** isn't just a dashboard; it's an orchestrator. It autonomously monitors global scan telemetry to:
-*   **Geo-fenced Risk Masks:** Automatically identifies regional counterfeit hotspots and visualizes threat layers on a national map.
-*   **Regulatory Recall Board:** AI drafts formal recall notices when forensic anomalies reach critical confidence levels.
-*   **Global Forensic Clusters:** Connects the dots across independent user accounts to identify systematic manufacturing signatures and supply chain leaks.
-
-### 2. Guardian Live: Real-time Multimodal Vision Guide
-The scanner features the **Guardian Forensic Director**, a multimodal HUD that "sees" what the user sees in real-time.
-*   **Spatial Guidance:** Gemini 3 Pro analyzes the live camera stream to provide voice-guided, reactive instructions (e.g., "Tilt slightly left for expiry code focus").
-*   **Hands-Free Operation:** Integrated voice guide powered by **Narị** ensures field workers can operate in low-light or difficult environments without touching the screen.
-*   **Visual Evidence Highlighting:** Gemini 3 identifies package anomalies and highlights them with bounding boxes directly on the captured image.
-
-### 3. Predictive AMR Stewardship Simulator
-Ndunari tackles Antimicrobial Resistance (AMR) by pivoting from simple advice to **autonomous stewardship**.
-*   **2030 Impact Projection:** For every prescription audited, the AI simulates the 10-year community impact of that specific antibiotic's misuse.
-*   **WHO AWaRe Integration:** Real-time classification of antibiotics into Access, Watch, and Reserve categories.
-*   **Autonomous Safety Index:** A real-time national score calculated from de-identified stewardship telemetry across Nigeria.
+| Criteria | Achievement Highlights |
+| :--- | :--- |
+| **Technical Execution** | Built with **Next.js 15** and **Supabase (Auth/DB)**. Implements a high-concurrency "Sentinel Agent" that performs multi-document reasoning over 100+ scan logs to identify forensic clusters. Features a **Multimodal Live HUD** for real-time vision guidance. |
+| **Potential Impact** | Addresses the counterfeit drug crisis in Nigeria (140M+ population). By providing an "Autonomous Stewardship Auditor," it prevents antibiotic resistance (AMR) at the source while mapping counterfeit outbreaks in real-time for national regulators. |
+| **Innovation / Wow Factor** | **Autonomous Regulatory Pivot:** The system doesn't wait for human reports; it *finds* systematic counterfeiting by "connecting the dots" between independent, anonymous scans using Gemini 3's advanced pattern reasoning. |
 
 ---
 
-## 🛠️ Action Era Architecture
+## 🛰️ Core Capabilities
 
-*   **Logic Engine:** Unified **Gemini 3 Pro Preview** for multimodal vision, multi-document reasoning, and autonomous directive generation.
-*   **Interface:** **Next.js 15 (PWA Ready)** with a "premium glassmorphic" aesthetic designed to command attention.
-*   **Intelligence Grid:** Secure **Supabase Admin** integration for cross-account telemetry and national signal aggregation.
-*   **Accessibility:** **Narị Voice Engine** for bilingual (English/Pidgin) guidance.
+### 1. Sentinel Agent (Autonomous Orchestrator)
+The brain of the network. It functions as a **Proactive Regulatory Hive**:
+*   **Forensic Detective**: Reasons cross-account to identify shared manufacturing defects (e.g., identical print shifts or batch fractures) across the nation.
+*   **Geo-fenced Risk Masks**: Automatically generates threat heatmaps without manual data entry.
+*   **Recall Directives**: Autonomously drafts regulatory recall notices when a counterfeit signature reaches 90%+ confidence.
+
+### 2. Guardian Live (Multimodal Vision HUD)
+A "Forensic Director" in your pocket:
+*   **Spatial Interaction**: Gemini 3 analyzes the live multimodal stream to guide the user's hand (e.g., *"Tilt down to capture the NAFDAC holograms"*).
+*   **Visual Evidence**: Identifies and highlights specific package anomalies with bounding boxes directly on the captured forensic images.
+*   **Narị Voice Engine**: Bilingual (English/Pidgin) hands-free guidance for field use.
+
+### 3. Predictive AMR Stewardship
+Moving beyond simple advice to **impact simulation**:
+*   **2030 Resistance Projection**: Projects the 10-year community impact of a specific drug choice.
+*   **WHO AWaRe Auditor**: Audits all antibiotic prescriptions against modern safety standards to prevent the rise of superbugs.
 
 ---
 
-## 🛡️ Public Health Safety First
-Ndunari is built for **Regulatory Empowerment**. It does not provide medical advice; it provides **Forensic Intelligence** and **Stewardship Guardrails**. It is the autonomous partner for national drug regulatory bodies.
+## 🛠️ Performance-First Architecture
+*   **AI Stack**: Unified **Gemini 3 Pro Preview** (Multimodal, Long-Context, Pattern-Reasoning).
+*   **Frontend**: Next.js 15 PWA with a high-fidelity glassmorphic design system.
+*   **Backend**: Supabase with Anonymous Auth support for low-friction community data collection.
 
 ---
 
-> [!IMPORTANT]
-> **Hackathon Judges:** To see the autonomous agent in action, go to the **Admin Intelligence Center** and run a **Deep Sentinel Analysis**. Watch as the AI reasons across the national telemetry to generate risk masks and forensic clusters in real-time.
+## 🛡️ Safety & Integrity
+Ndunari is a **Regulatory Support Tool**. It is designed to empower national drug agencies with forensic intelligence and public health stewardship guardrails.
+
+🚀 **Submission Walkthrough: [View High-Fidelity Demo](file:///c:/Users/david/.gemini/antigravity/brain/0022c8f0-3f94-446a-affa-04b507dbb986/walkthrough.md)**
