@@ -42,6 +42,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [loading, setLoading] = useState(true);
 
     const fetchProfile = async (userId: string) => {
+        console.log("Auth: Fetching profile for", userId);
         try {
             const { data, error } = await supabase
                 .from('user_profiles')
@@ -53,6 +54,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 console.warn("Auth: Error fetching profile:", error.message);
                 return null;
             }
+            console.log("Auth: Profile fetched successfully", { role: data?.role });
             return data as UserProfile;
         } catch (err) {
             console.error("Auth: Failed to fetch profile:", err);
@@ -107,6 +109,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             } catch (error: any) {
                 console.error('Auth: Initialization failed:', error.message);
             } finally {
+                console.log("Auth: Initialization complete, setting loading to false");
                 setLoading(false);
             }
         };

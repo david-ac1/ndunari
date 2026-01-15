@@ -11,13 +11,19 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 10; // Cache for 10 seconds only
 
 export async function GET(request: NextRequest) {
+    console.log("Admin API: GET /api/admin/stats starting...");
     try {
         // 1. Verify Authentication & Role
-        const { data: { user } } = await supabase.auth.getUser();
+        const authHeader = request.headers.get('Authorization');
+        const token = authHeader?.split(' ')[1];
+
+        const { data: { user } } = await supabase.auth.getUser(token);
 
         if (!user) {
+            console.warn("Admin API: No user found");
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
+        console.log("Admin API: User found", user.id);
 
         const { data: profile } = await supabase
             .from('user_profiles')
@@ -26,19 +32,25 @@ export async function GET(request: NextRequest) {
             .single();
 
         if (profile?.role !== 'admin') {
+            console.warn("Admin API: User is not admin", { role: profile?.role });
             return NextResponse.json({ error: "Forbidden: Admin access only" }, { status: 403 });
         }
+        console.log("Admin API: Role verified as admin");
 
         // 2. Fetch Data
+        console.log("Admin API: Fetching stats and streams...");
         const stats = await adminIntelligenceService.getGlobalStats();
+        console.log("Admin API: Global stats fetched");
         const liveFeed = await adminIntelligenceService.getLiveForensicStream(15);
+        console.log("Admin API: Live feed fetched");
         const alerts = await adminIntelligenceService.getActiveAlertClusters();
+        console.log("Admin API: Alert clusters fetched");
 
         // Optional: Fetch autonomous interventions (marathon tasks)
         const includeDirectives = request.nextUrl.searchParams.get('deep') === 'true';
         let riskMasks: RiskMask[] = [];
-        let recallNotices: RecallNotice[] = [];
         let forensicClusters: ForensicCluster[] = [];
+        let recallNotices: RecallNotice[] = [];
 
         if (includeDirectives) {
             console.log("Admin API: Triggering unified autonomous analysis...");
@@ -46,8 +58,10 @@ export async function GET(request: NextRequest) {
             riskMasks = intelligence.riskMasks;
             recallNotices = intelligence.recallNotices;
             forensicClusters = intelligence.forensicClusters;
+            console.log("Admin API: Deep intelligence fetched");
         }
 
+        console.log("Admin API: Sending success response");
         return NextResponse.json({
             success: true,
             data: {

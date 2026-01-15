@@ -6,9 +6,12 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
  * GET /api/admin/promote-me
  * TEMPORARY: Promote the current user to Admin for demo access
  */
-export async function GET() {
+export async function GET(request: Request) {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const authHeader = request.headers.get('Authorization');
+        const token = authHeader?.split(' ')[1];
+
+        const { data: { user } } = await supabase.auth.getUser(token);
 
         if (!user) {
             return NextResponse.json({ error: "No authenticated user found. Please sign in first." }, { status: 401 });

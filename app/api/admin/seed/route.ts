@@ -6,10 +6,13 @@ import { seedDemoData } from "@/lib/services/admin-seed.service";
  * POST /api/admin/seed
  * Admin only: Inject demo data for hackathon presentation
  */
-export async function POST() {
+export async function POST(request: Request) {
     try {
         // 1. Verify Authentication & Role
-        const { data: { user } } = await supabase.auth.getUser();
+        const authHeader = request.headers.get('Authorization');
+        const token = authHeader?.split(' ')[1];
+
+        const { data: { user } } = await supabase.auth.getUser(token);
 
         if (!user) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

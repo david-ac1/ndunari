@@ -132,7 +132,12 @@ export default function HomePage() {
                             <button
                                 onClick={async () => {
                                     if (confirm("Elevate this account to National Administrator?")) {
-                                        const res = await fetch('/api/admin/promote-me');
+                                        const { data: { session } } = await supabase.auth.getSession();
+                                        const res = await fetch('/api/admin/promote-me', {
+                                            headers: {
+                                                'Authorization': `Bearer ${session?.access_token}`
+                                            }
+                                        });
                                         const json = await res.json();
                                         if (json.success) {
                                             alert(json.message + "\n\n" + json.instruction);

@@ -38,28 +38,53 @@ export default function AdminPage() {
     }, [profile, authLoading, router]);
 
     const fetchStats = async (deep = false) => {
+        console.log("AdminPage: fetchStats starting...", { deep });
         if (deep) setAnalyzing(true);
         setAdminError(null);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
         try {
+            const { data: { session } } = await supabase.auth.getSession();
+
             const res = await fetch(`/api/admin/stats${deep ? '?deep=true' : ''}`, {
-                cache: 'no-store'
+                cache: 'no-store',
+                signal: controller.signal,
+                headers: {
+                    'Authorization': `Bearer ${session?.access_token}`
+                }
             });
+            clearTimeout(timeoutId);
+
+            console.log("AdminPage: fetchStats response received", { status: res.status });
             const json = await res.json();
+
             if (json.success) {
+                console.log("AdminPage: fetchStats success");
                 setData(json.data);
             } else {
+                console.warn("AdminPage: fetchStats error json", json);
                 setAdminError(json.error || "National Grid Offline");
             }
-        } catch (e) {
-            console.error("Admin stats fetch failed:", e);
-            setAdminError("Failed to synchronize with National Intelligence Grid.");
+        } catch (e: any) {
+            clearTimeout(timeoutId);
+            if (e.name === 'AbortError') {
+                console.error("Admin stats fetch timed out after 15s");
+                setAdminError("Connection timed out. The National Intelligence Grid is taking too long to respond.");
+            } else {
+                console.error("Admin stats fetch failed:", e);
+                setAdminError("Failed to synchronize with National Intelligence Grid.");
+            }
         } finally {
+            console.log("AdminPage: fetchStats complete");
             setLoading(false);
             if (deep) setAnalyzing(false);
         }
     };
 
     useEffect(() => {
+        console.log("AdminPage: Role Effect", { role: profile?.role });
         if (profile?.role === 'admin') {
             fetchStats();
             const interval = setInterval(fetchStats, 30000);
@@ -142,7 +167,8 @@ export default function AdminPage() {
         suspiciousScans: 0,
         counterfeitScans: 0,
         totalPrescriptions: 0,
-        awareDistribution: { access: 0, watch: 0, reserve: 0 }
+        awareDistribution: { access: 0, watch: 0, reserve: 0 },
+        regionalActivity: {} // FIXED: Prevent TypeError
     };
 
     return (
