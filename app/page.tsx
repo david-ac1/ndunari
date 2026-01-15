@@ -36,6 +36,14 @@ export default function HomePage() {
 
             if (user) {
                 setSentinelThoughts(prev => [...prev, { id: 'cloud-sync', text: "Synchronizing with National Cloud Ledger...", level: 'system', timestamp: new Date() }]);
+
+                // 1.5 Sync local to cloud first
+                const { syncLocalScans } = await import('@/lib/services/scan-storage.service');
+                const syncedCount = await syncLocalScans(localHistory);
+                if (syncedCount > 0) {
+                    setSentinelThoughts(prev => [...prev, { id: 'sync-push', text: `Uploaded ${syncedCount} local records to cloud.`, level: 'system', timestamp: new Date() }]);
+                }
+
                 const { data: cloudScans, error: cloudError } = await getUserScans();
 
                 if (cloudError) {

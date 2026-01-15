@@ -1,4 +1,5 @@
 import { supabase, type Scan } from '../supabase/client';
+import { type ScanHistoryItem } from '../utils/scan-history';
 
 /**
  * Scan Storage Service
@@ -289,4 +290,36 @@ export async function getScanEvidence(scanId: string): Promise<{ data: any[] | n
     }
 
     return { data, error: null };
+}
+
+/**
+ * Synchronize local scans to Supabase
+ */
+export async function syncLocalScans(localScans: ScanHistoryItem[]): Promise<number> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || localScans.length === 0) return 0;
+
+    // Get existing scan IDs from cloud to avoid duplicates
+    const { data: cloudScans } = await getUserScans();
+    const cloudIds = new Set(cloudScans?.map(s => s.id) || []);
+
+    const toSync = localScans.filter(ls => !cloudIds.has(ls.id));
+    if (toSync.length === 0) return 0;
+
+    let syncCount = 0;
+    for (const scan of toSync) {
+        const { error } = await saveScan({
+            drugName: scan.drugName,
+            nafdacNumber: scan.nafdacNumber,
+            authenticityScore: scan.authenticityScore,
+            riskLevel: scan.riskLevel,
+            findings: [], // Findings aren't stored in local history currently
+            scanMode: 'single', // Default for legacy sync
+            anglesScanned: 1,
+            imagePreview: scan.imagePreview
+        });
+        if (!error) syncCount++;
+    }
+
+    return syncCount;
 }
