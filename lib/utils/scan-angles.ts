@@ -145,11 +145,9 @@ export interface MultiAngleScanSession {
     currentAngle: AngleType | null;
     completedCount: number;
     requiredCount: number;
+    totalCount: number;
 }
 
-/**
- * Create new scan session
- */
 export const createScanSession = (mode: ScanMode): MultiAngleScanSession => {
     return {
         id: Date.now().toString(),
@@ -159,6 +157,7 @@ export const createScanSession = (mode: ScanMode): MultiAngleScanSession => {
         currentAngle: mode === 'multi' ? 'front' : null,
         completedCount: 0,
         requiredCount: getRequiredAngles().length,
+        totalCount: getAllAngles().length,
     };
 };
 
@@ -180,9 +179,24 @@ export const getNextAngle = (
 };
 
 /**
- * Check if session is complete (all required angles captured)
+ * Check if session has met minimum requirements (all required angles)
  */
-export const isSessionComplete = (session: MultiAngleScanSession): boolean => {
+export const isMinimumSessionComplete = (session: MultiAngleScanSession): boolean => {
     const requiredAngles = getRequiredAngles();
     return requiredAngles.every((angle) => session.capturedAngles.has(angle.id));
+};
+
+/**
+ * Check if session has met optimal requirements (all 5 angles)
+ */
+export const isOptimalSessionComplete = (session: MultiAngleScanSession): boolean => {
+    const allAngles = getAllAngles();
+    return allAngles.every((angle) => session.capturedAngles.has(angle.id));
+};
+
+/**
+ * Check if session is complete (legacy support - defaults to minimum)
+ */
+export const isSessionComplete = (session: MultiAngleScanSession): boolean => {
+    return isMinimumSessionComplete(session);
 };

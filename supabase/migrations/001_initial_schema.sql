@@ -139,55 +139,114 @@ CREATE INDEX IF NOT EXISTS idx_alerts_drug_batch ON counterfeit_alerts(drug_name
 CREATE INDEX IF NOT EXISTS idx_alerts_status ON counterfeit_alerts(status);
 CREATE INDEX IF NOT EXISTS idx_alerts_severity ON counterfeit_alerts(severity);
 
+-- 6. Scan Evidence (Temporary 12-hour Vault)
+CREATE TABLE IF NOT EXISTS scan_evidence (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  scan_id uuid REFERENCES scans(id) ON DELETE CASCADE,
+  angle_type text NOT NULL,
+  image_data text NOT NULL,
+  created_at timestamptz DEFAULT now(),
+  expires_at timestamptz DEFAULT (now() + interval '12 hours')
+);
+
+CREATE INDEX IF NOT EXISTS idx_evidence_scan_id ON scan_evidence(scan_id);
+CREATE INDEX IF NOT EXISTS idx_evidence_expires_at ON scan_evidence(expires_at);
+
 -- Row Level Security Policies
 
 -- User Profiles
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own profile" ON user_profiles;
 CREATE POLICY "Users can view own profile" ON user_profiles
   FOR SELECT USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Users can update own profile" ON user_profiles;
 CREATE POLICY "Users can update own profile" ON user_profiles
   FOR UPDATE USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Users can insert own profile" ON user_profiles;
 CREATE POLICY "Users can insert own profile" ON user_profiles
   FOR INSERT WITH CHECK (auth.uid() = id);
 
 -- Scans
 ALTER TABLE scans ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own scans" ON scans;
 CREATE POLICY "Users can view own scans" ON scans
   FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own scans" ON scans;
 CREATE POLICY "Users can insert own scans" ON scans
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete own scans" ON scans;
 CREATE POLICY "Users can delete own scans" ON scans
   FOR DELETE USING (auth.uid() = user_id);
 
 -- Prescriptions
 ALTER TABLE prescriptions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own prescriptions" ON prescriptions;
 CREATE POLICY "Users can view own prescriptions" ON prescriptions
   FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own prescriptions" ON prescriptions;
 CREATE POLICY "Users can insert own prescriptions" ON prescriptions
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete own prescriptions" ON prescriptions;
 CREATE POLICY "Users can delete own prescriptions" ON prescriptions
   FOR DELETE USING (auth.uid() = user_id);
+
+-- Scan Evidence
+ALTER TABLE scan_evidence ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view own scan evidence" ON scan_evidence;
+CREATE POLICY "Users can view own scan evidence" ON scan_evidence
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM scans
+      WHERE scans.id = scan_evidence.scan_id
+      AND scans.user_id = auth.uid()
+    )
+  );
+
+DROP POLICY IF EXISTS "Users can insert own scan evidence" ON scan_evidence;
+CREATE POLICY "Users can insert own scan evidence" ON scan_evidence
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM scans
+      WHERE scans.id = scan_id
+      AND scans.user_id = auth.uid()
+    )
+  );
 
 -- Analytics (Public Read)
 ALTER TABLE analytics_aggregated ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Anyone can view analytics" ON analytics_aggregated;
 CREATE POLICY "Anyone can view analytics" ON analytics_aggregated
   FOR SELECT USING (true);
 
 -- Counterfeit Alerts (Public Read)
 ALTER TABLE counterfeit_alerts ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Anyone can view alerts" ON counterfeit_alerts;
 CREATE POLICY "Anyone can view alerts" ON counterfeit_alerts
   FOR SELECT USING (true);
+
+-- Function to safely increment statistics
+CREATE OR REPLACE FUNCTION public.increment(row_id uuid, field_name text)
+RETURNS void AS $$
+BEGIN
+  IF field_name = 'total_scans' THEN
+    UPDATE public.user_profiles SET total_scans = total_scans + 1, updated_at = now() WHERE id = row_id;
+  ELSIF field_name = 'total_prescriptions_analyzed' THEN
+    UPDATE public.user_profiles SET total_prescriptions_analyzed = total_prescriptions_analyzed + 1, updated_at = now() WHERE id = row_id;
+  END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function to create user profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -197,7 +256,8 @@ BEGIN
   VALUES (
     new.id,
     COALESCE(new.raw_user_meta_data->>'display_name', 'Health Guardian')
-  );
+  )
+  ON CONFLICT (id) DO NOTHING;
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

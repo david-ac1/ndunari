@@ -38,6 +38,7 @@ export async function saveScan(scanData: {
     const sharingEnabled = profile?.share_data !== false;
 
     // Insert scan (redact region if sharing is disabled)
+    console.log("Supabase: Attempting to insert scan for user", user.id);
     const { data, error } = await supabase
         .from('scans')
         .insert({
@@ -58,9 +59,11 @@ export async function saveScan(scanData: {
         .single();
 
     if (error) {
-        console.error('Error saving scan:', error);
+        console.error('Supabase: Error saving scan:', error.message, error.details);
         return { data: null, error };
     }
+
+    console.log("Supabase: Scan saved successfully with ID", data.id);
 
     // Update user profile stats
     await updateUserStats(user.id, 'scan');
@@ -243,3 +246,47 @@ export async function getGlobalSurveillanceData(): Promise<{
     return Object.values(regionalData).sort((a, b) => b.total - a.total);
 }
 
+/**
+ * Save multi-angle evidence images to the temporary vault
+ */
+export async function saveScanEvidence(scanId: string, evidence: Map<string, string>): Promise<{ success: boolean; error: any }> {
+    try {
+        const evidenceEntries = Array.from(evidence.entries()).map(([angle, data]) => ({
+            scan_id: scanId,
+            angle_type: angle,
+            image_data: data, // In a real prod app, we'd upload to a bucket and store the URL
+        }));
+
+        const { error } = await supabase
+            .from('scan_evidence')
+            .insert(evidenceEntries);
+
+        if (error) {
+            console.error('Error saving scan evidence:', error);
+            return { success: false, error };
+        }
+
+        return { success: true, error: null };
+    } catch (err) {
+        console.error('Failed to save scan evidence:', err);
+        return { success: false, error: err };
+    }
+}
+
+/**
+ * Get evidence for a specific scan
+ */
+export async function getScanEvidence(scanId: string): Promise<{ data: any[] | null; error: any }> {
+    const { data, error } = await supabase
+        .from('scan_evidence')
+        .select('*')
+        .eq('scan_id', scanId)
+        .order('created_at', { ascending: true });
+
+    if (error) {
+        console.error('Error fetching scan evidence:', error);
+        return { data: null, error };
+    }
+
+    return { data, error: null };
+}

@@ -8,6 +8,8 @@ import {
     type MultiAngleScanSession,
     getNextAngle,
     isSessionComplete,
+    isMinimumSessionComplete,
+    isOptimalSessionComplete
 } from "@/lib/utils/scan-angles";
 import Link from "next/link";
 
@@ -54,8 +56,9 @@ export default function MultiAngleCapture({
             onCaptureAngle(currentAngle, imageSrc);
             setCapturing(false);
 
-            // Check if all required angles are captured
-            if (isSessionComplete(session)) {
+            // AUTO-PROCEED: Only auto-complete if ALL 5 (optimal) are captured
+            // Otherwise, parent's getNextAngle will move to the next one
+            if (isOptimalSessionComplete(session)) {
                 onComplete();
             }
         }, 300);
@@ -121,7 +124,16 @@ export default function MultiAngleCapture({
                         </p>
                     </div>
 
-                    {!angleConfig.required && (
+                    {isMinimumSessionComplete(session) && !isOptimalSessionComplete(session) && (
+                        <button
+                            onClick={onComplete}
+                            className="bg-access-green text-black px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-[0_0_15px_rgba(34,197,94,0.3)]"
+                        >
+                            Finish Capture
+                        </button>
+                    )}
+
+                    {!angleConfig.required && !isMinimumSessionComplete(session) && (
                         <button
                             onClick={handleSkip}
                             className="text-white/70 hover:text-white text-sm font-medium transition-colors"
@@ -129,7 +141,7 @@ export default function MultiAngleCapture({
                             Skip
                         </button>
                     )}
-                    {angleConfig.required && <div className="w-12" />}
+                    {angleConfig.required && !isMinimumSessionComplete(session) && <div className="w-12" />}
                 </div>
             </header>
 

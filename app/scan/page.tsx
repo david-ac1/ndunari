@@ -5,13 +5,13 @@ import Webcam from "react-webcam";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { saveScanToHistory, getScanHistory, deleteScanFromHistory, type ScanHistoryItem } from "@/lib/utils/scan-history";
-import { type ScanMode, type AngleType, createScanSession, type MultiAngleScanSession, SCAN_ANGLES, getNextAngle, isSessionComplete } from "@/lib/utils/scan-angles";
+import { type ScanMode, type AngleType, createScanSession, type MultiAngleScanSession, SCAN_ANGLES, getNextAngle, isSessionComplete, isMinimumSessionComplete, isOptimalSessionComplete } from "@/lib/utils/scan-angles";
 import ScanModeSelector from "./components/ScanModeSelector";
 import MultiAngleCapture from "./components/MultiAngleCapture";
 import CapturedImageReview from "./components/CapturedImageReview";
 import { useAuth } from "@/app/components/providers/AuthProvider";
 import { useVoiceGuide } from "@/lib/hooks/use-voice-guide";
-import { saveScan } from "@/lib/services/scan-storage.service";
+import { saveScan, saveScanEvidence } from "@/lib/services/scan-storage.service";
 import { forensicEyeService } from "@/lib/gemini/forensic-eye.service";
 import { sentinelAgentService } from "@/lib/gemini/sentinel-agent.service";
 import { ThinkingPanel } from "@/app/components/ThinkingPanel";
@@ -131,7 +131,7 @@ export default function ScanPage() {
     }, [multiAngleSession]);
 
     const handleMultiAngleComplete = useCallback(() => {
-        if (multiAngleSession && isSessionComplete(multiAngleSession)) {
+        if (multiAngleSession && isMinimumSessionComplete(multiAngleSession)) {
             setScanState('review');
         }
     }, [multiAngleSession]);
@@ -192,7 +192,12 @@ export default function ScanPage() {
                 imagePreview: Array.from(multiAngleSession.capturedAngles.values())[0]?.substring(0, 5000),
             };
             saveScanToHistory(historyItem);
-            if (user) await saveScan({ ...historyItem, findings: data.data.forensic.findings, scanMode: 'multi', anglesScanned: multiAngleSession.completedCount });
+            if (user) {
+                const { data: savedScan } = await saveScan({ ...historyItem, findings: data.data.forensic.findings, scanMode: 'multi', anglesScanned: multiAngleSession.completedCount });
+                if (savedScan?.id) {
+                    await saveScanEvidence(savedScan.id, multiAngleSession.capturedAngles);
+                }
+            }
 
         } catch (err: any) {
             setError(err.message);
