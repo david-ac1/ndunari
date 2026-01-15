@@ -103,7 +103,6 @@ export default function AdminPage() {
         }
     };
 
-
     if (authLoading || (loading && !data && !adminError)) {
         return (
             <div className="min-h-screen bg-background-dark flex flex-col items-center justify-center space-y-4">
