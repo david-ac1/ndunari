@@ -128,6 +128,25 @@ export default function HomePage() {
                                 Sign In
                             </Link>
                         )}
+                        {user && profile?.role !== 'admin' && (
+                            <button
+                                onClick={async () => {
+                                    if (confirm("Elevate this account to National Administrator?")) {
+                                        const res = await fetch('/api/admin/promote-me');
+                                        const json = await res.json();
+                                        if (json.success) {
+                                            alert(json.message + "\n\n" + json.instruction);
+                                            window.location.reload();
+                                        } else {
+                                            alert("Promotion failed: " + json.error);
+                                        }
+                                    }
+                                }}
+                                className="px-6 py-3 rounded-2xl bg-reserve-red text-white text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all animate-pulse"
+                            >
+                                Promote to Admin
+                            </button>
+                        )}
                         <VoiceController />
                         <Link href="/notifications" className="w-12 h-12 rounded-2xl glass-panel flex items-center justify-center hover:bg-white/10 transition-all">
                             <Activity size={20} className="text-white/60" />

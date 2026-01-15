@@ -24,8 +24,16 @@ export default function AdminPage() {
 
     // Security Guard: Redirect non-admins
     useEffect(() => {
-        if (!authLoading && profile?.role !== 'admin') {
-            router.push('/');
+        if (!authLoading) {
+            console.log("Admin Check:", {
+                role: profile?.role,
+                id: profile?.id,
+                email: profile?.display_name
+            });
+            if (profile?.role !== 'admin') {
+                console.warn("Unauthorized access attempt to Intelligence Center. Redirecting to home.");
+                router.push('/');
+            }
         }
     }, [profile, authLoading, router]);
 
