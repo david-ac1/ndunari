@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { getScanHistory, type ScanHistoryItem } from "@/lib/utils/scan-history";
 import { VoiceController } from "@/app/components/VoiceController";
 import { useAuth } from "@/app/components/providers/AuthProvider";
+import { supabase } from "@/lib/supabase/client";
 import { getUserScans } from "@/lib/services/scan-storage.service";
 import { sentinelAgentService, type SentinelDirective } from "@/lib/gemini/sentinel-agent.service";
 import { ThinkingPanel } from "@/app/components/ThinkingPanel";
@@ -133,9 +134,10 @@ export default function HomePage() {
                                 onClick={async () => {
                                     if (confirm("Elevate this account to National Administrator?")) {
                                         const { data: { session } } = await supabase.auth.getSession();
+                                        console.log("Promotion attempt for user:", session?.user?.id);
                                         const res = await fetch('/api/admin/promote-me', {
                                             headers: {
-                                                'Authorization': `Bearer ${session?.access_token}`
+                                                'Authorization': session?.access_token ? `Bearer ${session.access_token}` : ''
                                             }
                                         });
                                         const json = await res.json();

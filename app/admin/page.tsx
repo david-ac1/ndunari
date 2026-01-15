@@ -47,12 +47,16 @@ export default function AdminPage() {
 
         try {
             const { data: { session } } = await supabase.auth.getSession();
+            console.log("AdminPage: session token check", {
+                present: !!session?.access_token,
+                expires_at: session?.expires_at
+            });
 
             const res = await fetch(`/api/admin/stats${deep ? '?deep=true' : ''}`, {
                 cache: 'no-store',
                 signal: controller.signal,
                 headers: {
-                    'Authorization': `Bearer ${session?.access_token}`
+                    'Authorization': session?.access_token ? `Bearer ${session.access_token}` : ''
                 }
             });
             clearTimeout(timeoutId);
@@ -161,14 +165,14 @@ export default function AdminPage() {
         );
     }
 
-    const stats = data?.summary || {
-        totalScans: 0,
-        safeScans: 0,
-        suspiciousScans: 0,
-        counterfeitScans: 0,
-        totalPrescriptions: 0,
-        awareDistribution: { access: 0, watch: 0, reserve: 0 },
-        regionalActivity: {} // FIXED: Prevent TypeError
+    const stats = {
+        totalScans: data?.summary?.totalScans ?? 0,
+        safeScans: data?.summary?.safeScans ?? 0,
+        suspiciousScans: data?.summary?.suspiciousScans ?? 0,
+        counterfeitScans: data?.summary?.counterfeitScans ?? 0,
+        totalPrescriptions: data?.summary?.totalPrescriptions ?? 0,
+        awareDistribution: data?.summary?.awareDistribution || { access: 0, watch: 0, reserve: 0 },
+        regionalActivity: data?.summary?.regionalActivity || {}
     };
 
     return (

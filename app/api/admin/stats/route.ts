@@ -17,6 +17,12 @@ export async function GET(request: NextRequest) {
         const authHeader = request.headers.get('Authorization');
         const token = authHeader?.split(' ')[1];
 
+        console.log("Admin API: Token Check", {
+            headerExists: !!authHeader,
+            tokenExists: !!token,
+            tokenPrefix: token ? token.substring(0, 10) + "..." : "NONE"
+        });
+
         const { data: { user } } = await supabase.auth.getUser(token);
 
         if (!user) {
