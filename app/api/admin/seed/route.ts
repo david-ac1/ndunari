@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase/client";
-import { adminIntelligenceService } from "@/lib/services/admin-intelligence.service";
+import { seedDemoData } from "@/lib/services/admin-seed.service";
 
 /**
- * GET /api/admin/stats
- * Gateway to national public health intelligence
+ * POST /api/admin/seed
+ * Admin only: Inject demo data for hackathon presentation
  */
-export async function GET() {
+export async function POST() {
     try {
         // 1. Verify Authentication & Role
         const { data: { user } } = await supabase.auth.getUser();
@@ -25,24 +25,20 @@ export async function GET() {
             return NextResponse.json({ error: "Forbidden: Admin access only" }, { status: 403 });
         }
 
-        // 2. Fetch Data
-        const stats = await adminIntelligenceService.getGlobalStats();
-        const liveFeed = await adminIntelligenceService.getLiveForensicStream(15);
-        const alerts = await adminIntelligenceService.getActiveAlertClusters();
+        // 2. Clear existing demo data (Optional - skipped to avoid data loss)
+
+        // 3. Seed Data
+        const result = await seedDemoData();
 
         return NextResponse.json({
             success: true,
-            data: {
-                summary: stats,
-                feed: liveFeed,
-                alerts: alerts
-            },
-            timestamp: new Date().toISOString()
+            message: "National Intelligence Injection Successful",
+            data: result
         });
     } catch (error) {
-        console.error("Admin API Error:", error);
+        console.error("Admin Seed Error:", error);
         return NextResponse.json(
-            { success: false, error: "Failed to fetch national intelligence" },
+            { success: false, error: "Failed to inject demo data" },
             { status: 500 }
         );
     }

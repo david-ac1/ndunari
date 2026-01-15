@@ -2,38 +2,96 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/components/providers/AuthProvider";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Shield, Activity, Globe, AlertTriangle,
     ArrowLeft, TrendingUp, Search, Layers,
-    MessageSquare, Zap, BarChart3, Database
+    MessageSquare, Zap, BarChart3, Database,
+    Download, AlertCircle
 } from "lucide-react";
 
 export default function AdminPage() {
+    const { profile, loading: authLoading } = useAuth();
+    const router = useRouter();
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [seeding, setSeeding] = useState(false);
     const [activeTab, setActiveTab] = useState('overview');
 
+    // Security Guard: Redirect non-admins
     useEffect(() => {
-        async function fetchStats() {
-            try {
-                const res = await fetch('/api/admin/stats');
-                const json = await res.json();
-                if (json.success) setData(json.data);
-            } catch (error) {
-                console.error("Admin stats fetch failed:", error);
-            } finally {
-                setLoading(false);
-            }
+        if (!authLoading && profile?.role !== 'admin') {
+            router.push('/');
         }
-        fetchStats();
+    }, [profile, authLoading, router]);
 
-        // Refresh every 30 seconds for "Live" feel
-        const interval = setInterval(fetchStats, 30000);
-        return () => clearInterval(interval);
-    }, []);
+    const fetchStats = async () => {
+        try {
+            const res = await fetch('/api/admin/stats');
+            const json = await res.json();
+            if (json.success) setData(json.data);
+        } catch (error) {
+            console.error("Admin stats fetch failed:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    if (loading && !data) {
+    useEffect(() => {
+        if (profile?.role === 'admin') {
+            fetchStats();
+            const interval = setInterval(fetchStats, 30000);
+            return () => clearInterval(interval);
+        }
+    }, [profile]);
+
+    const handleSeed = async () => {
+        if (!confirm("🚀 Inject National Intelligence Data?\n\nThis will populate the dashboard with realistic de-identified forensic clusters and AMR trends for demo purposes.")) return;
+        setSeeding(true);
+        try {
+            const res = await fetch('/api/admin/seed', { method: 'POST' });
+            const json = await res.json();
+            if (json.success) {
+                alert("SUCCESS: National Intelligence Grid Injected!");
+                fetchStats();
+            } else {
+                alert("Error: " + json.error);
+            }
+        } catch (error) {
+            alert("Injection failed. Check console.");
+        } finally {
+            setSeeding(false);
+        }
+    };
+
+    const handleIssueDirective = async (drugName?: string) => {
+        const name = typeof drugName === 'string' ? drugName : prompt("Enter Drug Name for National Alert:");
+        if (!name) return;
+
+        try {
+            const res = await fetch('/api/admin/directive', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    drugName: name,
+                    severity: 'high',
+                    region: 'National Cluster',
+                    batchNumber: 'ALL_SUSPICIOUS'
+                })
+            });
+            const json = await res.json();
+            if (json.success) {
+                alert(`📡 MISSION CRITICAL: National Directive Issued for ${name}. Guardian nodes notified!`);
+                fetchStats();
+            }
+        } catch (error) {
+            alert("Failed to issue directive");
+        }
+    };
+
+    if (authLoading || (loading && !data)) {
         return (
             <div className="min-h-screen bg-background-dark flex flex-col items-center justify-center space-y-4">
                 <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -69,17 +127,31 @@ export default function AdminPage() {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4 bg-white/5 p-1 rounded-2xl border border-white/5">
-                        {['overview', 'forensics', 'stewardship'].map((tab) => (
+                    <div className="flex items-center gap-6">
+                        {/* Demo Mode Controller */}
+                        {stats.totalScans === 0 && (
                             <button
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
-                                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-primary text-black' : 'text-white/40 hover:text-white/60'
-                                    }`}
+                                onClick={handleSeed}
+                                disabled={seeding}
+                                className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-xl text-primary text-[10px] font-black uppercase tracking-widest hover:bg-primary/20 transition-all disabled:opacity-50"
                             >
-                                {tab}
+                                <Download size={14} className={seeding ? "animate-bounce" : ""} />
+                                {seeding ? "Injecting..." : "Seed Demo Data"}
                             </button>
-                        ))}
+                        )}
+
+                        <div className="flex gap-2 p-1 rounded-2xl bg-white/5 border border-white/5">
+                            {['overview', 'forensics', 'stewardship'].map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab)}
+                                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-primary text-black' : 'text-white/40 hover:text-white/60'
+                                        }`}
+                                >
+                                    {tab}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </header>
@@ -141,8 +213,8 @@ export default function AdminPage() {
                                 </div>
                             </div>
 
-                            <div className="p-2">
-                                <table className="w-full text-left">
+                            <div className="p-2 overflow-x-auto">
+                                <table className="w-full text-left border-collapse min-w-[700px]">
                                     <thead className="text-[10px] font-black uppercase text-white/20">
                                         <tr>
                                             <th className="p-4">Timestamp</th>
@@ -153,7 +225,7 @@ export default function AdminPage() {
                                         </tr>
                                     </thead>
                                     <tbody className="text-xs">
-                                        {data?.feed?.map((item: any, idx: number) => (
+                                        {data?.feed?.map((item: any) => (
                                             <tr key={item.id} className="border-t border-white/5 hover:bg-white/[0.02] transition-colors group">
                                                 <td className="p-4 text-white/40 font-mono">
                                                     {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
@@ -165,7 +237,7 @@ export default function AdminPage() {
                                                 <td className="p-4">
                                                     <div className="flex items-center gap-2">
                                                         <Globe size={12} className="text-white/20" />
-                                                        <span className="font-bold uppercase tracking-tight">{item.region || 'Unknown'}</span>
+                                                        <span className="font-bold uppercase tracking-tight">{item.region || 'National'}</span>
                                                     </div>
                                                 </td>
                                                 <td className="p-4">
@@ -178,8 +250,8 @@ export default function AdminPage() {
                                                         </span>
                                                     </div>
                                                 </td>
-                                                <td className="p-4 text-right">
-                                                    <span className="font-black italic text-sm">{item.authenticity_score}%</span>
+                                                <td className="p-4 text-right font-black italic text-sm text-white/80">
+                                                    {item.authenticity_score}%
                                                 </td>
                                             </tr>
                                         ))}
@@ -217,15 +289,15 @@ export default function AdminPage() {
                                 </div>
                             </div>
 
-                            <div className="glass-panel p-8 rounded-[2.5rem] border-2 border-white/5 flex flex-col justify-center text-center space-y-4">
-                                <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                            <div className="glass-panel p-8 rounded-[2.5rem] border-2 border-primary/20 flex flex-col justify-center text-center space-y-4">
+                                <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
                                     <Shield className="text-primary" size={32} />
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-black uppercase italic">National Vigilance Score</h3>
                                     <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-1">AI-Computed Safety Rating</p>
                                 </div>
-                                <div className="text-5xl font-black text-primary">
+                                <div className="text-5xl font-black text-primary italic">
                                     {Math.round((stats.safeScans / (stats.totalScans || 1)) * 100)}%
                                 </div>
                                 <p className="text-[10px] text-white/30 max-w-[200px] mx-auto leading-relaxed">
@@ -245,30 +317,41 @@ export default function AdminPage() {
                                     <AlertTriangle className="text-reserve-red" size={20} />
                                     <h2 className="text-[10px] font-black uppercase tracking-[0.2em]">Active Threat Clusters</h2>
                                 </div>
-                                <span className="px-2 py-0.5 rounded bg-reserve-red text-[8px] font-black uppercase text-white tracking-widest italic">Action Required</span>
+                                <span className="px-2 py-0.5 rounded bg-reserve-red text-[8px] font-black uppercase text-white tracking-widest italic animate-pulse">Live Radar</span>
                             </div>
 
-                            <div className="space-y-4">
+                            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                                 {data?.alerts?.length > 0 ? (
                                     data.alerts.map((alert: any) => (
-                                        <div key={alert.id} className="p-4 rounded-2xl bg-black/40 border border-reserve-red/10 space-y-1">
+                                        <div key={alert.id} className="p-4 rounded-2xl bg-black/40 border border-reserve-red/10 space-y-2 hover:bg-reserve-red/[0.05] transition-all cursor-crosshair group">
                                             <div className="flex justify-between items-start">
-                                                <h3 className="text-xs font-black uppercase text-white">{alert.drug_name}</h3>
-                                                <span className="text-[10px] font-bold text-reserve-red">{alert.report_count} Reports</span>
+                                                <h3 className="text-xs font-black uppercase text-white group-hover:text-reserve-red transition-colors">{alert.drug_name}</h3>
+                                                <span className="text-[10px] font-bold text-reserve-red">{alert.report_count} Hits</span>
                                             </div>
-                                            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{alert.region} Cluster</p>
+                                            <div className="flex justify-between items-end">
+                                                <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{alert.region}</p>
+                                                <button
+                                                    onClick={() => handleIssueDirective(alert.drug_name)}
+                                                    className="w-8 h-8 rounded-lg bg-reserve-red/20 flex items-center justify-center hover:bg-reserve-red text-reserve-red hover:text-white transition-all"
+                                                >
+                                                    <Zap size={14} />
+                                                </button>
+                                            </div>
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="h-32 rounded-3xl border-2 border-dashed border-white/5 flex flex-col items-center justify-center grayscale opacity-30">
-                                        <Shield size={24} className="mb-2" />
-                                        <span className="text-[8px] font-black uppercase tracking-widest">No National Outbreaks</span>
+                                    <div className="h-48 rounded-3xl border-2 border-dashed border-white/5 flex flex-col items-center justify-center grayscale opacity-30 gap-3">
+                                        <Shield size={32} />
+                                        <span className="text-[8px] font-black uppercase tracking-widest text-center px-8 leading-relaxed">No National Counterfeit Outbreaks Detected by Sentinel Agent</span>
                                     </div>
                                 )}
                             </div>
 
-                            <button className="w-full mt-6 py-4 bg-reserve-red text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:scale-[1.02] active:scale-95 transition-all">
-                                Issue National Directive
+                            <button
+                                onClick={() => handleIssueDirective()}
+                                className="w-full mt-6 py-4 bg-reserve-red text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_20px_rgba(239,68,68,0.2)]"
+                            >
+                                Issue Global Directive
                             </button>
                         </section>
 
@@ -280,20 +363,25 @@ export default function AdminPage() {
                             </div>
 
                             <div className="space-y-4">
-                                {Object.entries(stats.regionalActivity).sort((a: any, b: any) => b[1] - a[1]).slice(0, 5).map(([region, count]) => (
-                                    <div key={region} className="flex items-center justify-between group">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                            <span className="text-[10px] font-black uppercase text-white/60 group-hover:text-white transition-colors">{region}</span>
+                                {Object.keys(stats.regionalActivity).length > 0 ? (
+                                    Object.entries(stats.regionalActivity).sort((a: any, b: any) => b[1] - a[1]).slice(0, 6).map(([region, count]) => (
+                                        <div key={region} className="flex items-center justify-between group">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(56,189,248,0.8)]" />
+                                                <span className="text-[10px] font-black uppercase text-white/60 group-hover:text-white transition-colors">{region}</span>
+                                            </div>
+                                            <div className="text-[10px] font-mono text-primary font-bold">
+                                                {count as number} <span className="text-[8px] text-white/20 uppercase">Units</span>
+                                            </div>
                                         </div>
-                                        <div className="text-[10px] font-mono text-primary font-bold">
-                                            {count as number} <span className="text-[8px] text-white/20 uppercase">Units</span>
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))
+                                ) : (
+                                    <p className="text-[10px] text-white/20 italic text-center py-4">Waiting for regional pings...</p>
+                                )}
                             </div>
 
-                            <div className="pt-4 border-t border-white/5">
+                            <div className="pt-4 border-t border-white/5 flex gap-3">
+                                <AlertCircle size={14} className="text-primary shrink-0" />
                                 <p className="text-[9px] text-white/30 leading-relaxed italic">
                                     Sentinel Agent is currently monitoring de-identified telemetry from all active field nodes. Regional normalization applied.
                                 </p>
@@ -311,19 +399,21 @@ function StatCard({ title, value, icon, color, sub }: { title: string, value: nu
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass-panel p-8 rounded-[2.5rem] border-2 border-white/5 hover:border-white/10 transition-all group"
+            className="glass-panel p-8 rounded-[2.5rem] border-2 border-white/5 hover:border-white/10 transition-all group relative overflow-hidden"
         >
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-6 relative z-10">
                 <div className={`w-10 h-10 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center transition-colors group-hover:bg-primary/20 ${color}`}>
                     {icon}
                 </div>
-                <TrendingUp size={16} className="text-white/10" />
+                <TrendingUp size={16} className="text-white/10 group-hover:text-white/40 transition-colors" />
             </div>
-            <div className={`text-4xl font-black tracking-tighter mb-2 ${color}`}>
+            <div className={`text-5xl font-black tracking-tighter mb-2 relative z-10 italic ${color}`}>
                 {value.toLocaleString()}
             </div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1">{title}</div>
-            <div className="text-[8px] font-bold uppercase tracking-widest text-white/20 italic">{sub}</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1 relative z-10">{title}</div>
+            <div className="text-[8px] font-bold uppercase tracking-widest text-white/20 italic relative z-10">{sub}</div>
+
+            <div className={`absolute top-0 right-0 w-32 h-32 blur-[80px] opacity-10 transition-opacity group-hover:opacity-20 ${color === 'text-reserve-red' ? 'bg-reserve-red' : color === 'text-primary' ? 'bg-primary' : 'bg-access-green'}`} />
         </motion.div>
     );
 }
@@ -341,7 +431,7 @@ function AwareCategoryBar({ label, count, total, color }: { label: string, count
                     initial={{ width: 0 }}
                     animate={{ width: `${percentage}%` }}
                     transition={{ duration: 1, ease: "circOut" }}
-                    className={`h-full ${color}`}
+                    className={`h-full ${color} shadow-[0_0_10px_rgba(255,255,255,0.1)]`}
                 />
             </div>
         </div>

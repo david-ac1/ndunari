@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   preferred_language text DEFAULT 'english',
   share_data boolean DEFAULT true,
   profile_image_url text,
+  role text DEFAULT 'user' CHECK (role IN ('user', 'admin')),
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );

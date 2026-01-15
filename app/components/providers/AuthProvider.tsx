@@ -14,6 +14,7 @@ export interface UserProfile {
     preferred_language: string;
     share_data: boolean;
     profile_image_url?: string;
+    role: 'user' | 'admin';
 }
 
 interface AuthContextType {
