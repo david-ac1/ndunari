@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '../supabase/admin';
-import { sentinelAgentService, type RiskMask, type RecallNotice, type ForensicCluster } from '../gemini/sentinel-agent.service';
+import { sentinelAgentService, type RiskMask, type RecallNotice, type ForensicCluster, type UnifiedIntelligence } from '../gemini/sentinel-agent.service';
 
 export interface AdminStats {
     totalScans: number;
@@ -100,10 +100,7 @@ export class AdminIntelligenceService {
         return data;
     }
 
-    /**
-     * Generate national risk masks using Gemini 3
-     */
-    async getNationalRiskMasks(): Promise<RiskMask[]> {
+    async getDeepIntelligence(): Promise<UnifiedIntelligence> {
         const { data: scans, error } = await supabaseAdmin
             .from('scans')
             .select('*')
@@ -111,32 +108,7 @@ export class AdminIntelligenceService {
             .limit(100);
 
         if (error) throw error;
-        return sentinelAgentService.generateRiskMasks(scans || []);
-    }
-
-    /**
-     * Generate autonomous recall notices using Gemini 3
-     */
-    async getAutonomousRecallNotices(): Promise<RecallNotice[]> {
-        const { data: scans, error } = await supabaseAdmin
-            .from('scans')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(100);
-
-        if (error) throw error;
-        return sentinelAgentService.generateRecallNotices(scans || []);
-    }
-
-    async getForensicClusters(): Promise<ForensicCluster[]> {
-        const { data: scans, error } = await supabaseAdmin
-            .from('scans')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(100);
-
-        if (error) throw error;
-        return sentinelAgentService.detectForensicClusters(scans || []);
+        return sentinelAgentService.getUnifiedIntelligence(scans || []);
     }
 }
 

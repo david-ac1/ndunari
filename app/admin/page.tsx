@@ -20,6 +20,7 @@ export default function AdminPage() {
     const [seeding, setSeeding] = useState(false);
     const [activeTab, setActiveTab] = useState('overview');
     const [analyzing, setAnalyzing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // Security Guard: Redirect non-admins
     useEffect(() => {
@@ -30,12 +31,20 @@ export default function AdminPage() {
 
     const fetchStats = async (deep = false) => {
         if (deep) setAnalyzing(true);
+        setError(null);
         try {
-            const res = await fetch(`/api/admin/stats${deep ? '?deep=true' : ''}`);
+            const res = await fetch(`/api/admin/stats${deep ? '?deep=true' : ''}`, {
+                cache: 'no-store'
+            });
             const json = await res.json();
-            if (json.success) setData(json.data);
-        } catch (error) {
-            console.error("Admin stats fetch failed:", error);
+            if (json.success) {
+                setData(json.data);
+            } else {
+                setError(json.error || "National Grid Offline");
+            }
+        } catch (e) {
+            console.error("Admin stats fetch failed:", e);
+            setError("Failed to synchronize with National Intelligence Grid.");
         } finally {
             setLoading(false);
             if (deep) setAnalyzing(false);
@@ -62,7 +71,7 @@ export default function AdminPage() {
             } else {
                 alert("Error: " + json.error);
             }
-        } catch (error) {
+        } catch (e) {
             alert("Injection failed. Check console.");
         } finally {
             setSeeding(false);
@@ -89,16 +98,33 @@ export default function AdminPage() {
                 alert(`📡 MISSION CRITICAL: National Directive Issued for ${name}. Guardian nodes notified!`);
                 fetchStats();
             }
-        } catch (error) {
+        } catch (e) {
             alert("Failed to issue directive");
         }
     };
 
-    if (authLoading || (loading && !data)) {
+
+    if (authLoading || (loading && !data && !error)) {
         return (
             <div className="min-h-screen bg-background-dark flex flex-col items-center justify-center space-y-4">
                 <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                 <p className="text-primary font-black uppercase tracking-[0.3em] animate-pulse">Decrypting National Signals...</p>
+            </div>
+        );
+    }
+
+    if (error && !data) {
+        return (
+            <div className="min-h-screen bg-background-dark flex flex-col items-center justify-center space-y-4 p-6 text-center">
+                <AlertCircle size={48} className="text-reserve-red mb-4" />
+                <h2 className="text-xl font-black uppercase tracking-widest text-white">Signal Interrupted</h2>
+                <p className="text-white/40 max-w-md">{error}</p>
+                <button
+                    onClick={() => fetchStats()}
+                    className="mt-6 px-8 py-3 bg-primary text-black font-black uppercase tracking-widest rounded-xl"
+                >
+                    Retry Connection
+                </button>
             </div>
         );
     }

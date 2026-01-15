@@ -49,17 +49,16 @@ export const STEWARDSHIP_BRAIN_CONFIG = {
 } as const;
 
 
-/**
- * Get Forensic Eye model instance
- * Used for 99% of scans (<$0.001/scan, 2-3 seconds)
- */
-export function getForensicEyeModel() {
+export function getForensicEyeModel(useJsonMode = false) {
     if (!API_KEY && !MOCK_MODE) {
         throw new Error("GEMINI_API_KEY environment variable is required");
     }
     return genAI.getGenerativeModel({
         model: FORENSIC_EYE_CONFIG.model,
-        generationConfig: FORENSIC_EYE_CONFIG.generationConfig,
+        generationConfig: {
+            ...FORENSIC_EYE_CONFIG.generationConfig,
+            responseMimeType: useJsonMode ? "application/json" : "text/plain",
+        },
     });
 }
 
@@ -68,13 +67,16 @@ export function getForensicEyeModel() {
  * Used for 1% of scans (<$0.015/assessment, 4-6 seconds)
  * Escalated only for: Reserve drugs, suspicious packages, NAFDAC failures
  */
-export function getStewardshipBrainModel() {
+export function getStewardshipBrainModel(useJsonMode = false) {
     if (!API_KEY && !MOCK_MODE) {
         throw new Error("GEMINI_API_KEY environment variable is required");
     }
     return genAI.getGenerativeModel({
         model: STEWARDSHIP_BRAIN_CONFIG.model,
-        generationConfig: STEWARDSHIP_BRAIN_CONFIG.generationConfig,
+        generationConfig: {
+            ...STEWARDSHIP_BRAIN_CONFIG.generationConfig,
+            responseMimeType: useJsonMode ? "application/json" : "text/plain",
+        },
     });
 }
 

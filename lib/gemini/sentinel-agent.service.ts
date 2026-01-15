@@ -66,6 +66,18 @@ export const RecallNoticeSchema = z.object({
 export type RecallNotice = z.infer<typeof RecallNoticeSchema>;
 
 /**
+ * Unified National Intelligence Schema
+ */
+export const UnifiedIntelligenceSchema = z.object({
+    riskMasks: z.array(RiskMaskSchema),
+    recallNotices: z.array(RecallNoticeSchema),
+    forensicClusters: z.array(ForensicClusterSchema),
+    strategicDirectives: z.array(SentinelDirectiveSchema)
+});
+
+export type UnifiedIntelligence = z.infer<typeof UnifiedIntelligenceSchema>;
+
+/**
  * Sentinel Agent Service
  * The "Orchestrator" that plans and executes surveillance tasks
  */
@@ -74,9 +86,31 @@ export class SentinelAgentService {
 
     private get model() {
         if (!this._model) {
-            this._model = getStewardshipBrainModel();
+            this._model = getStewardshipBrainModel(true); // Always use JSON mode for Sentinel Agent
         }
         return this._model;
+    }
+
+    /**
+     * Helper to clean and parse JSON from Gemini
+     */
+    private safeParseJson(text: string, fallback: any = []) {
+        try {
+            // Native JSON mode usually returns clean JSON, but we'll trim just in case
+            const cleanText = text.trim();
+            return JSON.parse(cleanText);
+        } catch (error) {
+            // Fallback to regex if for some reason it's not pure JSON
+            const jsonMatch = text.match(/\[[\s\S]*\]/) || text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                try {
+                    return JSON.parse(jsonMatch[0]);
+                } catch (e) {
+                    console.error("Critical JSON parse failure:", e);
+                }
+            }
+            return fallback;
+        }
     }
 
     /**
@@ -119,15 +153,11 @@ export class SentinelAgentService {
             const result = await retryWithBackoff(() => this.model.generateContent(prompt));
             const response = await result.response;
             const text = response.text();
-
-            const jsonMatch = text.match(/\[[\s\S]*\]/);
-            if (!jsonMatch) throw new Error("Sentinel failed to generate directives");
-
-            const directives = JSON.parse(jsonMatch[0]);
-            return z.array(SentinelDirectiveSchema).parse(directives);
+            const json = this.safeParseJson(text, []);
+            return z.array(SentinelDirectiveSchema).parse(json);
         } catch (error) {
             console.error("Sentinel Analysis failed:", error);
-            return []; // Fail gracefully in background
+            return [];
         }
     }
 
@@ -163,8 +193,8 @@ export class SentinelAgentService {
         try {
             const result = await this.model.generateContent(prompt);
             const text = result.response.text();
-            const jsonText = text.match(/\[[\s\S]*\]/)?.[0] || "[]";
-            return JSON.parse(jsonText);
+            const json = this.safeParseJson(text, []);
+            return z.array(RiskMaskSchema).parse(json);
         } catch (error) {
             console.error("Sentinel Risk Mask failure:", error);
             return [];
@@ -200,8 +230,8 @@ export class SentinelAgentService {
         try {
             const result = await this.model.generateContent(prompt);
             const text = result.response.text();
-            const jsonText = text.match(/\[[\s\S]*\]/)?.[0] || "[]";
-            return JSON.parse(jsonText);
+            const json = this.safeParseJson(text, []);
+            return z.array(RecallNoticeSchema).parse(json);
         } catch (error) {
             console.error("Sentinel Recall Notice failure:", error);
             return [];
@@ -247,37 +277,42 @@ export class SentinelAgentService {
     }
 
     /**
-     * Detect systematic forensic clusters across multiple scans
+     * Unified Intelligence Marathon
+     * Performs a single, deep reasoning pass over national telemetry to generate all directives, masks, and clusters.
+     * This is significantly faster and more coherent than separate calls.
      */
-    async detectForensicClusters(scanLogs: any[]): Promise<ForensicCluster[]> {
-        const prompt = `You are a Global Forensic Lead. Review these national scan logs and identify "Forensic Clusters"—groups of independent scans that share the SAME anomaly or manufacturing defect (e.g., identical label typos, hologram shifts, or batch patterns).
+    async getUnifiedIntelligence(scanLogs: any[]): Promise<UnifiedIntelligence> {
+        const dataContext = JSON.stringify(scanLogs.slice(0, 60));
+        const prompt = `You are THE SENTINEL, the autonomous national health orchestrator for Nigeria.
         
-        DATA: ${JSON.stringify(scanLogs.slice(0, 50))} 
+        INPUT TELEMETRY:
+        ${dataContext}
         
-        Based on the data, return a JSON array of clusters:
-        [
-          {
-            "id": "cluster-<unique>",
-            "title": "<short descriptive title>",
-            "threatLevel": "low" | "medium" | "high" | "critical",
-            "evidenceSignature": "<detailed shared anomaly, e.g. 'Kerning error in Amoxicillin label v2.1'>",
-            "affectedBrands": ["<brand1>", "<brand2>"],
-            "geoConcentration": "<region names>",
-            "scanCount": <number of related scans>,
-            "reasoning": "<why these scans are linked>"
-          }
-        ]
+        TASK:
+        Perform a UNIFIED FORENSIC AUDIT. Connect the dots across every scan to identify manufacturing defects, regional outbreaks, and supply chain fractures.
         
-        If no clear clusters exist, return an empty array. Focus on pattern matching across DIFFERENT user accounts.`;
+        OUTPUT SCHEMA (JSON):
+        {
+            "riskMasks": [{ "id": "M1", "region": "...", "center": {"lat": 9.0, "lng": 7.0}, "radius": 50, "intensity": 0.8, "detectedThreat": "..." }],
+            "recallNotices": [{ "id": "R1", "drugName": "...", "batchNumber": "...", "reason": "...", "severity": "high", "scope": "National", "publishedAt": "..." }],
+            "forensicClusters": [{ "id": "C1", "title": "...", "threatLevel": "high", "evidenceSignature": "...", "affectedBrands": [], "geoConcentration": "...", "scanCount": 5, "reasoning": "..." }],
+            "strategicDirectives": [{ "id": "D1", "type": "REGIONAL_ALERT", "region": "...", "confidence": 95, "rationale": "...", "evidence": [], "proposedAction": "...", "priority": "high", "timestamp": "..." }]
+        }
+        
+        RULES:
+        - Logic coherence: Ensure your risk masks align with your forensic clusters.
+        - Precision: Only flag clusters where valid manufacture-level patterns exist.
+        - Response: Return ONLY valid JSON matching the schema above.`;
 
         try {
-            const result = await this.model.generateContent(prompt);
-            const text = result.response.text();
-            const jsonMatch = text.match(/\[[\s\S]*\]/);
-            return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+            const result = await retryWithBackoff(() => this.model.generateContent(prompt));
+            const response = await result.response;
+            const text = response.text();
+            const json = this.safeParseJson(text, { riskMasks: [], recallNotices: [], forensicClusters: [], strategicDirectives: [] });
+            return UnifiedIntelligenceSchema.parse(json);
         } catch (error) {
-            console.error("Cluster detection failed:", error);
-            return [];
+            console.error("Unified Sentinel Intelligence failed:", error);
+            return { riskMasks: [], recallNotices: [], forensicClusters: [], strategicDirectives: [] };
         }
     }
 }

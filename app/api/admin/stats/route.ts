@@ -7,6 +7,9 @@ import { type RiskMask, type RecallNotice, type ForensicCluster } from "@/lib/ge
  * GET /api/admin/stats
  * Gateway to national public health intelligence
  */
+export const dynamic = 'force-dynamic';
+export const revalidate = 10; // Cache for 10 seconds only
+
 export async function GET(request: NextRequest) {
     try {
         // 1. Verify Authentication & Role
@@ -38,12 +41,11 @@ export async function GET(request: NextRequest) {
         let forensicClusters: ForensicCluster[] = [];
 
         if (includeDirectives) {
-            console.log("Admin API: Triggering deep autonomous analysis...");
-            [riskMasks, recallNotices, forensicClusters] = await Promise.all([
-                adminIntelligenceService.getNationalRiskMasks(),
-                adminIntelligenceService.getAutonomousRecallNotices(),
-                adminIntelligenceService.getForensicClusters()
-            ]);
+            console.log("Admin API: Triggering unified autonomous analysis...");
+            const intelligence = await adminIntelligenceService.getDeepIntelligence();
+            riskMasks = intelligence.riskMasks;
+            recallNotices = intelligence.recallNotices;
+            forensicClusters = intelligence.forensicClusters;
         }
 
         return NextResponse.json({
