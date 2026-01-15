@@ -35,7 +35,7 @@ export default function HomePage() {
             let combinedHistory = [...localHistory];
 
             if (user) {
-                setSentinelThoughts(prev => [...prev, { id: 'cloud-sync', text: "Synchronizing with National Cloud Ledger...", level: 'primary', timestamp: new Date() }]);
+                setSentinelThoughts(prev => [...prev, { id: 'cloud-sync', text: "Synchronizing with National Cloud Ledger...", level: 'system', timestamp: new Date() }]);
                 const { data: cloudScans, error: cloudError } = await getUserScans();
 
                 if (cloudError) {
