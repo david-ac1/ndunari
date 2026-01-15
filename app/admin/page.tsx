@@ -20,7 +20,7 @@ export default function AdminPage() {
     const [seeding, setSeeding] = useState(false);
     const [activeTab, setActiveTab] = useState('overview');
     const [analyzing, setAnalyzing] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [adminError, setAdminError] = useState<string | null>(null);
 
     // Security Guard: Redirect non-admins
     useEffect(() => {
@@ -31,7 +31,7 @@ export default function AdminPage() {
 
     const fetchStats = async (deep = false) => {
         if (deep) setAnalyzing(true);
-        setError(null);
+        setAdminError(null);
         try {
             const res = await fetch(`/api/admin/stats${deep ? '?deep=true' : ''}`, {
                 cache: 'no-store'
@@ -40,11 +40,11 @@ export default function AdminPage() {
             if (json.success) {
                 setData(json.data);
             } else {
-                setError(json.error || "National Grid Offline");
+                setAdminError(json.error || "National Grid Offline");
             }
         } catch (e) {
             console.error("Admin stats fetch failed:", e);
-            setError("Failed to synchronize with National Intelligence Grid.");
+            setAdminError("Failed to synchronize with National Intelligence Grid.");
         } finally {
             setLoading(false);
             if (deep) setAnalyzing(false);
@@ -104,7 +104,7 @@ export default function AdminPage() {
     };
 
 
-    if (authLoading || (loading && !data && !error)) {
+    if (authLoading || (loading && !data && !adminError)) {
         return (
             <div className="min-h-screen bg-background-dark flex flex-col items-center justify-center space-y-4">
                 <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -113,12 +113,12 @@ export default function AdminPage() {
         );
     }
 
-    if (error && !data) {
+    if (adminError && !data) {
         return (
             <div className="min-h-screen bg-background-dark flex flex-col items-center justify-center space-y-4 p-6 text-center">
                 <AlertCircle size={48} className="text-reserve-red mb-4" />
                 <h2 className="text-xl font-black uppercase tracking-widest text-white">Signal Interrupted</h2>
-                <p className="text-white/40 max-w-md">{error}</p>
+                <p className="text-white/40 max-w-md">{adminError}</p>
                 <button
                     onClick={() => fetchStats()}
                     className="mt-6 px-8 py-3 bg-primary text-black font-black uppercase tracking-widest rounded-xl"
