@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase/client";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { adminIntelligenceService } from "@/lib/services/admin-intelligence.service";
 import { type RiskMask, type RecallNotice, type ForensicCluster } from "@/lib/gemini/sentinel-agent.service";
 
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
         }
         console.log("Admin API: User found", user.id);
 
-        const { data: profile } = await supabase
+        const { data: profile } = await supabaseAdmin
             .from('user_profiles')
             .select('role')
             .eq('id', user.id)

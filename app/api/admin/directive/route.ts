@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase/client";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 /**
  * POST /api/admin/directive
@@ -17,7 +18,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { data: profile } = await supabase
+        const { data: profile } = await supabaseAdmin
             .from('user_profiles')
             .select('role')
             .eq('id', user.id)
