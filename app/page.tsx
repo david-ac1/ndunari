@@ -94,8 +94,6 @@ export default function HomePage() {
             setDirectives(newDirectives);
             setSentinelThoughts(prev => [...prev, { id: '3', text: `Audit complete. ${newDirectives.length} directives issued.`, level: 'system', timestamp: new Date() }]);
 
-        } catch (error) {
-            console.error('Sentinel failure:', error);
         } finally {
             setIsSyncing(false);
             setIsSentinelThinking(false);
@@ -103,7 +101,41 @@ export default function HomePage() {
     }, [user, profile]);
 
     useEffect(() => {
-        if (!authLoading) loadHistoryAndAnalyze();
+        if (!authLoading) {
+            loadHistoryAndAnalyze();
+
+            // 1. REHYDRATION ON FOCUS
+            const handleVisibilityChange = () => {
+                if (document.visibilityState === 'visible') {
+                    console.log("Home: Visibility restored. Re-syncing...");
+                    loadHistoryAndAnalyze();
+                }
+            };
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+
+            // 2. LIVE SCAN LISTENER
+            let scanSubscription: any = null;
+            if (user) {
+                console.log("Home: Setting up real-time scan listener for", user.id);
+                scanSubscription = supabase
+                    .channel(`public:scans:${user.id}`)
+                    .on('postgres_changes', {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'scans',
+                        filter: `user_id=eq.${user.id}`
+                    }, (payload) => {
+                        console.log("Home: New scan detected in real-time", payload.new);
+                        loadHistoryAndAnalyze(); // Refresh everything when a new scan is added
+                    })
+                    .subscribe();
+            }
+
+            return () => {
+                document.removeEventListener('visibilitychange', handleVisibilityChange);
+                if (scanSubscription) supabase.removeChannel(scanSubscription);
+            };
+        }
     }, [user, authLoading, loadHistoryAndAnalyze]);
 
     return (

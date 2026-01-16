@@ -39,8 +39,38 @@ export default function ProfilePage() {
     useEffect(() => {
         if (user) {
             fetchStats();
+
+            // 1. REHYDRATION ON FOCUS
+            const handleVisibilityChange = () => {
+                if (document.visibilityState === 'visible') {
+                    console.log("Profile: Visibility restored. Re-syncing stats...");
+                    fetchStats();
+                    refreshProfile();
+                }
+            };
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+
+            // 2. REAL-TIME PROFILE STATS LISTENER
+            const profileSub = supabase
+                .channel(`profile_stats:${user.id}`)
+                .on('postgres_changes', {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'user_profiles',
+                    filter: `id=eq.${user.id}`
+                }, (payload) => {
+                    console.log("Profile: Real-time stat update detected", payload.new);
+                    fetchStats(); // Refresh local calculated stats
+                    refreshProfile(payload.new as UserProfile); // Update global context
+                })
+                .subscribe();
+
+            return () => {
+                document.removeEventListener('visibilitychange', handleVisibilityChange);
+                supabase.removeChannel(profileSub);
+            };
         }
-    }, [user]);
+    }, [user, refreshProfile]);
 
     // Initial form sync
     useEffect(() => {

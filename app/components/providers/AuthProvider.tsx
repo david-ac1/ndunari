@@ -110,7 +110,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             } catch (error: any) {
                 console.error('Auth: Initialization failed:', error.message);
             } finally {
-                console.log("Auth: Initialization complete, setting loading to false");
+                console.log("Auth: Initialization complete");
                 setLoading(false);
             }
         };
@@ -148,14 +148,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 syncManager.syncLocalToCloud().then(result => {
                     if (result.synced > 0) refreshProfile();
                 });
-                setLoading(false);
             }
         });
 
+        // 3. REAL-TIME PROFILE SYNC
+        let profileSubscription: any = null;
+
+        if (user) {
+            console.log("Auth: Setting up real-time profile listener for", user.id);
+            profileSubscription = supabase
+                .channel(`profile:${user.id}`)
+                .on('postgres_changes', {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'user_profiles',
+                    filter: `id=eq.${user.id}`
+                }, (payload) => {
+                    console.log("Auth: Real-time profile update detected", payload.new);
+                    setProfile(payload.new as UserProfile);
+                })
+                .subscribe();
+        }
+
         return () => {
             subscription.unsubscribe();
+            if (profileSubscription) supabase.removeChannel(profileSubscription);
         };
-    }, []);
+    }, [user]); // Re-run when user changes to update subscription
 
     const signOut = async () => {
         await supabase.auth.signOut();

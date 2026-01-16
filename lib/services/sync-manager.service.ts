@@ -43,19 +43,21 @@ export const syncManager = {
                 });
 
                 if (error) {
+                    console.error(`SyncManager: Critical failure for ${scan.drugName}. Code: ${error.code}. Message: ${error.message}`);
                     result.failed++;
-                    result.errors.push(`Failed to sync ${scan.drugName}: ${error.message}`);
+                    result.errors.push(`Cloud Reject (${scan.drugName}): ${error.message}`);
                 } else {
                     result.synced++;
                 }
             } catch (e: any) {
+                console.error(`SyncManager: Network/Runtime error for ${scan.drugName}`, e);
                 result.failed++;
-                result.errors.push(`Error syncing ${scan.drugName}: ${e.message}`);
+                result.errors.push(`System Error (${scan.drugName}): ${e.message}`);
             }
         }
 
         if (result.synced > 0) {
-            console.log(`SyncManager: Successfully synced ${result.synced} items. Clearing local cache.`);
+            console.log(`SyncManager: Successfully synced ${result.synced} items. Items failed: ${result.failed}`);
             // Once synced to cloud, we can clear local to prevent duplicates 
             // since the home page pulls from both but prioritizes cloud IDs
             clearScanHistory();
