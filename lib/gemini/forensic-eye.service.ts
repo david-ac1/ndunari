@@ -23,6 +23,7 @@ export const ForensicAnalysisSchema = z.object({
     findings: z.array(z.string()),
     riskLevel: z.enum(["safe", "suspicious", "counterfeit"]),
     thoughtProcess: z.array(z.string()),
+    packageFingerprint: z.string(), // Deterministic hash of identity features
     evidenceBoxes: z.array(EvidenceBoxSchema).optional(),
 });
 
@@ -68,6 +69,7 @@ export class ForensicEyeService {
                     "Package seal shows signs of tampering",
                 ],
                 riskLevel: "suspicious",
+                packageFingerprint: "CIPRO500-NAF201945678-LOT2024001-122025",
                 thoughtProcess: [
                     "Analyzing hologram structure...",
                     "Checking NAFDAC number format...",
@@ -110,6 +112,7 @@ Analyze this drug package image and return ONLY this JSON structure:
     "Checking regulatory marks",
     "Evaluating security features"
   ],
+  "packageFingerprint": "DNAME-NAF123-BN456-EXP1225",
   "evidenceBoxes": [
     { "box_2d": [ymin, xmin, ymax, xmax], "label": "Feature Name" }
   ]
@@ -153,6 +156,10 @@ ANALYSIS GUIDELINES:
 - riskLevel: "safe" (85-100%), "suspicious" (60-84%), "counterfeit" (0-59%)
 - findings: 3-5 specific observations about the package
 - thoughtProcess: 3-4 steps of your analysis
+- packageFingerprint: Generate a STABLE, deterministic ID string for this SPECIFIC package. 
+  Format: [DE-SPACED DRUG NAME]-[NAFDAC]-[BATCH]-[EXPIRY]
+  Example: "PANADOL500-NAF123456-LOT789-122025"
+  If a field is missing, use "X". This is critical for deduplication.
 
 RESPOND WITH ONLY THE JSON OBJECT. NO OTHER TEXT.`;
 

@@ -37,6 +37,7 @@ export const syncManager = {
                     authenticityScore: scan.authenticityScore,
                     riskLevel: scan.riskLevel,
                     imagePreview: scan.imagePreview,
+                    packageFingerprint: scan.packageFingerprint, // Pass for idempotency check
                     // Note: We don't have findings in simple history storage, 
                     // in a real app we might store findings in a separate local key
                 });

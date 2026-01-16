@@ -198,7 +198,13 @@ export default function ScanPage() {
             };
             saveScanToHistory(historyItem);
             if (user) {
-                const { data: savedScan } = await saveScan({ ...historyItem, findings: data.data.forensic.findings, scanMode: 'multi', anglesScanned: multiAngleSession.completedCount });
+                const { data: savedScan } = await saveScan({
+                    ...historyItem,
+                    findings: data.data.forensic.findings,
+                    scanMode: 'multi',
+                    anglesScanned: multiAngleSession.completedCount,
+                    packageFingerprint: data.data.forensic.packageFingerprint
+                });
                 if (savedScan?.id) {
                     await saveScanEvidence(savedScan.id, multiAngleSession.capturedAngles);
                 }
@@ -256,7 +262,13 @@ export default function ScanPage() {
                 imagePreview: preview.substring(0, 5000),
             };
             saveScanToHistory(historyItem);
-            if (user) await saveScan({ ...historyItem, findings: data.data.forensic.findings, scanMode: 'single', anglesScanned: 1 });
+            if (user) await saveScan({
+                ...historyItem,
+                findings: data.data.forensic.findings,
+                scanMode: 'single',
+                anglesScanned: 1,
+                packageFingerprint: data.data.forensic.packageFingerprint
+            });
 
         } catch (err: any) {
             setError(err.message);

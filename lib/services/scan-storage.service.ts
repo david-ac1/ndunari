@@ -21,6 +21,7 @@ export async function saveScan(scanData: {
     anglesScanned?: number;
     imagePreview?: string;
     region?: string;
+    packageFingerprint?: string; // New: For deduplication
 }): Promise<{ data: Scan | null; error: any }> {
     // Get current user and privacy preference
     const { data: { user } } = await supabase.auth.getUser();
@@ -38,7 +39,29 @@ export async function saveScan(scanData: {
 
     const sharingEnabled = profile?.share_data !== false;
 
-    // Insert scan (redact region if sharing is disabled)
+    // --- IDEMPOTENCY CHECK ---
+    // If we have a fingerprint, check if this exact drug was scanned by this user in the last 5 minutes
+    if (scanData.packageFingerprint) {
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+        const { data: existingScan } = await supabase
+            .from('scans')
+            .select('id, created_at')
+            .eq('user_id', user.id)
+            .eq('drug_name', scanData.drugName)
+            .eq('nafdac_number', scanData.nafdacNumber || null)
+            .eq('batch_number', scanData.batchNumber || null)
+            .gt('created_at', fiveMinutesAgo)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (existingScan) {
+            console.log("Supabase: Duplicate scan detected via fingerprint. Merging data into existing ID:", existingScan.id);
+            // We return the existing scan to prevent a new entry in the UI history too
+            return { data: { ...existingScan, ...scanData } as any, error: null };
+        }
+    }
+    // ---------------------------
     console.log("Supabase: Attempting to insert scan for user", user.id);
     const { data, error } = await supabase
         .from('scans')

@@ -8,6 +8,7 @@ export interface ScanHistoryItem {
     authenticityScore: number;
     riskLevel: "safe" | "suspicious" | "counterfeit";
     nafdacNumber?: string;
+    packageFingerprint?: string;
     imagePreview?: string; // Base64 preview
 }
 
