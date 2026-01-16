@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/components/providers/AuthProvider";
@@ -22,6 +22,7 @@ export default function AdminPage() {
     const [activeTab, setActiveTab] = useState('overview');
     const [analyzing, setAnalyzing] = useState(false);
     const [adminError, setAdminError] = useState<string | null>(null);
+    const isFetching = useRef(false);
 
     // Security Guard: Redirect non-admins
     useEffect(() => {
@@ -39,12 +40,18 @@ export default function AdminPage() {
     }, [profile, authLoading, router]);
 
     const fetchStats = async (deep = false) => {
+        if (isFetching.current) {
+            console.log("AdminPage: fetchStats already in flight, skipping...");
+            return;
+        }
+
         console.log("AdminPage: fetchStats starting...", { deep });
+        isFetching.current = true;
         if (deep) setAnalyzing(true);
         setAdminError(null);
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // Increased to 30s for cold starts/AI
 
         try {
             const { data: { session } } = await supabase.auth.getSession();
@@ -75,27 +82,29 @@ export default function AdminPage() {
         } catch (e: any) {
             clearTimeout(timeoutId);
             if (e.name === 'AbortError') {
-                console.error("Admin stats fetch timed out after 15s");
-                setAdminError("Connection timed out. The National Intelligence Grid is taking too long to respond.");
+                console.error("Admin stats fetch timed out after 30s");
+                setAdminError("Connection timed out. The National Intelligence Grid is taking too long to respond. Decryption might be stalled.");
             } else {
                 console.error("Admin stats fetch failed:", e);
                 setAdminError("Failed to synchronize with National Intelligence Grid.");
             }
         } finally {
             console.log("AdminPage: fetchStats complete");
+            isFetching.current = false;
             setLoading(false);
             if (deep) setAnalyzing(false);
         }
     };
 
     useEffect(() => {
-        console.log("AdminPage: Role Effect", { role: profile?.role });
-        if (profile?.role === 'admin') {
+        const role = profile?.role;
+        console.log("AdminPage: Role Effect Triggered", { role });
+        if (role === 'admin') {
             fetchStats();
-            const interval = setInterval(fetchStats, 30000);
+            const interval = setInterval(fetchStats, 60000); // Refresh every minute instead of 30s to reduce load
             return () => clearInterval(interval);
         }
-    }, [profile]);
+    }, [profile?.role]); // Only re-run if the role itself changes
 
     const handleSeed = async () => {
         if (!confirm("🚀 Inject National Intelligence Data?\n\nThis will populate the dashboard with realistic de-identified forensic clusters and AMR trends for demo purposes.")) return;

@@ -44,14 +44,14 @@ export async function GET(request: NextRequest) {
         }
         console.log("Admin API: Role verified as admin");
 
-        // 2. Fetch Data
-        console.log("Admin API: Fetching stats and streams...");
-        const stats = await adminIntelligenceService.getGlobalStats();
-        console.log("Admin API: Global stats fetched");
-        const liveFeed = await adminIntelligenceService.getLiveForensicStream(15);
-        console.log("Admin API: Live feed fetched");
-        const alerts = await adminIntelligenceService.getActiveAlertClusters();
-        console.log("Admin API: Alert clusters fetched");
+        // 2. Fetch Data in Parallel for maximum speed
+        console.log("Admin API: Fetching stats, streams, and alerts in parallel...");
+        const [stats, liveFeed, alerts] = await Promise.all([
+            adminIntelligenceService.getGlobalStats(),
+            adminIntelligenceService.getLiveForensicStream(15),
+            adminIntelligenceService.getActiveAlertClusters()
+        ]);
+        console.log("Admin API: Core intelligence gathered");
 
         // Optional: Fetch autonomous interventions (marathon tasks)
         const includeDirectives = request.nextUrl.searchParams.get('deep') === 'true';
