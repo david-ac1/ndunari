@@ -87,16 +87,32 @@ export default function ScanPage() {
             const interval = setInterval(async () => {
                 // Determine captured count safely
                 const capturedCount = multiAngleSession?.capturedAngles?.size || 0;
-                const context = `State: ${scanState}, Mode: ${scanMode || 'none'}, Captured: ${capturedCount}`;
 
-                const guidance = await sentinelAgentService.generateLiveGuidance(context);
-                addThought(guidance, 'sentinel');
-                if (enabled) speak(guidance);
-            }, 10000); // Pulse every 10s for guidance
+                // --- AR IMMERSION UPGRADE ---
+                // Pulse visual scanner reticle
+                setIsThinking(true);
+
+                // Capture current frame for real-time analysis
+                const screenshot = webcamRef.current?.getScreenshot();
+                if (screenshot) {
+                    const guidance = await sentinelAgentService.generateLiveGuidance(screenshot);
+                    addThought(guidance, 'sentinel');
+                    if (enabled) speak(guidance);
+
+                    // Small delay to show the 'Thinking' state visually
+                    setTimeout(() => setIsThinking(false), 800);
+                } else {
+                    const context = `State: ${scanState}, Mode: ${scanMode || 'none'}, Captured: ${capturedCount}`;
+                    const guidance = await sentinelAgentService.generateLiveGuidance(context);
+                    addThought(guidance, 'sentinel');
+                    if (enabled) speak(guidance);
+                    setIsThinking(false);
+                }
+            }, 4000); // Pulse every 4s for high-immersion guidance
 
             return () => clearInterval(interval);
         }
-    }, [scanState, scanMode, multiAngleSession, enabled, speak]);
+    }, [scanState, scanMode, multiAngleSession, enabled, speak, webcamRef, setIsThinking]);
 
     // Initial thoughts on mount
     useEffect(() => {

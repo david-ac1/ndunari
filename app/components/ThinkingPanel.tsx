@@ -29,9 +29,21 @@ export function ThinkingPanel({ thoughts, isAnalyzing, agentName = "Ndunari Sent
         <div className="glass-panel rounded-xl border border-white/10 overflow-hidden bg-black/40 backdrop-blur-xl">
             {/* Header */}
             <div className="px-4 py-2 border-b border-white/10 flex items-center justify-between bg-white/5">
-                <div className="flex items-center gap-2">
-                    <Terminal size={14} className="text-primary" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-white/50">{agentName} Monologue</span>
+                <div className="flex items-center justify-between w-full"> {/* Adjusted to make inner div take full width */}
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-emerald-400/80">
+                            {agentName}
+                        </h3>
+                    </div>
+                    {/* Live Immersion Indicator */}
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                        <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-tighter">Live Monitor</span>
+                    </div>
                 </div>
                 {isAnalyzing && (
                     <div className="flex items-center gap-1">
@@ -73,7 +85,7 @@ export function ThinkingPanel({ thoughts, isAnalyzing, agentName = "Ndunari Sent
                                 </div>
                                 <div className="flex-1">
                                     <span className={`font-bold mr-2 ${thought.level === 'forensic' ? 'text-yellow-400/80' :
-                                            thought.level === 'sentinel' ? 'text-primary/80' : 'text-white/40'
+                                        thought.level === 'sentinel' ? 'text-primary/80' : 'text-white/40'
                                         }`}>
                                         [{thought.level.toUpperCase()}]
                                     </span>

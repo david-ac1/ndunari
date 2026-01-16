@@ -244,17 +244,19 @@ export class SentinelAgentService {
      */
     async generateLiveGuidance(base64Image: string): Promise<string> {
         const prompt = `You are a Forensic Director guiding a field worker through a drug scan. 
-        Look at this camera frame and provide ONE short, proactive instruction (max 10 words) to help them get a perfect scan.
+        Analyze the provided camera frame and provide ONE tactical, proactive instruction (max 12 words).
         
-        Focus on:
-        - Positioning (closer/further)
-        - Alignment (center the package)
-        - Lighting (glare/shadows)
-        - Forensic features (hologram, expiry, batch code)
+        Focus on these LIVE bottlenecks:
+        - Distance: Are they too far to see microscopic print? Tell them.
+        - Lighting: Is there glare on the NAFDAC hologram? Tell them to tilt.
+        - Stability: Is the frame blurry? Tell them to hold steady.
+        - Alignment: Is the drug name or batch code out of frame? Tell them to center it.
+        
+        TONE: Urgent but professional (Action Era).
         
         Example: "Hold steady, scanning NAFDAC hologram now..."
-        Example: "Tilt slightly left to capture the expiry date."
-        Example: "Move closer to focus on the batch code."`;
+        Example: "Tilt slightly left to avoid glare on the expiry date."
+        Example: "Move 2cm closer to focus on the batch code."`;
 
         try {
             // Remove header if present
