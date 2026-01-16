@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
 import { getCurrentUser, signInAnonymously, onAuthStateChange } from '@/lib/supabase/auth.service';
+import { syncManager } from '@/lib/services/sync-manager.service';
 
 export interface UserProfile {
     id: string;
@@ -143,6 +144,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 }
                 setLoading(false);
             } else if (event === 'SIGNED_IN') {
+                console.log("Auth: User signed in, triggering cloud synchronization...");
+                syncManager.syncLocalToCloud().then(result => {
+                    if (result.synced > 0) refreshProfile();
+                });
                 setLoading(false);
             }
         });

@@ -17,6 +17,7 @@ export default function HomePage() {
     const [scanHistory, setScanHistory] = useState<ScanHistoryItem[]>([]);
     const [stats, setStats] = useState({ total: 0, safe: 0, suspicious: 0, counterfeit: 0 });
     const [isSyncing, setIsSyncing] = useState(false);
+    const [configError, setConfigError] = useState<string | null>(null);
 
     // Sentinel State
     const [directives, setDirectives] = useState<SentinelDirective[]>([]);
@@ -31,6 +32,13 @@ export default function HomePage() {
         setSentinelThoughts([{ id: '1', text: "Sentinel Node Online. Initiating historical audit...", level: 'system', timestamp: new Date() }]);
 
         try {
+            // 0. Vital Check: Env Vars
+            const hasSupabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+            if (!hasSupabase) {
+                setSentinelThoughts(prev => [...prev, { id: 'env-err', text: "CRITICAL: Cloud Grid Config Missing. Check Env Vars.", level: 'system', timestamp: new Date() }]);
+                setConfigError("Supabase Configuration Missing");
+            }
+
             // 1. Load History
             const localHistory = getScanHistory();
             let combinedHistory = [...localHistory];
@@ -38,11 +46,12 @@ export default function HomePage() {
             if (user) {
                 setSentinelThoughts(prev => [...prev, { id: 'cloud-sync', text: "Synchronizing with National Cloud Ledger...", level: 'system', timestamp: new Date() }]);
 
-                // 1.5 Sync local to cloud first
-                const { syncLocalScans } = await import('@/lib/services/scan-storage.service');
-                const syncedCount = await syncLocalScans(localHistory);
-                if (syncedCount > 0) {
-                    setSentinelThoughts(prev => [...prev, { id: 'sync-push', text: `Uploaded ${syncedCount} local records to cloud.`, level: 'system', timestamp: new Date() }]);
+                // 1.5 Sync local scans to cloud
+                const { syncManager } = await import('@/lib/services/sync-manager.service');
+                const syncResult = await syncManager.syncLocalToCloud();
+
+                if (syncResult.synced > 0) {
+                    setSentinelThoughts(prev => [...prev, { id: 'sync-push', text: `Uploaded ${syncResult.synced} local records to cloud.`, level: 'system', timestamp: new Date() }]);
                 }
 
                 const { data: cloudScans, error: cloudError } = await getUserScans();
