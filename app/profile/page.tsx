@@ -178,15 +178,28 @@ export default function ProfilePage() {
                             👤
                         </div>
                         <div className="flex-1 text-center md:text-left">
-                            <h2 className="text-2xl font-bold text-white mb-1">
+                            <h2 className="text-2xl font-bold text-white mb-1 flex items-center gap-2">
                                 {profile?.display_name || 'Health Guardian'}
+                                {profile?.role === 'admin' && (
+                                    <span className="px-2 py-0.5 rounded-md bg-primary text-black text-[10px] font-black tracking-widest uppercase">
+                                        Admin
+                                    </span>
+                                )}
                             </h2>
                             <p className="text-white/60 text-sm mb-4">
                                 {isAnonymous ? 'Anonymous Account' : user.email}
                             </p>
-                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-access-green/20 border border-access-green/30 rounded-lg text-access-green">
-                                <span className="font-bold">Health Integrity Score:</span>
-                                <span className="text-xl">{profile?.health_integrity_score || 0}</span>
+                            <div className="flex flex-wrap gap-3">
+                                <div className="inline-flex items-center gap-2 px-4 py-2 bg-access-green/20 border border-access-green/30 rounded-lg text-access-green">
+                                    <span className="font-bold">Health Integrity Score:</span>
+                                    <span className="text-xl">{profile?.health_integrity_score || 0}</span>
+                                </div>
+                                <button
+                                    onClick={() => refreshProfile()}
+                                    className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/60 text-xs font-bold hover:bg-white/10 transition-all uppercase"
+                                >
+                                    🔄 Refresh Authorization
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -194,20 +207,24 @@ export default function ProfilePage() {
 
                 {/* Admin Controls (if admin) */}
                 {profile?.role === 'admin' && (
-                    <section className="glass-panel p-8 rounded-2xl border border-primary/20 bg-primary/5 mb-8 relative overflow-hidden">
-                        <div className="absolute right-0 bottom-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-10 -mb-10" />
+                    <section className="glass-panel p-8 rounded-2xl border border-primary/40 bg-primary/10 mb-8 relative overflow-hidden shadow-[0_0_30px_rgba(56,189,248,0.1)]">
+                        <div className="absolute right-0 bottom-0 w-48 h-48 bg-primary/10 rounded-full blur-3xl -mr-16 -mb-16" />
                         <div className="relative z-10">
-                            <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                                🛡️ National Administrator Access
+                            <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-3">
+                                <div className="p-2 bg-primary rounded-lg text-black">
+                                    <Shield size={20} />
+                                </div>
+                                National Administrator Access
                             </h3>
-                            <p className="text-white/60 mb-6 text-sm">
-                                You have elevated clearance. Access the National Intelligence Center to monitor regional counterfeit patterns and surveillance directives.
+                            <p className="text-white/80 mb-6 text-sm max-w-2xl leading-relaxed">
+                                You hold elevated pharmaceutical surveillance clearance. Your account is authorized to access the National Intelligence Grid to monitor counterfeit clusters, issue recall directives, and analyze regional forensic data.
                             </p>
                             <Link
                                 href="/admin"
-                                className="inline-flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-dark transition-all shadow-lg shadow-primary/20"
+                                className="inline-flex items-center gap-3 px-10 py-4 bg-primary text-black rounded-xl font-black uppercase tracking-wider hover:scale-105 transition-all shadow-xl shadow-primary/30"
                             >
                                 Enter Intelligence Center
+                                <span className="text-xl">→</span>
                             </Link>
                         </div>
                     </section>

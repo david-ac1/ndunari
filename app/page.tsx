@@ -154,10 +154,15 @@ export default function HomePage() {
                         <div>
                             <h1 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2">
                                 {displayName}
+                                {profile?.role === 'admin' && (
+                                    <span className="px-2 py-0.5 rounded-md bg-primary text-black text-[8px] font-black tracking-widest">
+                                        NATIONAL ADMIN
+                                    </span>
+                                )}
                                 <span className={`w-2 h-2 rounded-full animate-pulse ${user ? 'bg-primary' : 'bg-white/20'}`} />
                             </h1>
                             <p className="text-[10px] font-bold text-white/40 uppercase tracking-[0.3em]">
-                                {user ? 'Sentinel Active' : 'Guest Mode'}
+                                {user ? (profile?.role === 'admin' ? 'Command Center Active' : 'Sentinel Active') : 'Guest Mode'}
                             </p>
                         </div>
                     </div>
@@ -165,10 +170,10 @@ export default function HomePage() {
                         {user && profile?.role === 'admin' && (
                             <Link
                                 href="/admin"
-                                className="px-6 py-3 rounded-2xl bg-white/10 border border-primary/30 text-primary text-[10px] font-black uppercase tracking-widest hover:bg-white/20 active:scale-95 transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(56,189,248,0.2)]"
+                                className="px-6 py-3 rounded-2xl bg-primary text-black text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(56,189,248,0.4)]"
                             >
                                 <Shield size={14} />
-                                Admin Panel
+                                Enterprise Intelligence
                             </Link>
                         )}
                         {(!user || user.is_anonymous) && (
