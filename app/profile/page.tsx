@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Shield } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { supabase } from "@/lib/supabase/client";
@@ -191,6 +192,27 @@ export default function ProfilePage() {
                     </div>
                 </section>
 
+                {/* Admin Controls (if admin) */}
+                {profile?.role === 'admin' && (
+                    <section className="glass-panel p-8 rounded-2xl border border-primary/20 bg-primary/5 mb-8 relative overflow-hidden">
+                        <div className="absolute right-0 bottom-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-10 -mb-10" />
+                        <div className="relative z-10">
+                            <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                                🛡️ National Administrator Access
+                            </h3>
+                            <p className="text-white/60 mb-6 text-sm">
+                                You have elevated clearance. Access the National Intelligence Center to monitor regional counterfeit patterns and surveillance directives.
+                            </p>
+                            <Link
+                                href="/admin"
+                                className="inline-flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-dark transition-all shadow-lg shadow-primary/20"
+                            >
+                                Enter Intelligence Center
+                            </Link>
+                        </div>
+                    </section>
+                )}
+
                 {/* Privacy Guard Status */}
                 <section className={`glass-panel p-6 rounded-2xl border mb-8 transition-all ${editShareData ? 'border-primary/30 bg-primary/5' : 'border-access-green/30 bg-access-green/5'}`}>
                     <div className="flex items-center justify-between">
@@ -372,54 +394,56 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Account Upgrade (if anonymous) */}
-                {isAnonymous && (
-                    <section className="glass-panel p-8 rounded-2xl border border-primary/20 mb-8">
-                        <h3 className="text-xl font-bold text-white mb-2">Secure Your Account</h3>
-                        <p className="text-white/70 mb-6">
-                            Convert your anonymous session to a permanent account to access your history from any device.
-                        </p>
+                {
+                    isAnonymous && (
+                        <section className="glass-panel p-8 rounded-2xl border border-primary/20 mb-8">
+                            <h3 className="text-xl font-bold text-white mb-2">Secure Your Account</h3>
+                            <p className="text-white/70 mb-6">
+                                Convert your anonymous session to a permanent account to access your history from any device.
+                            </p>
 
-                        <form onSubmit={handleUpgrade} className="space-y-4 max-w-md">
-                            <div>
-                                <label className="block text-xs font-bold text-white/50 mb-2 uppercase">Email Address</label>
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="your@email.com"
-                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary outline-none"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-white/50 mb-2 uppercase">Password</label>
-                                <input
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="Min 6 characters"
-                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary outline-none"
-                                    required
-                                />
-                            </div>
-
-                            {message && (
-                                <div className={`p-4 rounded-xl text-sm font-medium ${message.type === 'success' ? 'bg-access-green/10 text-access-green border border-access-green/20' : 'bg-reserve-red/10 text-reserve-red border border-reserve-red/20'
-                                    }`}>
-                                    {message.text}
+                            <form onSubmit={handleUpgrade} className="space-y-4 max-w-md">
+                                <div>
+                                    <label className="block text-xs font-bold text-white/50 mb-2 uppercase">Email Address</label>
+                                    <input
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        placeholder="your@email.com"
+                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary outline-none"
+                                        required
+                                    />
                                 </div>
-                            )}
+                                <div>
+                                    <label className="block text-xs font-bold text-white/50 mb-2 uppercase">Password</label>
+                                    <input
+                                        type="password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="Min 6 characters"
+                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary outline-none"
+                                        required
+                                    />
+                                </div>
 
-                            <button
-                                type="submit"
-                                disabled={upgrading}
-                                className="w-full py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
-                            >
-                                {upgrading ? 'Upgrading...' : 'Save Account'}
-                            </button>
-                        </form>
-                    </section>
-                )}
+                                {message && (
+                                    <div className={`p-4 rounded-xl text-sm font-medium ${message.type === 'success' ? 'bg-access-green/10 text-access-green border border-access-green/20' : 'bg-reserve-red/10 text-reserve-red border border-reserve-red/20'
+                                        }`}>
+                                        {message.text}
+                                    </div>
+                                )}
+
+                                <button
+                                    type="submit"
+                                    disabled={upgrading}
+                                    className="w-full py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
+                                >
+                                    {upgrading ? 'Upgrading...' : 'Save Account'}
+                                </button>
+                            </form>
+                        </section>
+                    )
+                }
 
                 {/* Settings & Logout */}
                 <section className="flex flex-col gap-4">
@@ -430,7 +454,7 @@ export default function ProfilePage() {
                         Sign Out
                     </button>
                 </section>
-            </main>
-        </div>
+            </main >
+        </div >
     );
 }

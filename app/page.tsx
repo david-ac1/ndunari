@@ -162,6 +162,15 @@ export default function HomePage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
+                        {user && profile?.role === 'admin' && (
+                            <Link
+                                href="/admin"
+                                className="px-6 py-3 rounded-2xl bg-white/10 border border-primary/30 text-primary text-[10px] font-black uppercase tracking-widest hover:bg-white/20 active:scale-95 transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(56,189,248,0.2)]"
+                            >
+                                <Shield size={14} />
+                                Admin Panel
+                            </Link>
+                        )}
                         {(!user || user.is_anonymous) && (
                             <Link
                                 href="/login"
