@@ -52,7 +52,8 @@ export default function ScanPage() {
     const [showHistory, setShowHistory] = useState(false);
     const [scanHistory, setScanHistory] = useState<ScanHistoryItem[]>([]);
     const [thoughts, setThoughts] = useState<{ id: string, text: string, level: 'forensic' | 'sentinel' | 'system', timestamp: Date }[]>([]);
-    const [isThinking, setIsThinking] = useState(false);
+    const [isThinking, setIsThinking] = useState(false); // Global busy state
+    const [isGuiding, setIsGuiding] = useState(false);  // Agent background pulse state
     const [lastScanPreview, setLastScanPreview] = useState<string | null>(null);
 
     const webcamRef = useRef<Webcam>(null);
@@ -88,31 +89,27 @@ export default function ScanPage() {
             };
 
             const interval = setInterval(async () => {
-                // Determine captured count safely
-                const capturedCount = multiAngleSession?.capturedAngles?.size || 0;
-
-                // --- AR IMMERSION UPGRADE ---
                 // Capture current frame for real-time analysis
                 const screenshot = webcamRef.current?.getScreenshot();
 
                 if (screenshot) {
-                    setIsThinking(true);
+                    setIsGuiding(true);
                     const guidance = await sentinelAgentService.generateLiveGuidance(screenshot);
                     addThought(guidance, 'sentinel');
                     if (enabled) speak(guidance);
 
-                    // Small delay to show the 'Thinking' state visually
-                    setTimeout(() => setIsThinking(false), 800);
+                    // Small delay to show the 'Pulse' visually
+                    setTimeout(() => setIsGuiding(false), 800);
                 } else {
-                    // If no screenshot, we don't send text-only context to the vision model anymore
-                    // This prevents the 'upload scan failure' conflict
                     console.log("Sentinel: No camera frame available, skipping live guidance pulse.");
                 }
             }, 4000); // Pulse every 4s for high-immersion guidance
 
             return () => clearInterval(interval);
+        } else {
+            setIsGuiding(false);
         }
-    }, [scanState, scanMode, multiAngleSession, enabled, speak, webcamRef, setIsThinking]);
+    }, [scanState, scanMode, multiAngleSession, enabled, speak, webcamRef, setIsGuiding]);
 
     // Initial thoughts on mount
     useEffect(() => {
@@ -342,7 +339,7 @@ export default function ScanPage() {
     return (
         <div className="relative min-h-screen w-full bg-background-dark overflow-hidden flex flex-col">
             {/* Camera Viewport (Background) */}
-            <div className="absolute inset-0 z-0">
+            <div className={`absolute inset-0 z-0 transition-all duration-1000 ${scanState === 'analyzing_upload' ? 'scale-110 blur-xl opacity-40' : ''}`}>
                 <Webcam
                     ref={webcamRef}
                     audio={false}
@@ -373,7 +370,7 @@ export default function ScanPage() {
             <main className="flex-1 relative z-10 flex flex-col items-center justify-center p-6 pb-32">
                 <div className="w-full max-w-lg space-y-6">
                     {/* Thinking Monologue (Action Era Feature) */}
-                    <ThinkingPanel thoughts={thoughts} isAnalyzing={isThinking} />
+                    <ThinkingPanel thoughts={thoughts} isAnalyzing={isThinking || isGuiding} mode={scanState === 'analyzing_upload' ? 'document' : 'live'} />
 
                     {/* Central Reticle */}
                     <div className="relative aspect-square w-full max-w-sm mx-auto group">
@@ -402,7 +399,7 @@ export default function ScanPage() {
                                     <p className="text-xs font-black text-primary uppercase tracking-[0.2em]">Analyzing Document...</p>
                                 </div>
                             )}
-                            {isThinking && scanState !== 'analyzing_upload' && <div className="text-5xl animate-bounce">🧠</div>}
+                            {isGuiding && scanState !== 'analyzing_upload' && <div className="text-5xl animate-bounce">🧠</div>}
                         </div>
                     </div>
                 </div>
@@ -411,26 +408,28 @@ export default function ScanPage() {
             {/* Controls */}
             <footer className="absolute bottom-0 left-0 w-full z-30 p-10 flex flex-col items-center gap-6">
                 <div className="flex items-center gap-8">
-                    <button onClick={loadHistory} className="w-12 h-12 rounded-full glass-panel flex items-center justify-center group">
-                        <span className="group-hover:scale-125 transition-transform">📁</span>
+                    <button onClick={loadHistory} className="w-12 h-12 rounded-full glass-panel flex items-center justify-center group relative" title="Scan History">
+                        <span className="group-hover:scale-125 transition-transform text-lg">📁</span>
+                        <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[8px] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-bold uppercase tracking-widest bg-black/60 px-2 py-1 rounded">Logbook</span>
                     </button>
 
                     <button
                         onClick={scanState === 'idle' ? captureImage : resetScan}
                         disabled={isThinking}
-                        className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center bg-primary shadow-xl disabled:opacity-50"
+                        className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center bg-primary shadow-[0_0_20px_rgba(56,189,248,0.4)] disabled:opacity-50 transition-all hover:scale-105"
                     >
                         <span className="text-white text-3xl">{scanState === 'complete' ? '↻' : '📷'}</span>
                     </button>
 
-                    <button onClick={() => fileInputRef.current?.click()} className="w-12 h-12 rounded-full glass-panel flex items-center justify-center group">
-                        <span className="group-hover:scale-125 transition-transform">📂</span>
+                    <button onClick={() => fileInputRef.current?.click()} className="w-12 h-12 rounded-full glass-panel flex items-center justify-center group relative" title="Upload Document">
+                        <span className="group-hover:scale-125 transition-transform text-lg">📂</span>
+                        <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[8px] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-bold uppercase tracking-widest bg-black/60 px-2 py-1 rounded">Upload</span>
                     </button>
                     <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileUpload} />
                 </div>
 
                 <p className="text-[10px] text-white/40 font-bold uppercase tracking-[0.3em]">
-                    {scanMode === 'single' ? 'Standard Forensic Mode' : 'Initializing Sentinel...'}
+                    {scanState === 'analyzing_upload' ? 'Scanning National Ledger...' : scanMode === 'single' ? 'Standard Forensic Mode' : 'Initializing Sentinel...'}
                 </p>
             </footer>
 

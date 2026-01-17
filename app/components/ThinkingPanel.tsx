@@ -15,9 +15,10 @@ interface ThinkingPanelProps {
     thoughts: Thought[];
     isAnalyzing: boolean;
     agentName?: string;
+    mode?: 'live' | 'document';
 }
 
-export function ThinkingPanel({ thoughts, isAnalyzing, agentName = "Ndunari Sentinel" }: ThinkingPanelProps) {
+export function ThinkingPanel({ thoughts, isAnalyzing, agentName = "Ndunari Sentinel", mode = 'live' }: ThinkingPanelProps) {
     const [displayThoughts, setDisplayThoughts] = useState<Thought[]>([]);
 
     useEffect(() => {
@@ -37,12 +38,14 @@ export function ThinkingPanel({ thoughts, isAnalyzing, agentName = "Ndunari Sent
                         </h3>
                     </div>
                     {/* Live Immersion Indicator */}
-                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                    <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border transition-colors ${mode === 'document' ? 'bg-primary/10 border-primary/20' : 'bg-emerald-500/10 border-emerald-500/20'}`}>
                         <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${mode === 'document' ? 'bg-primary' : 'bg-emerald-400'}`}></span>
+                            <span className={`relative inline-flex rounded-full h-2 w-2 ${mode === 'document' ? 'bg-primary' : 'bg-emerald-500'}`}></span>
                         </span>
-                        <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-tighter">Live Monitor</span>
+                        <span className={`text-[10px] uppercase font-bold tracking-tighter ${mode === 'document' ? 'text-primary' : 'text-emerald-400'}`}>
+                            {mode === 'document' ? 'Ledger Analysis' : 'Live Monitor'}
+                        </span>
                     </div>
                 </div>
                 {isAnalyzing && (
@@ -105,7 +108,7 @@ export function ThinkingPanel({ thoughts, isAnalyzing, agentName = "Ndunari Sent
                         className="flex items-center gap-2 text-[10px] text-primary/40 font-mono"
                     >
                         <span className="animate-pulse">_</span>
-                        <span>Iterating on supply chain vectors...</span>
+                        <span>{mode === 'document' ? 'Auditing supply chain signatures...' : 'Iterating on camera vectors...'}</span>
                     </motion.div>
                 )}
             </div>
