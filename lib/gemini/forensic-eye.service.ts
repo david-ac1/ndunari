@@ -1,5 +1,6 @@
 import { getForensicEyeModel, MOCK_MODE, retryWithBackoff } from "./config";
 import { z } from "zod";
+import { ForensicLogger } from "../utils/forensic-logger";
 
 /**
  * Forensic Evidence Bounding Box
@@ -38,27 +39,51 @@ export class ForensicEyeService {
     private _model: ReturnType<typeof getForensicEyeModel> | null = null;
 
     private get model() {
-        if (!this._model) {
-            this._model = getForensicEyeModel(true); // Always use JSON mode
-        }
-        return this._model;
+        // Dynamic getter ensures we always use the latest config model ID
+        // useJsonMode=true to enforce JSON responses
+        return getForensicEyeModel(true);
     }
 
     /**
-     * Helper to clean and parse JSON from Gemini
+     * Hyper-resilient JSON extraction
      */
     private safeParseJson(text: string, fallback: any = null) {
         try {
-            const cleanText = text.trim();
-            // Remove markdown code blocks
-            const jsonPart = cleanText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+            if (!text) return fallback;
+            // Aggressive cleansing of control characters and trailing noise
+            let cleanText = text.trim().replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
+
+            // Stage 1: Direct Parse
+            try { return JSON.parse(cleanText); } catch (e) { }
+
+            // Stage 2: Markdown Cleansing
+            let jsonPart = cleanText
+                .replace(/^```json\s*/g, '')
+                .replace(/```\s*$/g, '')
+                .replace(/^```\s*/g, '')
+                .trim();
+
+            try { return JSON.parse(jsonPart); } catch (e) { }
+
+            // Stage 3: Deep Match Heuristics
+            // Find the outermost { } or [ ]
+            const firstBrace = jsonPart.indexOf('{');
+            const lastBrace = jsonPart.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+                const innerJson = jsonPart.substring(firstBrace, lastBrace + 1);
+                try { return JSON.parse(innerJson); } catch (e) { }
+            }
+
+            // Stage 4: Regex Extraction
             const match = jsonPart.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
             if (match) {
-                return JSON.parse(match[0]);
+                try { return JSON.parse(match[0]); } catch (e) { }
             }
-            return JSON.parse(jsonPart);
+
+            console.error("Hyper-Resilient JSON extraction failed. Raw sample:", text.substring(0, 1000));
+            return fallback;
         } catch (error) {
-            console.error("Forensic JSON parsing failed:", error, "Raw text:", text);
+            console.error("Forensic JSON extraction error:", error);
             return fallback;
         }
     }
@@ -66,9 +91,10 @@ export class ForensicEyeService {
     /**
      * Scan drug package for authenticity
      * @param imageData - Base64 encoded image or Buffer
+     * @param mimeType - The mime type of the image
      * @returns Forensic analysis with authenticity score
      */
-    async scanPackage(imageData: string | Buffer): Promise<ForensicAnalysis> {
+    async scanPackage(imageData: string | Buffer, mimeType: string = "image/jpeg"): Promise<ForensicAnalysis> {
         const startTime = Date.now();
 
         // Mock mode for development/testing
@@ -87,7 +113,7 @@ export class ForensicEyeService {
                     "NAFDAC number format valid BUT print quality degraded",
                     "Package seal shows signs of tampering",
                 ],
-                riskLevel: "suspicious",
+                riskLevel: "safe",
                 packageFingerprint: "CIPRO500-NAF201945678-LOT2024001-122025",
                 thoughtProcess: [
                     "Analyzing hologram structure...",
@@ -110,85 +136,46 @@ export class ForensicEyeService {
                     : imageData.toString("base64");
 
             // Direct forensic scan - NO pre-validation to avoid false negatives
-            const prompt = `CRITICAL: You MUST respond with ONLY valid JSON. No explanations, no commentary, no markdown.
+            const prompt = `Perform a high-resolution forensic analysis of this drug package image.
+        
+Analyze the packaging for authenticity and return a structured DNA report.
 
-Analyze this drug package image and return ONLY this JSON structure:
-
+STRUCTURE:
 {
-  "authenticityScore": 85,
-  "drugName": "Drug Name 500mg",
-  "nafdacNumber": "NAF-2023-12345",
-  "batchNumber": "LOT-2024-001",
-  "expiryDate": "12/2025",
-  "findings": [
-    "Print quality excellent",
-    "Hologram present",
-    "NAFDAC number valid format"
-  ],
-  "riskLevel": "safe",
-  "thoughtProcess": [
-    "Analyzing package quality",
-    "Checking regulatory marks",
-    "Evaluating security features"
-  ],
-  "packageFingerprint": "DNAME-NAF123-BN456-EXP1225",
+  "authenticityScore": 0-100,
+  "drugName": "Exact name and dosage",
+  "nafdacNumber": "NAF-YYYY-NNNNN or [A-Z]-[NNNN]",
+  "batchNumber": "Batch/Lot code",
+  "expiryDate": "Expiry info",
+  "findings": ["3-5 specific observations"],
+  "riskLevel": "safe" | "suspicious" | "counterfeit",
+  "thoughtProcess": ["3 steps of reasoning"],
+  "packageFingerprint": "[NAME]-[NAFDAC]-[BATCH]-[EXPIRY]",
   "evidenceBoxes": [
     { "box_2d": [ymin, xmin, ymax, xmax], "label": "Feature Name" }
   ]
 }
 
 CRITICAL INSTRUCTIONS FOR OBJECT DETECTION:
-1. Identify key forensic features and anomalies in the image.
-2. For each feature, provide the bounding box in [ymin, xmin, ymax, xmax] format.
-3. Coordinates MUST be normalized to 0-1000.
-4. Focus on: Holograms, NAFDAC numbers, Batch/Lot codes, Expiry dates, and Printing errors.
+1. Provide [ymin, xmin, ymax, xmax] normalized to 0-1000 for key features.
+2. Focus on: Holograms, NAFDAC numbers, Batch/Lot codes, and Printing quality.
 
 CRITICAL INSTRUCTIONS FOR NAFDAC NUMBER:
-1. Look for text that says "NAFDAC No:" or "NAFDAC REG. No:" or "NAFDAC Reg:" or similar
-2. NAFDAC numbers can be in TWO formats:
-   
-   A) NEW FORMAT (2019+): NAF-YYYY-NNNNN
-      - NAF- prefix (uppercase)
-      - 4-digit year (e.g., 2019, 2023)
-      - Hyphen
-      - 5-digit number (e.g., 12345)
-      - Example: NAF-2019-45678
-   
-   B) OLD FORMAT (pre-2019): [LETTER][NUMBER]-[NUMBER]
-      - 1-2 uppercase letters (e.g., A, B4, C7)
-      - Hyphen
-      - 4-5 digit number
-      - Examples: B4-6269, A1-1234, C7-12345
-   
-3. DO NOT guess or make up NAFDAC numbers
-4. Read the EXACT text after "NAFDAC REG. No:" or similar label
-5. Double-check every character - OCR accuracy is critical
-6. If you cannot clearly read the NAFDAC number, return "NOT_FOUND"
-7. If no NAFDAC number present (imported drug), return "NOT_APPLICABLE"
+1. NAFDAC numbers have two formats:
+   A) NEW: NAF-YYYY-NNNNN (e.g. NAF-2023-12345)
+   B) OLD: [LETTER][NUMBER]-[NUMBER] (e.g. B4-6269)
+2. If unreadable, use "NOT_FOUND". If missing (imported), use "NOT_APPLICABLE".
+3. Precision is paramount. Do not hallucinate regulatory codes.
 
 ANALYSIS GUIDELINES:
-- authenticityScore: 0-100 based on packaging quality, security features, and regulatory marks
-- drugName: Extract exact drug name and dosage from package (read carefully)
-- nafdacNumber: Follow CRITICAL INSTRUCTIONS above
-- batchNumber: Look for "Batch", "Lot", or "B/N" text
-- expiryDate: Look for "EXP", "Expiry", or "Use before" text
-- riskLevel: "safe" (85-100%), "suspicious" (60-84%), "counterfeit" (0-59%)
-- findings: 3-5 specific observations about the package
-- thoughtProcess: 3-4 steps of your analysis
-- packageFingerprint: Generate a STABLE, deterministic ID string for this SPECIFIC package. 
-  Format: [DE-SPACED DRUG NAME]-[NAFDAC]-[BATCH]-[EXPIRY]
-  Example: "PANADOL500-NAF123456-LOT789-122025"
-  If a field is missing, use "X". This is critical for deduplication.
-
-RESPOND WITH ONLY THE JSON OBJECT. 
-DO NOT INCLUDE ANY CONVERSATIONAL TEXT, EXPLANATIONS, OR MARKDOWN BACKTICKS UNLESS ABSOLUTELY NECESSARY.
-THE RESPONSE MUST BE A SINGLE VALID JSON OBJECT.
-ZERO FILLER. ZERO INTRO. ZERO OUTRO.`;
+- authenticityScore: Based on printing precision, hologram presence, and mark accuracy.
+- riskLevel: safe (85+), suspicious (60-84), counterfeit (<60).
+- packageFingerprint: De-spaced string for unique identification. Use 'X' for missing fields.`;
 
             const imagePart = {
                 inlineData: {
                     data: imageBase64,
-                    mimeType: "image/jpeg",
+                    mimeType: mimeType,
                 },
             };
 
@@ -198,53 +185,140 @@ ZERO FILLER. ZERO INTRO. ZERO OUTRO.`;
                 2000 // initial delay (2 seconds)
             );
             const response = await result.response;
-            const text = response.text();
+            const text = response.text() || "";
 
-            console.log("Gemini response received:", text.substring(0, 500)); // Log first 500 chars
+            // === COMPREHENSIVE FORENSIC DIAGNOSTICS ===
+            const diagnostics = {
+                timestamp: new Date().toISOString(),
+                imageSize: imageBase64.length,
+                mimeType: mimeType,
+                promptLength: prompt.length,
+                responseTextLength: text.length,
+                responseTextPreview: text.substring(0, 500),
+                finishReason: response.candidates?.[0]?.finishReason,
+                safetyRatings: response.candidates?.[0]?.safetyRatings,
+                promptFeedback: response.promptFeedback,
+                duration: Date.now() - startTime
+            };
+
+            console.log("=== GEMINI 3 FORENSIC DIAGNOSTICS ===");
+            console.log("Timestamp:", diagnostics.timestamp);
+            console.log("Image Size (base64):", diagnostics.imageSize, "chars");
+            console.log("MIME Type:", diagnostics.mimeType);
+            console.log("Prompt Length:", diagnostics.promptLength, "chars");
+            console.log("Response Text Length:", diagnostics.responseTextLength, "chars");
+            console.log("Response Preview:", diagnostics.responseTextPreview);
+            console.log("Finish Reason:", diagnostics.finishReason);
+            console.log("Safety Ratings:", JSON.stringify(diagnostics.safetyRatings, null, 2));
+            console.log("Prompt Feedback:", JSON.stringify(diagnostics.promptFeedback, null, 2));
+            console.log("Duration:", diagnostics.duration, "ms");
+            console.log("=====================================");
+
+            // Log to file
+            ForensicLogger.log(diagnostics);
 
             // extraction
             if (!text || text.trim().length < 10) {
-                console.error("Empty or extremely short response from Gemini:", text);
-                throw new Error("Unable to analyze image. Gemini returned an empty response. Please try with a clearer photo.");
+                const reason = response.candidates?.[0]?.finishReason;
+                console.error("❌ EMPTY RESPONSE DETECTED");
+                console.error("Finish Reason:", reason);
+                console.error("Full Response Object:", JSON.stringify(response, null, 2));
+
+                ForensicLogger.log({
+                    ...diagnostics,
+                    error: `Empty response. Finish Reason: ${reason}`
+                });
+
+                if (reason === 'SAFETY') {
+                    throw new Error("National Security Protocol: Forensic analysis interrupted due to image content safety triggers.");
+                }
+
+                if (reason === 'RECITATION') {
+                    throw new Error("Forensic Halt: Content flagged as copyrighted material. Please ensure you are scanning an authentic medicine package.");
+                }
+
+                throw new Error("Unable to analyze image. Sentinel intelligence returned an empty response. Please try with a clearer photo or different lighting.");
             }
 
             // Check for common error strings that aren't JSON
             if (text.includes("safety filters") || text.includes("blocked") || text.includes("cannot fulfill")) {
                 console.error("Gemini response blocked by safety filters:", text);
+                ForensicLogger.log({
+                    ...diagnostics,
+                    error: "Safety filter block detected"
+                });
                 throw new Error("National Security Protocol: Forensic analysis interrupted due to image content safety triggers.");
             }
 
             const analysis = this.safeParseJson(text);
             if (!analysis || typeof analysis !== 'object') {
                 console.error("Failed to extract valid JSON object from response:", text);
-                throw new Error("Unable to analyze image. DNA report data was malformed. Please try again with better lighting.");
+                const sample = text.substring(0, 100).replace(/\n/g, ' ');
+                throw new Error(`Forensic Halt: DNA report data was malformed. Diagnostic Payload: [${sample}...]`);
+            }
+
+            // --- SENTINEL DATA NORMALIZATION LAYER ---
+            // 1. Target Detection Check (AI might return nulls if it's not a drug)
+            const drugNameStr = String(analysis.drugName || '').toLowerCase();
+            const riskLevelStr = String(analysis.riskLevel || '').toLowerCase();
+            const isInvalidTarget = (analysis.drugName === null || !analysis.drugName || drugNameStr.includes("not a drug") || drugNameStr.includes("interface")) &&
+                (analysis.authenticityScore === null || analysis.authenticityScore < 10 || riskLevelStr.includes("unknown"));
+
+            if (isInvalidTarget) {
+                const reasoning = typeof analysis.riskLevel === 'string' ? analysis.riskLevel : "No valid medicinal specimen detected in frame.";
+                console.warn("Invalid forensic target detected:", reasoning);
+                throw new Error(`Forensic Halt: ${reasoning} Please scan physical drug packaging.`);
+            }
+
+            // 2. Score Normalization
+            if (typeof analysis.authenticityScore === 'string') {
+                const parsed = parseFloat(analysis.authenticityScore.replace(/[^0-9.]/g, ''));
+                analysis.authenticityScore = isNaN(parsed) ? 50 : parsed;
+            } else if (analysis.authenticityScore === null || typeof analysis.authenticityScore === 'undefined') {
+                analysis.authenticityScore = 0;
+            }
+
+            // 3. Risk Level Normalization
+            if (typeof analysis.riskLevel === 'string') {
+                analysis.riskLevel = analysis.riskLevel.toLowerCase().trim();
+                if (analysis.riskLevel.includes("safe")) analysis.riskLevel = "safe";
+                else if (analysis.riskLevel.includes("suspicious")) analysis.riskLevel = "suspicious";
+                else if (analysis.riskLevel.includes("counterfeit")) analysis.riskLevel = "counterfeit";
+
+                if (!["safe", "suspicious", "counterfeit"].includes(analysis.riskLevel)) {
+                    analysis.riskLevel = analysis.authenticityScore >= 85 ? "safe" : (analysis.authenticityScore < 60 ? "counterfeit" : "suspicious");
+                }
+            } else {
+                analysis.riskLevel = "suspicious";
+            }
+
+            // 4. Critical Field Integrity
+            if (!analysis.drugName) analysis.drugName = "Unknown Specimen";
+            if (!Array.isArray(analysis.findings)) analysis.findings = [String(analysis.findings || "Analyzing image patterns...")];
+            if (!Array.isArray(analysis.thoughtProcess)) analysis.thoughtProcess = [String(analysis.thoughtProcess || "Initiating forensic audit...")];
+
+            if (!analysis.packageFingerprint) {
+                analysis.packageFingerprint = `${analysis.drugName}-${analysis.nafdacNumber || 'X'}-${Date.now()}`;
             }
 
             // Validate NAFDAC number format if present
             if (analysis.nafdacNumber &&
                 analysis.nafdacNumber !== 'NOT_FOUND' &&
                 analysis.nafdacNumber !== 'NOT_APPLICABLE') {
-                // New format: NAF-2023-12345
                 const newFormat = /^NAF-\d{4}-\d{5}$/;
-                // Old format: B4-6269, A1-1234, C7-12345
                 const oldFormat = /^[A-Z]{1,2}\d{0,2}-\d{4,5}$/;
 
                 if (!newFormat.test(analysis.nafdacNumber) && !oldFormat.test(analysis.nafdacNumber)) {
                     console.warn(`Invalid NAFDAC format detected: ${analysis.nafdacNumber}`);
-                    analysis.findings.unshift(
-                        `⚠️ NAFDAC number format unclear: "${analysis.nafdacNumber}" - please verify manually`
-                    );
-                } else {
-                    const formatType = newFormat.test(analysis.nafdacNumber) ? 'new (NAF-YYYY-NNNNN)' : 'old (pre-2019)';
-                    console.log(`✓ Valid NAFDAC number (${formatType}): ${analysis.nafdacNumber}`);
+                    analysis.findings.unshift(`⚠️ NAFDAC format unclear: "${analysis.nafdacNumber}"`);
                 }
             }
 
+            // Final schema enforcement
             const validated = ForensicAnalysisSchema.parse(analysis);
 
             const duration = Date.now() - startTime;
             console.log(`Forensic scan completed in ${duration}ms`);
-
 
             return validated;
         } catch (error) {

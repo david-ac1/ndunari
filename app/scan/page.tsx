@@ -17,7 +17,7 @@ import { sentinelAgentService } from "@/lib/gemini/sentinel-agent.service";
 import { ThinkingPanel } from "@/app/components/ThinkingPanel";
 import ForensicEvidenceOverlay from "./components/ForensicEvidenceOverlay";
 
-type ScanState = "mode_select" | "idle" | "multi_angle" | "review" | "scanning" | "analyzing" | "analyzing_upload" | "complete" | "error";
+type ScanState = "mode_select" | "idle" | "multi_angle" | "review" | "scanning" | "analyzing" | "analyzing_upload" | "upload_pending" | "complete" | "error";
 
 interface ScanResult {
     forensic: {
@@ -80,8 +80,9 @@ export default function ScanPage() {
 
     // Live Guidance Loop (Action Era)
     useEffect(() => {
-        // Only run guidance if the camera is active and we're not currently uploading/analyzing a static file
-        const isCameraActive = scanState === 'idle' || scanState === 'scanning' || scanState === 'mode_select';
+        // Only run guidance if the camera is explicitly in IDLE mode
+        // This prevents interference during mode selection, scanning, and upload analysis
+        const isCameraActive = scanState === 'idle';
 
         if (isCameraActive) {
             const addThought = (text: string, level: 'forensic' | 'sentinel' | 'system' = 'system') => {
@@ -134,7 +135,9 @@ export default function ScanPage() {
             setMultiAngleSession(createScanSession(mode));
             setScanState('multi_angle');
         } else {
-            setScanState('idle');
+            // "Quick Upload" - Transition to upload-first UI
+            setScanState('upload_pending');
+            setThoughts(prev => [...prev, { id: Date.now().toString(), text: "Ready for National Ledger upload. Please select a high-contrast forensic specimen.", level: 'system', timestamp: new Date() }]);
         }
     }, []);
 
@@ -339,7 +342,7 @@ export default function ScanPage() {
     return (
         <div className="relative min-h-screen w-full bg-background-dark overflow-hidden flex flex-col">
             {/* Camera Viewport or Document Placeholder */}
-            {scanState !== 'analyzing_upload' ? (
+            {scanState !== 'analyzing_upload' && scanState !== 'upload_pending' ? (
                 <div className="absolute inset-0 z-0 transition-opacity duration-700">
                     <Webcam
                         ref={webcamRef}
@@ -366,13 +369,22 @@ export default function ScanPage() {
                             className="w-32 h-44 border-2 border-primary/30 rounded-lg bg-white/5 backdrop-blur-3xl flex items-center justify-center relative overflow-hidden"
                         >
                             <div className="text-6xl opacity-40">📄</div>
-                            <motion.div
-                                animate={{ top: ["0%", "100%", "0%"] }}
-                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                                className="absolute left-0 right-0 h-1 bg-primary/60 shadow-[0_0_15px_rgba(56,189,248,0.8)]"
-                            />
+                            {scanState === 'analyzing_upload' && (
+                                <motion.div
+                                    animate={{ top: ["0%", "100%", "0%"] }}
+                                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                    className="absolute left-0 right-0 h-1 bg-primary/60 shadow-[0_0_15px_rgba(56,189,248,0.8)]"
+                                />
+                            )}
+                            {scanState === 'upload_pending' && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-primary/10 animate-pulse">
+                                    <span className="text-3xl">+</span>
+                                </div>
+                            )}
                         </motion.div>
-                        <p className="text-primary/60 font-mono text-[10px] uppercase tracking-[0.4em] animate-pulse">Scanning Image Buffer...</p>
+                        <p className="text-primary/60 font-mono text-[10px] uppercase tracking-[0.4em] animate-pulse">
+                            {scanState === 'analyzing_upload' ? 'Scanning Image Buffer...' : 'Awaiting Forensic Document...'}
+                        </p>
                     </div>
                 </div>
             )}
@@ -430,13 +442,15 @@ export default function ScanPage() {
 
                         <div className="absolute inset-0 flex items-center justify-center">
                             {scanState === 'idle' && <span className="text-white/20 text-xs font-bold uppercase tracking-widest animate-pulse">Align Package</span>}
-                            {scanState === 'analyzing_upload' && (
+                            {(scanState === 'analyzing_upload' || scanState === 'upload_pending') && (
                                 <div className="text-center space-y-4">
-                                    <div className="text-5xl animate-bounce">📄</div>
-                                    <p className="text-xs font-black text-primary uppercase tracking-[0.2em]">Analyzing Document...</p>
+                                    <div className="text-5xl animate-bounce">{scanState === 'analyzing_upload' ? '📄' : '📤'}</div>
+                                    <p className="text-xs font-black text-primary uppercase tracking-[0.2em]">
+                                        {scanState === 'analyzing_upload' ? 'Analyzing Document...' : 'Upload Specimen'}
+                                    </p>
                                 </div>
                             )}
-                            {isGuiding && scanState !== 'analyzing_upload' && <div className="text-5xl animate-bounce">🧠</div>}
+                            {isGuiding && scanState !== 'analyzing_upload' && scanState !== 'upload_pending' && <div className="text-5xl animate-bounce">🧠</div>}
                         </div>
                     </div>
                 </div>
@@ -451,11 +465,13 @@ export default function ScanPage() {
                     </button>
 
                     <button
-                        onClick={scanState === 'idle' ? captureImage : resetScan}
+                        onClick={scanState === 'idle' ? captureImage : (scanState === 'upload_pending' ? () => fileInputRef.current?.click() : resetScan)}
                         disabled={isThinking}
-                        className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center bg-primary shadow-[0_0_20px_rgba(56,189,248,0.4)] disabled:opacity-50 transition-all hover:scale-105"
+                        className={`w-20 h-20 rounded-full border-4 border-white flex items-center justify-center bg-primary shadow-[0_0_20px_rgba(56,189,248,0.4)] disabled:opacity-50 transition-all hover:scale-105 ${scanState === 'upload_pending' ? 'bg-watch-orange' : ''}`}
                     >
-                        <span className="text-white text-3xl">{scanState === 'complete' ? '↻' : '📷'}</span>
+                        <span className="text-white text-3xl">
+                            {scanState === 'complete' ? '↻' : (scanState === 'upload_pending' ? '📤' : '📷')}
+                        </span>
                     </button>
 
                     <button onClick={() => fileInputRef.current?.click()} className="w-12 h-12 rounded-full glass-panel flex items-center justify-center group relative" title="Upload Document">
@@ -471,107 +487,113 @@ export default function ScanPage() {
             </footer>
 
             {/* Results Overlay */}
-            {scanState === 'complete' && result && (
-                <div className="absolute inset-0 z-50 bg-black/90 p-6 overflow-y-auto flex items-center justify-center">
-                    <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-2xl space-y-6">
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <h2 className="text-2xl font-black text-forest-green dark:text-white uppercase tracking-tight">Analysis Report</h2>
-                                <p className="text-sm font-bold text-primary">{result.forensic.drugName}</p>
-                            </div>
-                            <button onClick={resetScan} className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center font-bold">✕</button>
-                        </div>
-
-                        <div className={`p-6 rounded-2xl border-b-8 ${result.forensic.riskLevel === 'safe' ? 'bg-access-green/10 border-access-green' :
-                            result.forensic.riskLevel === 'suspicious' ? 'bg-watch-orange/10 border-watch-orange' :
-                                'bg-reserve-red/10 border-reserve-red'
-                            }`}>
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-xs font-bold uppercase opacity-60">Authenticity Score</span>
-                                <span className="text-2xl font-black">{result.forensic.authenticityScore}%</span>
-                            </div>
-                            <p className="text-lg font-black uppercase tracking-tighter">
-                                {result.forensic.riskLevel === 'safe' ? 'Verified Authentic' :
-                                    result.forensic.riskLevel === 'suspicious' ? 'Verification Required' : 'Counterfeit Suspected'}
-                            </p>
-                        </div>
-
-                        <div className="space-y-2">
-                            <h3 className="text-xs font-bold uppercase text-white/40 tracking-widest">Findings</h3>
-                            <ul className="space-y-2">
-                                {result.forensic.findings.slice(0, 4).map((f, i) => (
-                                    <li key={i} className="flex gap-2 text-sm items-start">
-                                        <span className="text-primary mt-1">•</span>
-                                        <span className="font-medium text-gray-700 dark:text-gray-300">{f}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-
-                        {/* Forensic Evidence Visualizer (Wow Factor) */}
-                        {lastScanPreview && result.forensic.evidenceBoxes && result.forensic.evidenceBoxes.length > 0 && (
-                            <div className="space-y-3">
-                                <h3 className="text-xs font-bold uppercase text-white/40 tracking-widest">Forensic Evidence</h3>
-                                <div className="relative aspect-video rounded-2xl overflow-hidden border-2 border-primary/30 group">
-                                    <img src={lastScanPreview} className="w-full h-full object-cover" alt="Evidence" />
-                                    <ForensicEvidenceOverlay boxes={result.forensic.evidenceBoxes} />
-                                    <div className="absolute top-2 right-2 bg-primary/20 backdrop-blur-md px-2 py-1 rounded-lg border border-primary/30">
-                                        <p className="text-[8px] text-primary font-black uppercase tracking-tighter">AI Annotated</p>
-                                    </div>
+            {
+                scanState === 'complete' && result && (
+                    <div className="absolute inset-0 z-50 bg-black/90 p-6 overflow-y-auto flex items-center justify-center">
+                        <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-2xl space-y-6">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <h2 className="text-2xl font-black text-forest-green dark:text-white uppercase tracking-tight">Analysis Report</h2>
+                                    <p className="text-sm font-bold text-primary">{result.forensic.drugName}</p>
                                 </div>
-                                <p className="text-[10px] text-white/40 font-medium italic text-center">
-                                    * Gemini 3 has pinpointed security feature anomalies above
+                                <button onClick={resetScan} className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center font-bold">✕</button>
+                            </div>
+
+                            <div className={`p-6 rounded-2xl border-b-8 ${result.forensic.riskLevel === 'safe' ? 'bg-access-green/10 border-access-green' :
+                                result.forensic.riskLevel === 'suspicious' ? 'bg-watch-orange/10 border-watch-orange' :
+                                    'bg-reserve-red/10 border-reserve-red'
+                                }`}>
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-xs font-bold uppercase opacity-60">Authenticity Score</span>
+                                    <span className="text-2xl font-black">{result.forensic.authenticityScore}%</span>
+                                </div>
+                                <p className="text-lg font-black uppercase tracking-tighter">
+                                    {result.forensic.riskLevel === 'safe' ? 'Verified Authentic' :
+                                        result.forensic.riskLevel === 'suspicious' ? 'Verification Required' : 'Counterfeit Suspected'}
                                 </p>
                             </div>
-                        )}
 
-                        <div className="flex gap-4">
-                            <button onClick={() => speaking ? stop() : handleReadScanResults()} className="flex-1 py-4 bg-primary/10 text-primary font-black rounded-2xl border-2 border-primary/20">
-                                {speaking ? 'Stop Narị' : 'Narị Audio'}
-                            </button>
-                            <button onClick={resetScan} className="flex-[2] py-4 bg-primary text-white font-black rounded-2xl shadow-lg">New Scan</button>
+                            <div className="space-y-2">
+                                <h3 className="text-xs font-bold uppercase text-white/40 tracking-widest">Findings</h3>
+                                <ul className="space-y-2">
+                                    {result.forensic.findings.slice(0, 4).map((f, i) => (
+                                        <li key={i} className="flex gap-2 text-sm items-start">
+                                            <span className="text-primary mt-1">•</span>
+                                            <span className="font-medium text-gray-700 dark:text-gray-300">{f}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            {/* Forensic Evidence Visualizer (Wow Factor) */}
+                            {lastScanPreview && result.forensic.evidenceBoxes && result.forensic.evidenceBoxes.length > 0 && (
+                                <div className="space-y-3">
+                                    <h3 className="text-xs font-bold uppercase text-white/40 tracking-widest">Forensic Evidence</h3>
+                                    <div className="relative aspect-video rounded-2xl overflow-hidden border-2 border-primary/30 group">
+                                        <img src={lastScanPreview} className="w-full h-full object-cover" alt="Evidence" />
+                                        <ForensicEvidenceOverlay boxes={result.forensic.evidenceBoxes} />
+                                        <div className="absolute top-2 right-2 bg-primary/20 backdrop-blur-md px-2 py-1 rounded-lg border border-primary/30">
+                                            <p className="text-[8px] text-primary font-black uppercase tracking-tighter">AI Annotated</p>
+                                        </div>
+                                    </div>
+                                    <p className="text-[10px] text-white/40 font-medium italic text-center">
+                                        * Gemini 3 has pinpointed security feature anomalies above
+                                    </p>
+                                </div>
+                            )}
+
+                            <div className="flex gap-4">
+                                <button onClick={() => speaking ? stop() : handleReadScanResults()} className="flex-1 py-4 bg-primary/10 text-primary font-black rounded-2xl border-2 border-primary/20">
+                                    {speaking ? 'Stop Narị' : 'Narị Audio'}
+                                </button>
+                                <button onClick={resetScan} className="flex-[2] py-4 bg-primary text-white font-black rounded-2xl shadow-lg">New Scan</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Error Overlay */}
-            {scanState === 'error' && (
-                <div className="absolute inset-0 z-50 bg-black/90 p-6 flex items-center justify-center">
-                    <div className="w-full max-w-xs bg-white dark:bg-gray-800 rounded-3xl p-8 text-center space-y-6">
-                        <div className="text-6xl">⚠️</div>
-                        <h2 className="text-xl font-black uppercase">Forensic Halt</h2>
-                        <p className="text-sm text-gray-500">{error || 'Unknown analysis exception'}</p>
-                        <button onClick={resetScan} className="w-full py-4 bg-reserve-red text-white font-black rounded-2xl">Retry Scan</button>
+            {
+                scanState === 'error' && (
+                    <div className="absolute inset-0 z-50 bg-black/90 p-6 flex items-center justify-center">
+                        <div className="w-full max-w-xs bg-white dark:bg-gray-800 rounded-3xl p-8 text-center space-y-6">
+                            <div className="text-6xl">⚠️</div>
+                            <h2 className="text-xl font-black uppercase">Forensic Halt</h2>
+                            <p className="text-sm text-gray-500">{error || 'Unknown analysis exception'}</p>
+                            <button onClick={resetScan} className="w-full py-4 bg-reserve-red text-white font-black rounded-2xl">Retry Scan</button>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* History Overlay (Simplified for MVP) */}
-            {showHistory && (
-                <div className="absolute inset-0 z-50 bg-black/90 p-6 overflow-y-auto">
-                    <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-3xl p-6 mx-auto">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl font-black uppercase">Sentinel Logs</h2>
-                            <button onClick={() => setShowHistory(false)} className="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-xl text-xs font-bold">Close</button>
-                        </div>
-                        <div className="space-y-4">
-                            {scanHistory.map(scan => (
-                                <div key={scan.id} className="p-4 rounded-2xl border-2 bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
-                                    <div>
-                                        <p className="font-black text-sm">{scan.drugName}</p>
-                                        <p className="text-[10px] uppercase font-bold opacity-50">{new Date(scan.timestamp).toLocaleDateString()}</p>
+            {
+                showHistory && (
+                    <div className="absolute inset-0 z-50 bg-black/90 p-6 overflow-y-auto">
+                        <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-3xl p-6 mx-auto">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-xl font-black uppercase">Sentinel Logs</h2>
+                                <button onClick={() => setShowHistory(false)} className="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-xl text-xs font-bold">Close</button>
+                            </div>
+                            <div className="space-y-4">
+                                {scanHistory.map(scan => (
+                                    <div key={scan.id} className="p-4 rounded-2xl border-2 bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
+                                        <div>
+                                            <p className="font-black text-sm">{scan.drugName}</p>
+                                            <p className="text-[10px] uppercase font-bold opacity-50">{new Date(scan.timestamp).toLocaleDateString()}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="font-black text-primary">{scan.authenticityScore}%</p>
+                                            <button onClick={() => handleDeleteScan(scan.id)} className="text-[10px] font-bold text-reserve-red uppercase">Delete</button>
+                                        </div>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="font-black text-primary">{scan.authenticityScore}%</p>
-                                        <button onClick={() => handleDeleteScan(scan.id)} className="text-[10px] font-bold text-reserve-red uppercase">Delete</button>
-                                    </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }

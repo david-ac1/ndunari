@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { tieredRoutingService } from "@/lib/gemini/tiered-routing.service";
+import { FORENSIC_EYE_CONFIG, STEWARDSHIP_BRAIN_CONFIG } from "@/lib/gemini/config";
 
 /**
  * POST /api/scan
@@ -36,8 +37,11 @@ export async function POST(request: NextRequest) {
             }
 
             // For now, analyze the front image (TODO: implement multi-image analysis)
+            const primaryFile = formData.get('front') as File || Object.values(images)[0];
             const primaryImage = images.front || Object.values(images)[0];
-            const result = await tieredRoutingService.analyzeDrugPackage(primaryImage);
+            const mimeType = (primaryFile as any).type || "image/jpeg";
+
+            const result = await tieredRoutingService.analyzeDrugPackage(primaryImage, mimeType);
 
             // Calculate confidence multiplier based on angle count
             const confidenceMultiplier = imageCount >= 3 ? 1.0 : imageCount === 2 ? 0.85 : 0.7;
@@ -82,8 +86,11 @@ export async function POST(request: NextRequest) {
 
         const bytes = await file.arrayBuffer();
         const imageData = Buffer.from(bytes);
+        const mimeType = file.type || "image/jpeg";
 
-        const result = await tieredRoutingService.analyzeDrugPackage(imageData);
+        console.log(`Processing single scan: ${file.name} (${file.size} bytes, ${mimeType})`);
+
+        const result = await tieredRoutingService.analyzeDrugPackage(imageData, mimeType);
 
         // Apply 70% confidence cap for single image
         const originalScore = result.forensic.authenticityScore;
@@ -136,8 +143,8 @@ export async function GET() {
         status: "operational",
         service: "Ndunari Drug Scanner",
         models: {
-            forensicEye: "gemini-2.0-flash-exp",
-            stewardshipBrain: "gemini-2.0-flash-thinking-exp-1219",
+            forensicEye: FORENSIC_EYE_CONFIG.model,
+            stewardshipBrain: STEWARDSHIP_BRAIN_CONFIG.model,
         },
         features: {
             tieredRouting: true,

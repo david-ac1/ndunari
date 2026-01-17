@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 
 // Get API key (will be validated at runtime when actually used)
 // Support both client-side and server-side environment variables
@@ -12,17 +12,20 @@ export const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === "true";
 
 /**
  * Forensic Eye Model Configuration
- * Using Gemini 3 Pro Preview - high-performance analytical engine
- * Temperature 1.0: The sweet spot for nuanced counterfeit detection
+ * PRIMARY: gemini-3-flash-preview - User-specified Gemini 3 model
+ * FALLBACK: gemini-2.0-flash-exp - Stable Gemini 2.0 fallback
+ * 
+ * Temperature 0.15: Balanced stability for complex multimodal reasoning
  * 
  * FREE TIER LIMITS:
- * - 60 requests/minute
- * - Widely available model
+ * - 15 RPM for Gemini 3
+ * - 15 RPM for Gemini 2.0 fallback
  */
 export const FORENSIC_EYE_CONFIG = {
-    model: "gemini-3-pro-preview", // User-specified bleeding edge model
+    model: "gemini-3-flash-preview", // User-specified Gemini 3 model
+    fallbackModel: "gemini-2.0-flash-exp", // Stable fallback
     generationConfig: {
-        temperature: 1.0, // Balanced reasoning
+        temperature: 0.15, // Balanced stability for complex multimodal reasoning
         maxOutputTokens: 2048,
         topP: 0.95,
         topK: 40,
@@ -31,34 +34,45 @@ export const FORENSIC_EYE_CONFIG = {
 
 /**
  * Stewardship Brain Model Configuration
- * Using Gemini 3 Pro Preview for deep clinical reasoning
- * Temperature 1.0: Contextually appropriate for medical decisions
+ * Using Gemini 3 for deep clinical reasoning with Gemini 2.0 fallback
+ * Temperature 0.1: Precise clinical reasoning
  * 
  * FREE TIER LIMITS:
- * - 60 requests/minute
+ * - 15 RPM for Gemini 3
  * - Only used for text-based prescription analysis
  */
 export const STEWARDSHIP_BRAIN_CONFIG = {
-    model: "gemini-3-pro-preview", // Standardized to user requirement
+    model: "gemini-3-flash-preview", // User-specified Gemini 3 model
+    fallbackModel: "gemini-2.0-flash-exp",
     generationConfig: {
-        temperature: 1.0, // Precise medical reasoning
+        temperature: 0.1, // Precise clinical reasoning
         maxOutputTokens: 4096, // For 5 languages + recommendations
         topP: 0.95,
         topK: 40,
     },
 } as const;
 
+export const SENTINEL_SAFETY_SETTINGS = [
+    { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+    { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+    { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+    { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+];
 
-export function getForensicEyeModel(useJsonMode = false) {
+
+export function getForensicEyeModel(useJsonMode = false, useFallback = false) {
     if (!API_KEY && !MOCK_MODE) {
         throw new Error("GEMINI_API_KEY environment variable is required");
     }
+    const modelId = useFallback ? FORENSIC_EYE_CONFIG.fallbackModel : FORENSIC_EYE_CONFIG.model;
+    console.log(`🔬 Initializing Forensic Eye with model: ${modelId}`);
     return genAI.getGenerativeModel({
-        model: FORENSIC_EYE_CONFIG.model,
+        model: modelId,
         generationConfig: {
             ...FORENSIC_EYE_CONFIG.generationConfig,
             responseMimeType: useJsonMode ? "application/json" : "text/plain",
         },
+        safetySettings: SENTINEL_SAFETY_SETTINGS,
     });
 }
 
@@ -67,16 +81,19 @@ export function getForensicEyeModel(useJsonMode = false) {
  * Used for 1% of scans (<$0.015/assessment, 4-6 seconds)
  * Escalated only for: Reserve drugs, suspicious packages, NAFDAC failures
  */
-export function getStewardshipBrainModel(useJsonMode = false) {
+export function getStewardshipBrainModel(useJsonMode = false, useFallback = false) {
     if (!API_KEY && !MOCK_MODE) {
         throw new Error("GEMINI_API_KEY environment variable is required");
     }
+    const modelId = useFallback ? STEWARDSHIP_BRAIN_CONFIG.fallbackModel : STEWARDSHIP_BRAIN_CONFIG.model;
+    console.log(`🧠 Initializing Stewardship Brain with model: ${modelId}`);
     return genAI.getGenerativeModel({
-        model: STEWARDSHIP_BRAIN_CONFIG.model,
+        model: modelId,
         generationConfig: {
             ...STEWARDSHIP_BRAIN_CONFIG.generationConfig,
             responseMimeType: useJsonMode ? "application/json" : "text/plain",
         },
+        safetySettings: SENTINEL_SAFETY_SETTINGS,
     });
 }
 

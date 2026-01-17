@@ -36,14 +36,15 @@ export class TieredRoutingService {
      * @returns Complete analysis with cost and timing metrics
      */
     async analyzeDrugPackage(
-        imageData: string | Buffer
+        imageData: string | Buffer,
+        mimeType: string = "image/jpeg"
     ): Promise<TieredAnalysisResult> {
         const startTime = Date.now();
 
         // STEP 1: Always start with Forensic Eye (Flash model)
         // Fast, cheap, handles 99% of cases
-        console.log("Starting Forensic Eye scan (Flash)...");
-        const forensic = await forensicEyeService.scanPackage(imageData);
+        console.log(`Starting Forensic Eye scan (Flash) for ${mimeType}...`);
+        const forensic = await forensicEyeService.scanPackage(imageData, mimeType);
 
         // STEP 2: Determine if escalation to Stewardship Brain is needed
         const shouldEscalate = this.shouldEscalateToThinking(forensic);
