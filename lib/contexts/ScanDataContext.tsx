@@ -117,8 +117,8 @@ export function ScanDataProvider({ children }: { children: React.ReactNode }) {
                 drugName: data.drug_name,
                 authenticityScore: data.authenticity_score,
                 riskLevel: data.risk_level,
-                nafdacNumber: data.nafdac_number,
-                imagePreview: data.image_preview
+                nafdacNumber: data.nafdac_number ?? undefined,
+                imagePreview: data.image_preview ?? undefined
             });
 
             // Broadcast update event for cross-tab synchronization
