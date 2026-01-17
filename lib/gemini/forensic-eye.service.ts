@@ -180,7 +180,10 @@ ANALYSIS GUIDELINES:
   Example: "PANADOL500-NAF123456-LOT789-122025"
   If a field is missing, use "X". This is critical for deduplication.
 
-RESPOND WITH ONLY THE JSON OBJECT. NO OTHER TEXT.`;
+RESPOND WITH ONLY THE JSON OBJECT. 
+DO NOT INCLUDE ANY CONVERSATIONAL TEXT, EXPLANATIONS, OR MARKDOWN BACKTICKS UNLESS ABSOLUTELY NECESSARY.
+THE RESPONSE MUST BE A SINGLE VALID JSON OBJECT.
+ZERO FILLER. ZERO INTRO. ZERO OUTRO.`;
 
             const imagePart = {
                 inlineData: {
@@ -200,10 +203,21 @@ RESPOND WITH ONLY THE JSON OBJECT. NO OTHER TEXT.`;
             console.log("Gemini response received:", text.substring(0, 500)); // Log first 500 chars
 
             // extraction
+            if (!text || text.trim().length < 10) {
+                console.error("Empty or extremely short response from Gemini:", text);
+                throw new Error("Unable to analyze image. Gemini returned an empty response. Please try with a clearer photo.");
+            }
+
+            // Check for common error strings that aren't JSON
+            if (text.includes("safety filters") || text.includes("blocked") || text.includes("cannot fulfill")) {
+                console.error("Gemini response blocked by safety filters:", text);
+                throw new Error("National Security Protocol: Forensic analysis interrupted due to image content safety triggers.");
+            }
+
             const analysis = this.safeParseJson(text);
-            if (!analysis) {
-                console.error("Failed to extract JSON from response:", text);
-                throw new Error("Unable to analyze image. Gemini did not return valid JSON. Please try again.");
+            if (!analysis || typeof analysis !== 'object') {
+                console.error("Failed to extract valid JSON object from response:", text);
+                throw new Error("Unable to analyze image. DNA report data was malformed. Please try again with better lighting.");
             }
 
             // Validate NAFDAC number format if present

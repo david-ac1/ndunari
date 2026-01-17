@@ -338,17 +338,44 @@ export default function ScanPage() {
 
     return (
         <div className="relative min-h-screen w-full bg-background-dark overflow-hidden flex flex-col">
-            {/* Camera Viewport (Background) */}
-            <div className={`absolute inset-0 z-0 transition-all duration-1000 ${scanState === 'analyzing_upload' ? 'scale-110 blur-xl opacity-40' : ''}`}>
-                <Webcam
-                    ref={webcamRef}
-                    audio={false}
-                    screenshotFormat="image/jpeg"
-                    videoConstraints={videoConstraints}
-                    className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/90 pointer-events-none" />
-            </div>
+            {/* Camera Viewport or Document Placeholder */}
+            {scanState !== 'analyzing_upload' ? (
+                <div className="absolute inset-0 z-0 transition-opacity duration-700">
+                    <Webcam
+                        ref={webcamRef}
+                        audio={false}
+                        screenshotFormat="image/jpeg"
+                        videoConstraints={videoConstraints}
+                        className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/90 pointer-events-none" />
+                </div>
+            ) : (
+                <div className="absolute inset-0 z-0 bg-[#0a0a0a] flex items-center justify-center overflow-hidden">
+                    {/* Animated background for document processing */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: [0.1, 0.2, 0.1] }}
+                        transition={{ duration: 4, repeat: Infinity }}
+                        className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/20 via-transparent to-transparent"
+                    />
+                    <div className="relative z-10 flex flex-col items-center gap-6">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="w-32 h-44 border-2 border-primary/30 rounded-lg bg-white/5 backdrop-blur-3xl flex items-center justify-center relative overflow-hidden"
+                        >
+                            <div className="text-6xl opacity-40">📄</div>
+                            <motion.div
+                                animate={{ top: ["0%", "100%", "0%"] }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                className="absolute left-0 right-0 h-1 bg-primary/60 shadow-[0_0_15px_rgba(56,189,248,0.8)]"
+                            />
+                        </motion.div>
+                        <p className="text-primary/60 font-mono text-[10px] uppercase tracking-[0.4em] animate-pulse">Scanning Image Buffer...</p>
+                    </div>
+                </div>
+            )}
 
             {/* Header */}
             <header className="relative z-30 pt-6 px-4">
@@ -358,7 +385,9 @@ export default function ScanPage() {
                     </Link>
                     <div className="text-center">
                         <h1 className="text-sm font-black tracking-[0.2em] text-white uppercase italic">Ndunari Sentinel</h1>
-                        <p className="text-[10px] text-primary font-bold uppercase tracking-widest">Guardian Live Enabled</p>
+                        <p className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${scanState === 'analyzing_upload' ? 'text-primary' : 'text-emerald-500'}`}>
+                            {scanState === 'analyzing_upload' ? 'National Ledger Integrated' : 'Guardian Live Enabled'}
+                        </p>
                     </div>
                     <button className="w-10 h-10 rounded-full hover:bg-white/10 text-white flex items-center justify-center">
                         <span className="text-xl">💡</span>
@@ -370,17 +399,25 @@ export default function ScanPage() {
             <main className="flex-1 relative z-10 flex flex-col items-center justify-center p-6 pb-32">
                 <div className="w-full max-w-lg space-y-6">
                     {/* Thinking Monologue (Action Era Feature) */}
-                    <ThinkingPanel thoughts={thoughts} isAnalyzing={isThinking || isGuiding} mode={scanState === 'analyzing_upload' ? 'document' : 'live'} />
+                    <ThinkingPanel
+                        thoughts={thoughts}
+                        isAnalyzing={isThinking || isGuiding || scanState === 'analyzing_upload'}
+                        mode={scanState === 'analyzing_upload' ? 'document' : 'live'}
+                    />
 
                     {/* Central Reticle */}
                     <div className="relative aspect-square w-full max-w-sm mx-auto group">
                         <div className="absolute inset-0 border border-white/10 rounded-3xl bg-white/5 backdrop-blur-[2px]" />
 
-                        {/* Braces */}
-                        <div className="absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 border-primary rounded-tl-2xl -m-1" />
-                        <div className="absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 border-primary rounded-tr-2xl -m-1" />
-                        <div className="absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 border-primary rounded-bl-2xl -m-1" />
-                        <div className="absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 border-primary rounded-br-2xl -m-1" />
+                        {/* Braces - Only show for live scan */}
+                        {scanState !== 'analyzing_upload' && (
+                            <>
+                                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-2xl" />
+                                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-2xl" />
+                                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-2xl" />
+                                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-2xl" />
+                            </>
+                        )}
 
                         {/* Scan Line */}
                         {(scanState === 'scanning' || scanState === 'analyzing') && (
