@@ -3,6 +3,9 @@ import { stewardshipBrainService } from "./stewardship-brain.service";
 import { ESCALATION_THRESHOLD, RESERVE_DRUGS } from "./config";
 import type { ForensicAnalysis } from "./forensic-eye.service";
 import type { StewardshipAssessment } from "./stewardship-brain.service";
+import { geminiReconstructionService } from "../3d/gemini-reconstruction.service";
+import { modelStorageService } from "../3d/model-storage.service";
+import type { AngleImage, ReconstructionResult } from "../3d/types";
 
 /**
  * Tiered Routing Result
@@ -13,6 +16,7 @@ export interface TieredAnalysisResult {
     escalated: boolean;
     costEstimate: number;
     processingTime: number;
+    model3D?: ReconstructionResult; // Optional 3D model data
 }
 
 /**
@@ -37,7 +41,9 @@ export class TieredRoutingService {
      */
     async analyzeDrugPackage(
         imageData: string | Buffer,
-        mimeType: string = "image/jpeg"
+        mimeType: string = "image/jpeg",
+        multiAngleImages?: AngleImage[], // Optional multi-angle data for 3D
+        scanId?: string // Optional scan ID for model storage
     ): Promise<TieredAnalysisResult> {
         const startTime = Date.now();
 
@@ -63,6 +69,24 @@ export class TieredRoutingService {
             costEstimate = 0.016; // Flash + Thinking cost
         }
 
+        // STEP 3: Generate 3D model if multi-angle images provided
+        let model3D: ReconstructionResult | undefined;
+        if (multiAngleImages && multiAngleImages.length >= 2) {
+            console.log(`🧊 Generating 3D model from ${multiAngleImages.length} angles...`);
+            try {
+                model3D = await geminiReconstructionService.reconstructPackage(multiAngleImages);
+
+                // Store model if scanId provided
+                if (scanId && model3D) {
+                    await modelStorageService.saveModel(scanId, model3D);
+                    console.log(`✓ 3D model stored for scan: ${scanId}`);
+                }
+            } catch (error) {
+                console.error("3D reconstruction failed:", error);
+                // Continue without 3D model - not a critical failure
+            }
+        }
+
         const processingTime = Date.now() - startTime;
 
         return {
@@ -71,6 +95,7 @@ export class TieredRoutingService {
             escalated: shouldEscalate,
             costEstimate,
             processingTime,
+            model3D,
         };
     }
 
