@@ -243,20 +243,26 @@ export class SentinelAgentService {
      * This uses multimodal vision to "see" the live frame
      */
     async generateLiveGuidance(base64Image: string): Promise<string> {
-        const prompt = `You are a Forensic Director guiding a field worker through a drug scan. 
-        Analyze the provided camera frame and provide ONE tactical, proactive instruction (max 12 words).
+        // Safeguard: Do not attempt vision analysis if no image is provided
+        if (!base64Image || base64Image.length < 100) {
+            console.log("Sentinel Agent: Null or invalid vision signal. Skipping guidance.");
+            return "Positioning package...";
+        }
+
+        const prompt = `You are a Senior Forensic Director at NAFDAC. 
+        Analyze this LIVE camera frame and provide ONE sharp, tactical, proactive instruction (strictly max 12 words).
         
-        Focus on these LIVE bottlenecks:
-        - Distance: Are they too far to see microscopic print? Tell them.
-        - Lighting: Is there glare on the NAFDAC hologram? Tell them to tilt.
-        - Stability: Is the frame blurry? Tell them to hold steady.
-        - Alignment: Is the drug name or batch code out of frame? Tell them to center it.
+        Focus on these CRITICAL bottlenecks:
+        - HOLOGRAM: If blurry or has glare, tell them to tilt for diffraction check.
+        - PRINT: If too far, tell them to move closer for microscopic kerning analysis.
+        - ALIGNMENT: If drug name or batch code is clipped, tell them to center vertically.
+        - STABILITY: If motion blur detected, tell them to hold for forensic lock.
         
-        TONE: Urgent but professional (Action Era).
+        TONE: Urgent, authoritative, technical (Action Era). No conversational filler.
         
-        Example: "Hold steady, scanning NAFDAC hologram now..."
-        Example: "Tilt slightly left to avoid glare on the expiry date."
-        Example: "Move 2cm closer to focus on the batch code."`;
+        Example: "Tilt 15 degrees left to capture NAFDAC hologram diffraction."
+        Example: "Move 3cm closer. Micro-print analysis requires higher resolution."
+        Example: "Center batch code vertically for forensic OCR validation."`;
 
         try {
             // Remove header if present

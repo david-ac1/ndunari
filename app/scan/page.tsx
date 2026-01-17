@@ -79,7 +79,10 @@ export default function ScanPage() {
 
     // Live Guidance Loop (Action Era)
     useEffect(() => {
-        if (scanState === 'mode_select' || scanState === 'scanning' || scanState === 'idle') {
+        // Only run guidance if the camera is active and we're not currently uploading/analyzing a static file
+        const isCameraActive = scanState === 'idle' || scanState === 'scanning' || scanState === 'mode_select';
+
+        if (isCameraActive) {
             const addThought = (text: string, level: 'forensic' | 'sentinel' | 'system' = 'system') => {
                 setThoughts(prev => [...prev, { id: Math.random().toString(), text, level, timestamp: new Date() }]);
             };
@@ -89,12 +92,11 @@ export default function ScanPage() {
                 const capturedCount = multiAngleSession?.capturedAngles?.size || 0;
 
                 // --- AR IMMERSION UPGRADE ---
-                // Pulse visual scanner reticle
-                setIsThinking(true);
-
                 // Capture current frame for real-time analysis
                 const screenshot = webcamRef.current?.getScreenshot();
+
                 if (screenshot) {
+                    setIsThinking(true);
                     const guidance = await sentinelAgentService.generateLiveGuidance(screenshot);
                     addThought(guidance, 'sentinel');
                     if (enabled) speak(guidance);
@@ -102,11 +104,9 @@ export default function ScanPage() {
                     // Small delay to show the 'Thinking' state visually
                     setTimeout(() => setIsThinking(false), 800);
                 } else {
-                    const context = `State: ${scanState}, Mode: ${scanMode || 'none'}, Captured: ${capturedCount}`;
-                    const guidance = await sentinelAgentService.generateLiveGuidance(context);
-                    addThought(guidance, 'sentinel');
-                    if (enabled) speak(guidance);
-                    setIsThinking(false);
+                    // If no screenshot, we don't send text-only context to the vision model anymore
+                    // This prevents the 'upload scan failure' conflict
+                    console.log("Sentinel: No camera frame available, skipping live guidance pulse.");
                 }
             }, 4000); // Pulse every 4s for high-immersion guidance
 
