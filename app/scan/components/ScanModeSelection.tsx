@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import { Camera, Scan3d, X } from 'lucide-react';
+import { Camera, Scan, X } from 'lucide-react';
 
 export interface ScanModeSelectionProps {
     onSelectMode: (mode: 'quick' | 'multi-angle') => void;
@@ -81,7 +81,7 @@ export default function ScanModeSelection({ onSelectMode, onCancel }: ScanModeSe
                         </div>
 
                         <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                            <Scan3d className="w-8 h-8 text-blue-400" />
+                            <Scan className="w-8 h-8 text-blue-400" />
                         </div>
                         <h3 className="text-xl font-bold mb-2 text-white">
                             3D Verification Scan
