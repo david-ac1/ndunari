@@ -10,6 +10,7 @@ import { type ScanHistoryItem } from '../utils/scan-history';
  * Save a scan to Supabase
  */
 export async function saveScan(scanData: {
+    id?: string; // NEW: Optional ID for tracking
     drugName: string;
     nafdacNumber?: string;
     batchNumber?: string;
@@ -17,12 +18,25 @@ export async function saveScan(scanData: {
     authenticityScore: number;
     riskLevel: 'safe' | 'suspicious' | 'counterfeit';
     findings?: any;
-    scanMode?: 'single' | 'multi';
+    scanMode?: 'single' | 'multi' | '3d-verification';
     anglesScanned?: number;
     imagePreview?: string;
     region?: string;
-    packageFingerprint?: string; // New: For deduplication
+    packageFingerprint?: string; // For deduplication
+    userId?: string; // NEW: Optional user ID for tracking
+    timestamp?: string; // NEW: Optional timestamp
+    forensicAnalysis?: any; // NEW: Full forensic data
+    stewardshipAssessment?: any; // NEW: Stewardship data
+    model3D?: any; // NEW: 3D model data
 }): Promise<{ data: Scan | null; error: any }> {
+    // === DIAGNOSTIC LOGGING ===
+    const callStack = new Error().stack?.split('\n').slice(2, 5).join('\n') || 'N/A';
+    console.log('[LEDGER] saveScan CALLED:', {
+        scanId: scanData.id || 'NEW',
+        drugName: scanData.drugName,
+        timestamp: new Date().toISOString(),
+        callStack
+    });
     // Get current user and privacy preference
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -87,7 +101,35 @@ export async function saveScan(scanData: {
         return { data: null, error };
     }
 
-    console.log("Supabase: Scan saved successfully with ID", data.id);
+
+    console.log("[LEDGER] Scan saved successfully:", {
+        scanId: data.id,
+        drugName: data.drug_name,
+        timestamp: data.created_at
+    });
+
+    // === POST-SAVE VERIFICATION ===
+    // Check if duplicate was created despite idempotency check
+    const { data: duplicateCheck } = await supabase
+        .from('scans')
+        .select('id, created_at')
+        .eq('user_id', user.id)
+        .eq('drug_name', scanData.drugName)
+        .eq('nafdac_number', scanData.nafdacNumber || null)
+        .order('created_at', { ascending: false })
+        .limit(2);
+
+    if (duplicateCheck && duplicateCheck.length > 1) {
+        const timeDiff = new Date(duplicateCheck[0].created_at).getTime() -
+            new Date(duplicateCheck[1].created_at).getTime();
+        if (timeDiff < 10000) { // Within 10 seconds
+            console.error('[LEDGER] ⚠️ DUPLICATE DETECTED AFTER SAVE!', {
+                scanIds: duplicateCheck.map(s => s.id),
+                timestamps: duplicateCheck.map(s => s.created_at),
+                timeDiffMs: timeDiff
+            });
+        }
+    }
 
     // Update user profile stats
     await updateUserStats(user.id, 'scan');

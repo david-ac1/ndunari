@@ -9,3 +9,14 @@
   "duration": 15106
 }
 ---
+{
+  "timestamp": "2026-01-17T15:22:30.514Z",
+  "imageSize": 221836,
+  "mimeType": "image/png",
+  "promptLength": 1445,
+  "responseTextLength": 1503,
+  "responseTextPreview": "{\n  \"authenticityScore\": 92,\n  \"drugName\": \"Lonart Forte Tablets (Artemether 40 mg + Lumefantrine 240 mg)\",\n  \"nafdacNumber\": \"NOT_FOUND\",\n  \"batchNumber\": \"NOT_FOUND\",\n  \"expiryDate\": \"NOT_FOUND\",\n  \"findings\": [\n    \"High-quality offset printing with clear registration of the 'Lonart Forte' brand name.\",\n    \"Presence of a security hologram/authentication sticker on the right side of the pack.\",\n    \"Correct manufacturer details for Bliss GVS Pharma Ltd. including Indian factory address.\",\n   ",
+  "finishReason": "STOP",
+  "duration": 17473
+}
+---

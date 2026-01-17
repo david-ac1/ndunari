@@ -1,6 +1,7 @@
 import { getForensicEyeModel, MOCK_MODE, retryWithBackoff } from "./config";
 import { z } from "zod";
 import { ForensicLogger } from "../utils/forensic-logger";
+import { rateLimitManager } from "@/lib/utils/rate-limit-manager";
 
 /**
  * Forensic Evidence Bounding Box
@@ -179,10 +180,14 @@ ANALYSIS GUIDELINES:
                 },
             };
 
-            const result = await retryWithBackoff(
-                () => this.model.generateContent([prompt, imagePart]),
-                3, // max retries
-                2000 // initial delay (2 seconds)
+            // === WRAP IN RATE LIMIT QUEUE ===
+            const result = await rateLimitManager.enqueue(
+                () => retryWithBackoff(
+                    () => this.model.generateContent([prompt, imagePart]),
+                    3,
+                    2000
+                ),
+                'high' // Forensic scans are high priority
             );
             const response = await result.response;
             const text = response.text() || "";
