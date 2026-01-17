@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { tieredRoutingService } from "@/lib/gemini/tiered-routing.service";
 import { FORENSIC_EYE_CONFIG, STEWARDSHIP_BRAIN_CONFIG } from "@/lib/gemini/config";
+import { saveScan, saveScanEvidence } from "@/lib/services/scan-storage.service";
+import type { AngleImage } from "@/lib/3d/gemini-reconstruction.service";
 
 /**
  * POST /api/scan
@@ -14,53 +16,96 @@ export async function POST(request: NextRequest) {
         const formData = await request.formData();
         const mode = formData.get('mode') as 'single' | 'multi' | null;
 
-        // Multi-angle scan
+        // Multi-angle 3D verification scan
         if (mode === 'multi') {
-            const angles = ['front', 'back', 'side1', 'side2', 'contents'];
-            const images: Record<string, Buffer> = {};
+            const angles = ['front', 'back', 'left', 'right', 'top', 'bottom'];
+            const images: Record<string, { buffer: Buffer; file: File }> = {};
 
             // Collect all uploaded angle images
             for (const angle of angles) {
                 const file = formData.get(angle) as File | null;
                 if (file) {
                     const bytes = await file.arrayBuffer();
-                    images[angle] = Buffer.from(bytes);
+                    images[angle] = {
+                        buffer: Buffer.from(bytes),
+                        file: file
+                    };
                 }
             }
 
             const imageCount = Object.keys(images).length;
-            if (imageCount === 0) {
+            if (imageCount < 2) {
                 return NextResponse.json(
-                    { error: 'No images provided for multi-angle scan' },
+                    { error: 'At least 2 angles required for 3D verification scan' },
                     { status: 400 }
                 );
             }
 
-            // For now, analyze the front image (TODO: implement multi-image analysis)
-            const primaryFile = formData.get('front') as File || Object.values(images)[0];
-            const primaryImage = images.front || Object.values(images)[0];
-            const mimeType = (primaryFile as any).type || "image/jpeg";
+            // Prepare multi-angle data for 3D reconstruction
+            const multiAngleImages: AngleImage[] = Object.entries(images).map(([angle, { buffer, file }]) => ({
+                angle: angle as any,
+                imageData: `data:${file.type};base64,${buffer.toString('base64')}`,
+                capturedAt: new Date().toISOString(),
+            }));
 
-            const result = await tieredRoutingService.analyzeDrugPackage(primaryImage, mimeType);
+            // Use primary (front) image for main analysis
+            const primaryImage = images.front?.buffer || Object.values(images)[0].buffer;
+            const primaryMimeType = images.front?.file.type || Object.values(images)[0].file.type;
+
+            // Generate unique scan ID for 3D model storage
+            const scanId = `scan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+            // Run forensic analysis with 3D reconstruction
+            const result = await tieredRoutingService.analyzeDrugPackage(
+                primaryImage,
+                primaryMimeType,
+                multiAngleImages,
+                scanId
+            );
 
             // Calculate confidence multiplier based on angle count
-            const confidenceMultiplier = imageCount >= 3 ? 1.0 : imageCount === 2 ? 0.85 : 0.7;
+            const confidenceMultiplier = imageCount >= 4 ? 1.0 : imageCount === 3 ? 0.9 : 0.8;
             const adjustedScore = Math.min(
                 result.forensic.authenticityScore * confidenceMultiplier,
-                imageCount >= 3 ? 100 : 85
+                100
             );
 
-            // Add multi-angle bonus findings
-            result.forensic.findings.unshift(
-                `✓ Multi-angle scan completed (${imageCount} angles captured)`,
-                `Confidence: ${Math.round(confidenceMultiplier * 100)}% (${imageCount} angles)`
-            );
+            // Add3D verification findings
+            if (result.model3D) {
+                result.forensic.findings.unshift(
+                    `🔬 3D model reconstruction complete (${imageCount} angles)`,
+                    `Confidence: ${result.model3D.confidence}% (AI-powered depth analysis)`
+                );
+            } else {
+                result.forensic.findings.unshift(
+                    `📸 Multi-angle scan completed (${imageCount} angles captured)`
+                );
+            }
             result.forensic.authenticityScore = Math.round(adjustedScore);
 
-            console.log('Multi-angle scan completed:', {
+            // Store in National Ledger with all angle images
+            const userId = formData.get('userId') as string || 'anonymous';
+            await saveScan({
+                id: scanId,
+                userId,
+                timestamp: new Date().toISOString(),
+                scanMode: '3d-verification',
+                forensicAnalysis: result.forensic,
+                stewardshipAssessment: result.stewardship || undefined,
+                model3D: result.model3D,
+                anglesScanned: imageCount,
+            });
+
+            // Store all angle images as evidence
+            for (const [angle, { buffer }] of Object.entries(images)) {
+                await saveScanEvidence(scanId, angle, buffer.toString('base64'));
+            }
+
+            console.log('3D verification scan completed:', {
+                scanId,
                 timestamp: new Date().toISOString(),
                 anglesScanned: imageCount,
-                originalScore: result.forensic.authenticityScore,
+                has3DModel: !!result.model3D,
                 adjustedScore: Math.round(adjustedScore),
                 riskLevel: result.forensic.riskLevel,
             });
@@ -68,8 +113,10 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(
                 {
                     success: true,
+                    scanId,
                     data: result,
-                    message: `Multi-angle scan completed (${imageCount} angles)`,
+                    message: `3D verification scan completed (${imageCount} angles)`,
+                    imagesStored: imageCount,
                 },
                 { status: 200 }
             );
