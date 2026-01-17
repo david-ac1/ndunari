@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
-import { getScanHistory, type ScanHistoryItem } from "@/lib/utils/scan-history";
 import { VoiceController } from "@/app/components/VoiceController";
 import { useAuth } from "@/app/components/providers/AuthProvider";
 import { supabase } from "@/lib/supabase/client";
-import { getUserScans } from "@/lib/services/scan-storage.service";
+import { useScanData } from "@/lib/contexts/ScanDataContext";
 import { sentinelAgentService, type SentinelDirective } from "@/lib/gemini/sentinel-agent.service";
 import { ThinkingPanel } from "@/app/components/ThinkingPanel";
 import { Shield, Activity, Search, AlertCircle, Zap, TrendingUp, Map as MapIcon, ChevronRight, Users, Globe, Database, BookOpen } from "lucide-react";
@@ -14,9 +13,8 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function HomePage() {
     const { user, profile, loading: authLoading } = useAuth();
-    const [scanHistory, setScanHistory] = useState<ScanHistoryItem[]>([]);
+    const { scans, isLoading: scansLoading, refreshScans } = useScanData();
     const [stats, setStats] = useState({ total: 0, safe: 0, suspicious: 0, counterfeit: 0 });
-    const [isSyncing, setIsSyncing] = useState(false);
     const [configError, setConfigError] = useState<string | null>(null);
 
     // Sentinel State
@@ -27,7 +25,6 @@ export default function HomePage() {
     const displayName = profile?.display_name || user?.email?.split('@')[0] || "Health Guardian";
 
     const loadHistoryAndAnalyze = useCallback(async () => {
-        setIsSyncing(true);
         setIsSentinelThinking(true);
         setSentinelThoughts([{ id: '1', text: "Sentinel Node Online. Initiating historical audit...", level: 'system', timestamp: new Date() }]);
 
@@ -39,66 +36,34 @@ export default function HomePage() {
                 setConfigError("Supabase Configuration Missing");
             }
 
-            // 1. Load History
-            const localHistory = getScanHistory();
-            let combinedHistory = [...localHistory];
-
-            if (user) {
-                setSentinelThoughts(prev => [...prev, { id: 'cloud-sync', text: "Synchronizing with National Cloud Ledger...", level: 'system', timestamp: new Date() }]);
-
-                // 1.5 Sync local scans to cloud
-                const { syncManager } = await import('@/lib/services/sync-manager.service');
-                const syncResult = await syncManager.syncLocalToCloud();
-
-                if (syncResult.synced > 0) {
-                    setSentinelThoughts(prev => [...prev, { id: 'sync-push', text: `Uploaded ${syncResult.synced} local records to cloud.`, level: 'system', timestamp: new Date() }]);
-                }
-
-                const { data: cloudScans, error: cloudError } = await getUserScans();
-
-                if (cloudError) {
-                    console.error('Cloud sync failed:', cloudError);
-                    setSentinelThoughts(prev => [...prev, { id: 'sync-err', text: "Cloud Ledger unreachable. Check network/config.", level: 'system', timestamp: new Date() }]);
-                } else if (cloudScans) {
-                    const mapped = cloudScans.map(s => ({
-                        id: s.id,
-                        timestamp: new Date(s.created_at).getTime(),
-                        drugName: s.drug_name,
-                        authenticityScore: s.authenticity_score,
-                        riskLevel: s.risk_level,
-                        nafdacNumber: s.nafdac_number || undefined,
-                        imagePreview: s.image_preview || undefined
-                    }));
-                    const existingIds = new Set(localHistory.map(l => l.id));
-                    const newItems = mapped.filter(cs => !existingIds.has(cs.id));
-                    combinedHistory = [...localHistory, ...newItems];
-                    setSentinelThoughts(prev => [...prev, { id: 'sync-ok', text: `Integrated ${newItems.length} records from cloud.`, level: 'system', timestamp: new Date() }]);
-                }
-            } else {
-                setSentinelThoughts(prev => [...prev, { id: 'guest-warn', text: "Operating in Restricted Guest Mode. Sign in for global sync.", level: 'system', timestamp: new Date() }]);
-            }
-
-            combinedHistory.sort((a, b) => b.timestamp - a.timestamp);
-            setScanHistory(combinedHistory.slice(0, 3));
+            // Stats are calculated from scans provided by ScanDataContext
+            const scanList = scans.map(s => ({
+                id: s.id,
+                timestamp: new Date(s.created_at).getTime(),
+                drugName: s.drug_name,
+                authenticityScore: s.authenticity_score,
+                riskLevel: s.risk_level,
+                nafdacNumber: s.nafdac_number || undefined,
+                imagePreview: s.image_preview || undefined
+            }));
 
             setStats({
-                total: profile?.total_scans || combinedHistory.length,
-                safe: combinedHistory.filter(s => s.riskLevel === 'safe').length,
-                suspicious: combinedHistory.filter(s => s.riskLevel === 'suspicious').length,
-                counterfeit: combinedHistory.filter(s => s.riskLevel === 'counterfeit').length
+                total: scanList.length,
+                safe: scanList.filter(s => s.riskLevel === 'safe').length,
+                suspicious: scanList.filter(s => s.riskLevel === 'suspicious').length,
+                counterfeit: scanList.filter(s => s.riskLevel === 'counterfeit').length
             });
 
             // 2. Autonomous Sentinel Analysis
             setSentinelThoughts(prev => [...prev, { id: '2', text: "Identifying regional pattern anomalies...", level: 'sentinel', timestamp: new Date() }]);
-            const newDirectives = await sentinelAgentService.analyzeSurveillanceLogs(combinedHistory.slice(0, 50));
+            const newDirectives = await sentinelAgentService.analyzeSurveillanceLogs(scanList.slice(0, 50));
             setDirectives(newDirectives);
             setSentinelThoughts(prev => [...prev, { id: '3', text: `Audit complete. ${newDirectives.length} directives issued.`, level: 'system', timestamp: new Date() }]);
 
         } finally {
-            setIsSyncing(false);
             setIsSentinelThinking(false);
         }
-    }, [user, profile]);
+    }, [scans]);
 
     useEffect(() => {
         if (!authLoading) {
@@ -300,23 +265,23 @@ export default function HomePage() {
                         </section>
 
                         {/* Recent History Segment */}
-                        {scanHistory.length > 0 && (
+                        {scans.length > 0 && (
                             <section className="space-y-4">
                                 <div className="flex items-center justify-between px-2">
                                     <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white/40">Recent Logs</h2>
                                     <Link href="/history" className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline">View Ledger</Link>
                                 </div>
                                 <div className="space-y-3">
-                                    {scanHistory.map(scan => (
+                                    {scans.slice(0, 3).map(scan => (
                                         <div key={scan.id} className="glass-panel p-4 rounded-3xl border border-white/5 flex items-center justify-between group hover:border-primary/40 transition-all">
                                             <div className="flex items-center gap-4">
-                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${scan.riskLevel === 'safe' ? 'bg-access-green/10 text-access-green' : 'bg-reserve-red/10 text-reserve-red'
+                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${scan.risk_level === 'safe' ? 'bg-access-green/10 text-access-green' : 'bg-reserve-red/10 text-reserve-red'
                                                     }`}>
-                                                    {scan.authenticityScore}%
+                                                    {scan.authenticity_score}%
                                                 </div>
                                                 <div>
-                                                    <p className="font-black text-sm uppercase tracking-tight">{scan.drugName}</p>
-                                                    <p className="text-[10px] font-bold text-white/30">{new Date(scan.timestamp).toDateString()}</p>
+                                                    <p className="font-black text-sm uppercase tracking-tight">{scan.drug_name}</p>
+                                                    <p className="text-[10px] font-bold text-white/30">{new Date(scan.created_at).toDateString()}</p>
                                                 </div>
                                             </div>
                                             <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary/20 group-hover:text-primary transition-all">

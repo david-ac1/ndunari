@@ -1,117 +1,51 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useCallback } from "react";
-import { getScanHistory, deleteScanFromHistory, clearScanHistory, type ScanHistoryItem } from "@/lib/utils/scan-history";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/app/components/providers/AuthProvider";
-import { getUserScans, deleteScan, deleteAllScans } from "@/lib/services/scan-storage.service";
+import { useScanData } from "@/lib/contexts/ScanDataContext";
 import { type Scan } from "@/lib/supabase/client";
 
 export default function HistoryPage() {
-    const { user, loading } = useAuth();
-    const [scanHistory, setScanHistory] = useState<ScanHistoryItem[]>([]);
-    const [filteredHistory, setFilteredHistory] = useState<ScanHistoryItem[]>([]);
+    const { user } = useAuth();
+    const { scans, isLoading, removeScan, clearAll, refreshScans } = useScanData();
     const [filter, setFilter] = useState<'all' | 'safe' | 'suspicious' | 'counterfeit'>('all');
     const [sortBy, setSortBy] = useState<'recent' | 'score'>('recent');
     const [showClearConfirm, setShowClearConfirm] = useState(false);
-    const [isSyncing, setIsSyncing] = useState(false);
 
-    const loadHistory = useCallback(async () => {
-        setIsSyncing(true);
-        try {
-            // 1. Load from localStorage (Legacy)
-            const localHistory = getScanHistory();
-
-            // 2. Load from Supabase (Cloud)
-            let combinedHistory = [...localHistory];
-
-            if (user) {
-                const { data: cloudScans, error } = await getUserScans();
-                if (!error && cloudScans) {
-                    // Map cloud scans to local format
-                    const mappedCloudScans: ScanHistoryItem[] = cloudScans.map(s => ({
-                        id: s.id, // Supabase UUID
-                        timestamp: new Date(s.created_at).getTime(),
-                        drugName: s.drug_name,
-                        authenticityScore: s.authenticity_score,
-                        riskLevel: s.risk_level,
-                        nafdacNumber: s.nafdac_number || undefined,
-                        imagePreview: s.image_preview || undefined
-                    }));
-
-                    // Simple de-duplication (heuristic: same drug, same score, same timestamp within 5s)
-                    const existingIds = new Set(localHistory.map(l => l.id));
-                    const newCloudScans = mappedCloudScans.filter(cs => !existingIds.has(cs.id));
-
-                    combinedHistory = [...localHistory, ...newCloudScans];
-                }
-            }
-
-            // Sort by timestamp initially
-            combinedHistory.sort((a, b) => b.timestamp - a.timestamp);
-            setScanHistory(combinedHistory);
-        } catch (error) {
-            console.error('Failed to load history:', error);
-        } finally {
-            setIsSyncing(false);
-        }
-    }, [user]);
+    // Apply filters and sorting to scans from context
+    const [filteredHistory, setFilteredHistory] = useState<Scan[]>([]);
 
     useEffect(() => {
-        if (!loading) {
-            loadHistory();
-        }
-    }, [user, loading, loadHistory]);
-
-    useEffect(() => {
-        // Apply filters
-        let filtered = [...scanHistory];
+        let filtered = [...scans];
 
         if (filter !== 'all') {
-            filtered = filtered.filter(scan => scan.riskLevel === filter);
+            filtered = filtered.filter(scan => scan.risk_level === filter);
         }
 
-        // Apply sorting
         if (sortBy === 'recent') {
-            filtered.sort((a, b) => b.timestamp - a.timestamp);
+            filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         } else {
-            filtered.sort((a, b) => b.authenticityScore - a.authenticityScore);
+            filtered.sort((a, b) => b.authenticity_score - a.authenticity_score);
         }
 
         setFilteredHistory(filtered);
-    }, [scanHistory, filter, sortBy]);
+    }, [scans, filter, sortBy]);
 
     const handleDelete = async (scanId: string) => {
-        // 1. Delete from localStorage (if it exists there)
-        deleteScanFromHistory(scanId);
-
-        // 2. Delete from Supabase (if it's a UUID)
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{10,12}$/i.test(scanId);
-        if (isUuid && user) {
-            await deleteScan(scanId);
-        }
-
-        loadHistory();
+        await removeScan(scanId);
     };
 
     const handleClearAll = async () => {
-        // 1. Clear local
-        clearScanHistory();
-
-        // 2. Clear cloud
-        if (user) {
-            await deleteAllScans();
-        }
-
-        loadHistory();
+        await clearAll();
         setShowClearConfirm(false);
     };
 
     const stats = {
-        total: scanHistory.length,
-        safe: scanHistory.filter(s => s.riskLevel === 'safe').length,
-        suspicious: scanHistory.filter(s => s.riskLevel === 'suspicious').length,
-        counterfeit: scanHistory.filter(s => s.riskLevel === 'counterfeit').length,
+        total: scans.length,
+        safe: scans.filter(s => s.risk_level === 'safe').length,
+        suspicious: scans.filter(s => s.risk_level === 'suspicious').length,
+        counterfeit: scans.filter(s => s.risk_level === 'counterfeit').length,
     };
 
     return (
@@ -128,7 +62,7 @@ export default function HistoryPage() {
                             <p className="text-sm text-white/70">{stats.total} total scans</p>
                         </div>
                     </div>
-                    {scanHistory.length > 0 && (
+                    {scans.length > 0 && (
                         <button
                             onClick={() => setShowClearConfirm(true)}
                             className="text-sm text-reserve-red hover:underline"
@@ -141,7 +75,7 @@ export default function HistoryPage() {
 
             <main className="max-w-7xl mx-auto px-6 py-8">
 
-                {scanHistory.length === 0 ? (
+                {scans.length === 0 ? (
                     /* Empty State */
                     <div className="text-center py-20">
                         <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/5 flex items-center justify-center">
@@ -252,11 +186,11 @@ export default function HistoryPage() {
                                     >
                                         <div className="flex flex-col lg:flex-row gap-6">
                                             {/* Image Preview */}
-                                            {scan.imagePreview && (
+                                            {scan.image_preview && (
                                                 <div className="flex-shrink-0">
                                                     <img
-                                                        src={scan.imagePreview}
-                                                        alt={scan.drugName}
+                                                        src={scan.image_preview}
+                                                        alt={scan.drug_name}
                                                         className="w-full lg:w-32 h-32 rounded-lg object-cover"
                                                     />
                                                 </div>
@@ -267,9 +201,9 @@ export default function HistoryPage() {
                                                 {/* Header */}
                                                 <div className="flex items-start justify-between mb-4">
                                                     <div className="flex-1">
-                                                        <h3 className="text-xl font-bold text-white mb-1">{scan.drugName}</h3>
+                                                        <h3 className="text-xl font-bold text-white mb-1">{scan.drug_name}</h3>
                                                         <p className="text-sm text-white/70">
-                                                            {new Date(scan.timestamp).toLocaleString('en-US', {
+                                                            {new Date(scan.created_at).toLocaleString('en-US', {
                                                                 year: 'numeric',
                                                                 month: 'long',
                                                                 day: 'numeric',
@@ -289,33 +223,33 @@ export default function HistoryPage() {
 
                                                 {/* Score Badge */}
                                                 <div className="flex items-center gap-4 mb-4">
-                                                    <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${scan.riskLevel === 'safe' ? 'bg-access-green/20 border border-access-green/30' :
-                                                        scan.riskLevel === 'suspicious' ? 'bg-watch-orange/20 border border-watch-orange/30' :
+                                                    <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${scan.risk_level === 'safe' ? 'bg-access-green/20 border border-access-green/30' :
+                                                        scan.risk_level === 'suspicious' ? 'bg-watch-orange/20 border border-watch-orange/30' :
                                                             'bg-reserve-red/20 border border-reserve-red/30'
                                                         }`}>
                                                         <span className="text-2xl">
-                                                            {scan.riskLevel === 'safe' ? '✅' :
-                                                                scan.riskLevel === 'suspicious' ? '⚠️' : '❌'}
+                                                            {scan.risk_level === 'safe' ? '✅' :
+                                                                scan.risk_level === 'suspicious' ? '⚠️' : '❌'}
                                                         </span>
                                                         <div>
-                                                            <p className={`text-lg font-bold ${scan.riskLevel === 'safe' ? 'text-access-green' :
-                                                                scan.riskLevel === 'suspicious' ? 'text-watch-orange' :
+                                                            <p className={`text-lg font-bold ${scan.risk_level === 'safe' ? 'text-access-green' :
+                                                                scan.risk_level === 'suspicious' ? 'text-watch-orange' :
                                                                     'text-reserve-red'
                                                                 }`}>
-                                                                {scan.authenticityScore}%
+                                                                {scan.authenticity_score}%
                                                             </p>
                                                             <p className="text-xs text-white/70 uppercase">
-                                                                {scan.riskLevel}
+                                                                {scan.risk_level}
                                                             </p>
                                                         </div>
                                                     </div>
                                                 </div>
 
                                                 {/* NAFDAC Info */}
-                                                {scan.nafdacNumber && (
+                                                {scan.nafdac_number && (
                                                     <div className="mb-3">
                                                         <span className="text-xs text-white/50 uppercase">NAFDAC Reg.</span>
-                                                        <p className="text-white font-mono">{scan.nafdacNumber}</p>
+                                                        <p className="text-white font-mono">{scan.nafdac_number}</p>
                                                     </div>
                                                 )}
                                             </div>

@@ -203,21 +203,7 @@ export default function ScanPage() {
             setLastScanPreview(multiAngleSession.capturedAngles.get('front') || Array.from(multiAngleSession.capturedAngles.values())[0]);
             setScanState('complete');
 
-            // Background save logic
-            const historyItem: ScanHistoryItem = {
-                id: Date.now().toString(),
-                timestamp: Date.now(),
-                drugName: data.data.forensic.drugName,
-                authenticityScore: data.data.forensic.authenticityScore,
-                riskLevel: data.data.forensic.riskLevel,
-                nafdacNumber: data.data.forensic.nafdacNumber,
-                imagePreview: Array.from(multiAngleSession.capturedAngles.values())[0]?.substring(0, 5000),
-            };
-
-            // Save to localStorage for offline access only
-            saveScanToHistory(historyItem);
-
-            // API already saved to Supabase - just refresh UI
+            // API already saved to Supabase - refresh UI from context
             await refreshScans();
 
         } catch (err: any) {
@@ -262,20 +248,7 @@ export default function ScanPage() {
             setLastScanPreview(preview);
             setScanState('complete');
 
-            const historyItem: ScanHistoryItem = {
-                id: Date.now().toString(),
-                timestamp: Date.now(),
-                drugName: data.data.forensic.drugName,
-                authenticityScore: data.data.forensic.authenticityScore,
-                riskLevel: data.data.forensic.riskLevel,
-                nafdacNumber: data.data.forensic.nafdacNumber,
-                imagePreview: preview.substring(0, 5000),
-            };
-
-            // Save to localStorage for offline access only
-            saveScanToHistory(historyItem);
-
-            // API already saved to Supabase - just refresh UI
+            // API already saved to Supabase - refresh UI from context
             await refreshScans();
 
         } catch (err: any) {
