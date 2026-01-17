@@ -90,16 +90,23 @@ export async function POST(request: NextRequest) {
                 userId,
                 timestamp: new Date().toISOString(),
                 scanMode: '3d-verification',
+                drugName: result.forensic.drugName,
+                nafdacNumber: result.forensic.nafdacNumber,
+                authenticityScore: result.forensic.authenticityScore,
+                riskLevel: result.forensic.riskLevel,
+                findings: result.forensic.findings,
+                anglesScanned: imageCount,
                 forensicAnalysis: result.forensic,
                 stewardshipAssessment: result.stewardship || undefined,
                 model3D: result.model3D,
-                anglesScanned: imageCount,
             });
 
-            // Store all angle images as evidence
+            // Store all angle images as evidence - convert to Map
+            const evidenceMap = new Map<string, string>();
             for (const [angle, { buffer }] of Object.entries(images)) {
-                await saveScanEvidence(scanId, angle, buffer.toString('base64'));
+                evidenceMap.set(angle, buffer.toString('base64'));
             }
+            await saveScanEvidence(scanId, evidenceMap);
 
             console.log('3D verification scan completed:', {
                 scanId,

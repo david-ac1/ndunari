@@ -11,7 +11,7 @@ import MultiAngleCapture from "./components/MultiAngleCapture";
 import CapturedImageReview from "./components/CapturedImageReview";
 import { useAuth } from "@/app/components/providers/AuthProvider";
 import { useVoiceGuide } from "@/lib/hooks/use-voice-guide";
-import { saveScan, saveScanEvidence } from "@/lib/services/scan-storage.service";
+import { useScanData } from "@/lib/contexts/ScanDataContext";
 import { forensicEyeService, type EvidenceBox } from "@/lib/gemini/forensic-eye.service";
 import { sentinelAgentService } from "@/lib/gemini/sentinel-agent.service";
 import { ThinkingPanel } from "@/app/components/ThinkingPanel";
@@ -43,6 +43,7 @@ interface ScanResult {
 export default function ScanPage() {
     const { user } = useAuth();
     const { speak, stop, speaking, enabled } = useVoiceGuide();
+    const { refreshScans } = useScanData(); // Use centralized state
     const [scanState, setScanState] = useState<ScanState>("mode_select");
     const [scanMode, setScanMode] = useState<ScanMode | null>(null);
     const [multiAngleSession, setMultiAngleSession] = useState<MultiAngleScanSession | null>(null);
@@ -212,19 +213,12 @@ export default function ScanPage() {
                 nafdacNumber: data.data.forensic.nafdacNumber,
                 imagePreview: Array.from(multiAngleSession.capturedAngles.values())[0]?.substring(0, 5000),
             };
+
+            // Save to localStorage for offline access only
             saveScanToHistory(historyItem);
-            if (user) {
-                const { data: savedScan } = await saveScan({
-                    ...historyItem,
-                    findings: data.data.forensic.findings,
-                    scanMode: 'multi',
-                    anglesScanned: multiAngleSession.completedCount,
-                    packageFingerprint: data.data.forensic.packageFingerprint
-                });
-                if (savedScan?.id) {
-                    await saveScanEvidence(savedScan.id, multiAngleSession.capturedAngles);
-                }
-            }
+
+            // API already saved to Supabase - just refresh UI
+            await refreshScans();
 
         } catch (err: any) {
             setError(err.message);
@@ -277,14 +271,12 @@ export default function ScanPage() {
                 nafdacNumber: data.data.forensic.nafdacNumber,
                 imagePreview: preview.substring(0, 5000),
             };
+
+            // Save to localStorage for offline access only
             saveScanToHistory(historyItem);
-            if (user) await saveScan({
-                ...historyItem,
-                findings: data.data.forensic.findings,
-                scanMode: 'single',
-                anglesScanned: 1,
-                packageFingerprint: data.data.forensic.packageFingerprint
-            });
+
+            // API already saved to Supabase - just refresh UI
+            await refreshScans();
 
         } catch (err: any) {
             setError(err.message);
@@ -292,7 +284,8 @@ export default function ScanPage() {
         } finally {
             setIsThinking(false);
         }
-    }, [user]);
+    }, [user, refreshScans]);
+
 
     const captureImage = useCallback(async () => {
         const src = webcamRef.current?.getScreenshot();
