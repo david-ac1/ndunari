@@ -47,9 +47,28 @@ export class StewardshipBrainService {
 
     private get model() {
         if (!this._model) {
-            this._model = getStewardshipBrainModel();
+            this._model = getStewardshipBrainModel(true); // Always use JSON mode
         }
         return this._model;
+    }
+
+    /**
+     * Helper to clean and parse JSON from Gemini
+     */
+    private safeParseJson(text: string, fallback: any = null) {
+        try {
+            const cleanText = text.trim();
+            // Remove markdown code blocks
+            const jsonPart = cleanText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+            const match = jsonPart.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+            if (match) {
+                return JSON.parse(match[0]);
+            }
+            return JSON.parse(jsonPart);
+        } catch (error) {
+            console.error("Stewardship JSON parsing failed:", error, "Raw text:", text);
+            return fallback;
+        }
     }
 
     /**
@@ -169,13 +188,13 @@ Provide a comprehensive stewardship assessment for this drug.`;
             const response = await result.response;
             const text = response.text();
 
-            // Extract JSON from response
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) {
+            // extraction
+            const json = this.safeParseJson(text);
+            if (!json) {
                 throw new Error("Failed to extract JSON from Gemini response");
             }
 
-            const assessment = JSON.parse(jsonMatch[0]);
+            const assessment = json;
             const validated = StewardshipAssessmentSchema.parse(assessment);
 
             const duration = Date.now() - startTime;

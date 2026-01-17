@@ -39,9 +39,28 @@ export class ForensicEyeService {
 
     private get model() {
         if (!this._model) {
-            this._model = getForensicEyeModel();
+            this._model = getForensicEyeModel(true); // Always use JSON mode
         }
         return this._model;
+    }
+
+    /**
+     * Helper to clean and parse JSON from Gemini
+     */
+    private safeParseJson(text: string, fallback: any = null) {
+        try {
+            const cleanText = text.trim();
+            // Remove markdown code blocks
+            const jsonPart = cleanText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+            const match = jsonPart.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+            if (match) {
+                return JSON.parse(match[0]);
+            }
+            return JSON.parse(jsonPart);
+        } catch (error) {
+            console.error("Forensic JSON parsing failed:", error, "Raw text:", text);
+            return fallback;
+        }
     }
 
     /**
@@ -180,22 +199,12 @@ RESPOND WITH ONLY THE JSON OBJECT. NO OTHER TEXT.`;
 
             console.log("Gemini response received:", text.substring(0, 500)); // Log first 500 chars
 
-            // Extract JSON from response - handle markdown code blocks and commentary
-            let jsonText = text;
-
-            // Remove markdown code blocks if present
-            jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-
-            // Try to find JSON object
-            const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) {
+            // extraction
+            const analysis = this.safeParseJson(text);
+            if (!analysis) {
                 console.error("Failed to extract JSON from response:", text);
                 throw new Error("Unable to analyze image. Gemini did not return valid JSON. Please try again.");
             }
-
-            console.log("Extracted JSON:", jsonMatch[0].substring(0, 500));
-
-            const analysis = JSON.parse(jsonMatch[0]);
 
             // Validate NAFDAC number format if present
             if (analysis.nafdacNumber &&
