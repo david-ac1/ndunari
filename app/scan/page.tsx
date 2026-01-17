@@ -17,7 +17,7 @@ import { sentinelAgentService } from "@/lib/gemini/sentinel-agent.service";
 import { ThinkingPanel } from "@/app/components/ThinkingPanel";
 import ForensicEvidenceOverlay from "./components/ForensicEvidenceOverlay";
 
-type ScanState = "mode_select" | "idle" | "multi_angle" | "review" | "scanning" | "analyzing" | "complete" | "error";
+type ScanState = "mode_select" | "idle" | "multi_angle" | "review" | "scanning" | "analyzing" | "analyzing_upload" | "complete" | "error";
 
 interface ScanResult {
     forensic: {
@@ -234,8 +234,8 @@ export default function ScanPage() {
         }
     }, [multiAngleSession, user]);
 
-    const processScan = useCallback(async (imageSource: string | Blob) => {
-        setScanState('scanning');
+    const processScan = useCallback(async (imageSource: string | Blob, source: 'camera' | 'upload' = 'camera') => {
+        setScanState(source === 'camera' ? 'scanning' : 'analyzing_upload');
         setIsThinking(true);
         setError(null);
 
@@ -296,12 +296,12 @@ export default function ScanPage() {
 
     const captureImage = useCallback(async () => {
         const src = webcamRef.current?.getScreenshot();
-        if (src) await processScan(src);
+        if (src) await processScan(src, 'camera');
     }, [processScan]);
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) processScan(file);
+        if (file) processScan(file, 'upload');
     };
 
     const loadHistory = () => {
@@ -396,7 +396,13 @@ export default function ScanPage() {
 
                         <div className="absolute inset-0 flex items-center justify-center">
                             {scanState === 'idle' && <span className="text-white/20 text-xs font-bold uppercase tracking-widest animate-pulse">Align Package</span>}
-                            {isThinking && <div className="text-5xl animate-bounce">🧠</div>}
+                            {scanState === 'analyzing_upload' && (
+                                <div className="text-center space-y-4">
+                                    <div className="text-5xl animate-bounce">📄</div>
+                                    <p className="text-xs font-black text-primary uppercase tracking-[0.2em]">Analyzing Document...</p>
+                                </div>
+                            )}
+                            {isThinking && scanState !== 'analyzing_upload' && <div className="text-5xl animate-bounce">🧠</div>}
                         </div>
                     </div>
                 </div>
