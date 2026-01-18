@@ -68,7 +68,7 @@ export function ScanDataProvider({ children }: { children: React.ReactNode }) {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, []); // STABLE: No external dependencies, only uses state setters
 
     /**
      * Add a new scan (saves to Supabase ONCE, then updates local state)
@@ -199,8 +199,9 @@ export function ScanDataProvider({ children }: { children: React.ReactNode }) {
             }
         }
 
+        // Refresh after sync completes
         await refreshScans();
-    }, [scans, addScan, refreshScans]);
+    }, [scans, addScan, refreshScans]); // refreshScans is now stable
 
     // Initial load
     useEffect(() => {

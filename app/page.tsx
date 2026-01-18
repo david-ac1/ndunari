@@ -66,42 +66,44 @@ export default function HomePage() {
     }, [scans]);
 
     useEffect(() => {
-        if (!authLoading) {
-            loadHistoryAndAnalyze();
+        if (authLoading) return; // Wait for auth to be ready
 
-            // 1. REHYDRATION ON FOCUS
-            const handleVisibilityChange = () => {
-                if (document.visibilityState === 'visible') {
-                    console.log("Home: Visibility restored. Re-syncing...");
-                    loadHistoryAndAnalyze();
-                }
-            };
-            document.addEventListener('visibilitychange', handleVisibilityChange);
+        // Initial load
+        loadHistoryAndAnalyze();
 
-            // 2. LIVE SCAN LISTENER
-            let scanSubscription: any = null;
-            if (user) {
-                console.log("Home: Setting up real-time scan listener for", user.id);
-                scanSubscription = supabase
-                    .channel(`public:scans:${user.id}`)
-                    .on('postgres_changes', {
-                        event: 'INSERT',
-                        schema: 'public',
-                        table: 'scans',
-                        filter: `user_id=eq.${user.id}`
-                    }, (payload) => {
-                        console.log("Home: New scan detected in real-time", payload.new);
-                        loadHistoryAndAnalyze(); // Refresh everything when a new scan is added
-                    })
-                    .subscribe();
+        // 1. REHYDRATION ON FOCUS
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                console.log("Home: Visibility restored. Re-syncing...");
+                loadHistoryAndAnalyze();
             }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
 
-            return () => {
-                document.removeEventListener('visibilitychange', handleVisibilityChange);
-                if (scanSubscription) supabase.removeChannel(scanSubscription);
-            };
+        // 2. LIVE SCAN LISTENER
+        let scanSubscription: any = null;
+        if (user) {
+            console.log("Home: Setting up real-time scan listener for", user.id);
+            scanSubscription = supabase
+                .channel(`public:scans:${user.id}`)
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'scans',
+                    filter: `user_id=eq.${user.id}`
+                }, (payload) => {
+                    console.log("Home: New scan detected in real-time", payload.new);
+                    loadHistoryAndAnalyze(); // Refresh everything when a new scan is added
+                })
+                .subscribe();
         }
-    }, [user, authLoading, loadHistoryAndAnalyze]);
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            if (scanSubscription) supabase.removeChannel(scanSubscription);
+        };
+    }, [user?.id, authLoading]); // Only re-run when user ID or auth state changes
+
 
     return (
         <div className="relative min-h-screen flex flex-col overflow-hidden pb-24 lg:pb-8 bg-background-dark text-white">
