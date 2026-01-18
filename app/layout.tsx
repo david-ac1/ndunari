@@ -3,6 +3,7 @@ import { Inter, Manrope } from "next/font/google";
 import { PWAUpdater } from "@/app/components/PWAUpdater";
 import { AuthProvider } from "@/app/components/providers/AuthProvider";
 import { ScanDataProvider } from "@/lib/contexts/ScanDataContext";
+import { ErrorBoundary } from "@/app/components/ErrorBoundary";
 import "./globals.css";
 
 const inter = Inter({
@@ -55,11 +56,13 @@ export default function RootLayout({
         <html lang="en" className="dark">
             <body className={`${inter.variable} ${manrope.variable} font-sans`}>
                 <PWAUpdater />
-                <AuthProvider>
-                    <ScanDataProvider>
-                        {children}
-                    </ScanDataProvider>
-                </AuthProvider>
+                <ErrorBoundary>
+                    <AuthProvider>
+                        <ScanDataProvider>
+                            {children}
+                        </ScanDataProvider>
+                    </AuthProvider>
+                </ErrorBoundary>
             </body>
         </html>
     );

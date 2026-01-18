@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase/client";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { DirectiveRequestSchema, validateRequest } from "@/lib/validation/schemas";
 
 /**
  * POST /api/admin/directive
@@ -28,21 +29,30 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Forbidden: Admin access only" }, { status: 403 });
         }
 
-        // 2. Extract Alert Data
-        const { drugName, region, severity, batchNumber } = await request.json();
+        // 2. Validate Request Body
+        const body = await request.json();
+        const validation = validateRequest(DirectiveRequestSchema, body);
 
-        if (!drugName) {
-            return NextResponse.json({ error: "Drug name is required" }, { status: 400 });
+        if (!validation.success) {
+            return NextResponse.json(
+                {
+                    error: 'Validation failed',
+                    details: validation.errors
+                },
+                { status: 400 }
+            );
         }
 
-        // 3. Insert Alert
+        const { type, title, description, severity, affectedDrugs, regions } = validation.data;
+
+        // 3. Insert Alert to database
         const { data, error } = await supabase
             .from('counterfeit_alerts')
             .insert({
-                drug_name: drugName,
-                region: region || 'National',
-                severity: severity || 'high',
-                batch_number: batchNumber || 'ALL',
+                drug_name: affectedDrugs?.[0] || title,
+                region: regions?.[0] || 'National',
+                severity: severity,
+                batch_number: 'ALL',
                 status: 'active',
                 first_reported: new Date().toISOString(),
                 last_reported: new Date().toISOString(),
@@ -56,7 +66,7 @@ export async function POST(request: Request) {
         return NextResponse.json({
             success: true,
             data: data,
-            message: `National Directive Issued for ${drugName}`
+            message: `National Directive Issued: ${title}`
         });
     } catch (error) {
         console.error("Admin Directive Error:", error);

@@ -1,24 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stewardshipBrainService } from "@/lib/gemini/stewardship-brain.service";
+import { savePrescription } from "@/lib/services/prescription-storage.service";
+import { PrescriptionRequestSchema, validateRequest } from "@/lib/validation/schemas";
 
 /**
  * POST /api/prescription
- * Prescription analysis endpoint
- * 
- * Accepts: JSON with drug name and optional indication
- * Returns: WHO AWaRe classification + multilingual counseling
+ * Prescription analysis endpoint with AWARE classification
  */
 export async function POST(request: NextRequest) {
     try {
+        // Parse and validate request body
         const body = await request.json();
-        const { drugName, indication } = body;
+        const validation = validateRequest(PrescriptionRequestSchema, body);
 
-        if (!drugName) {
+        if (!validation.success) {
             return NextResponse.json(
-                { error: "Drug name is required" },
+                {
+                    error: 'Validation failed',
+                    details: validation.errors
+                },
                 { status: 400 }
             );
         }
+
+        const { drugName, indication } = validation.data;
 
         // Analyze prescription using Stewardship Brain
         const assessment = await stewardshipBrainService.analyzePrescription(
