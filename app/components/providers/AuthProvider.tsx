@@ -151,30 +151,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
         });
 
-        // 3. REAL-TIME PROFILE SYNC
-        let profileSubscription: any = null;
-
-        if (user) {
-            console.log("Auth: Setting up real-time profile listener for", user.id);
-            profileSubscription = supabase
-                .channel(`profile:${user.id}`)
-                .on('postgres_changes', {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'user_profiles',
-                    filter: `id=eq.${user.id}`
-                }, (payload) => {
-                    console.log("Auth: Real-time profile update detected", payload.new);
-                    setProfile(payload.new as UserProfile);
-                })
-                .subscribe();
-        }
-
         return () => {
             subscription.unsubscribe();
-            if (profileSubscription) supabase.removeChannel(profileSubscription);
         };
-    }, [user]); // Re-run when user changes to update subscription
+    }, []); // Run ONCE on mount - prevents infinite loop
+
+    // Separate effect for real-time profile subscription
+    useEffect(() => {
+        if (!user?.id) return;
+
+        console.log("Auth: Setting up real-time profile listener for", user.id);
+        const profileSubscription = supabase
+            .channel(`profile:${user.id}`)
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'user_profiles',
+                filter: `id=eq.${user.id}`
+            }, (payload) => {
+                console.log("Auth: Real-time profile update detected", payload.new);
+                setProfile(payload.new as UserProfile);
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(profileSubscription);
+        };
+    }, [user?.id]); // Only re-run when user ID actually changes
 
     const signOut = async () => {
         await supabase.auth.signOut();
