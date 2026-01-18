@@ -1,6 +1,7 @@
 import { getScanHistory, clearScanHistory } from '../utils/scan-history';
 import { saveScan } from './scan-storage.service';
 import { supabase } from '../supabase/client';
+import { normalizeError } from '../errors/app-errors';
 
 export interface SyncResult {
     synced: number;
@@ -49,10 +50,11 @@ export const syncManager = {
                 } else {
                     result.synced++;
                 }
-            } catch (e: any) {
-                console.error(`SyncManager: Network/Runtime error for ${scan.drugName}`, e);
+            } catch (e) {
+                const error = normalizeError(e);
+                console.error(`SyncManager: Network/Runtime error for ${scan.drugName}`, error);
                 result.failed++;
-                result.errors.push(`System Error (${scan.drugName}): ${e.message}`);
+                result.errors.push(`System Error (${scan.drugName}): ${error.message}`);
             }
         }
 

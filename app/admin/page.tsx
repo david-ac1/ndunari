@@ -4,7 +4,9 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/components/providers/AuthProvider";
-import { supabase } from "@/lib/supabase/client";
+import { adminIntelligenceService } from '@/lib/services/admin-intelligence.service';
+import { adminSeedService } from '@/lib/services/admin-seed.service';
+import { normalizeError, getUserMessage, logError } from '@/lib/errors/app-errors';
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Shield, Activity, Globe, AlertTriangle,
@@ -79,14 +81,16 @@ export default function AdminPage() {
                 console.warn("AdminPage: fetchStats error json", json);
                 setAdminError(json.error || "National Grid Offline");
             }
-        } catch (e: any) {
+        } catch (e) {
             clearTimeout(timeoutId);
-            if (e.name === 'AbortError') {
+            const error = normalizeError(e);
+            if ((e as any).name === 'AbortError') {
                 console.error("Admin stats fetch timed out after 30s");
-                setAdminError("Connection timed out. The National Intelligence Grid is taking too long to respond. Decryption might be stalled.");
+                setAdminError("Connection timed out. The National Intelligence Grid is taking too long to respond.");
             } else {
-                console.error("Admin stats fetch failed:", e);
-                setAdminError("Failed to synchronize with National Intelligence Grid.");
+                console.error("Admin stats fetch failed:", error);
+                setAdminError(getUserMessage(error));
+                logError(error, 'AdminPage.fetchStats');
             }
         } finally {
             console.log("AdminPage: fetchStats complete");

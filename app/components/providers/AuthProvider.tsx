@@ -3,8 +3,9 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
-import { getCurrentUser, signInAnonymously, onAuthStateChange } from '@/lib/supabase/auth.service';
+import { signInAnonymously, onAuthStateChange } from '@/lib/supabase/auth.service'; // Keep existing auth functions
 import { syncManager } from '@/lib/services/sync-manager.service';
+import { normalizeError, logError } from '@/lib/errors/app-errors'; // Add error utilities
 
 export interface UserProfile {
     id: string;
@@ -58,7 +59,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             console.log("Auth: Profile fetched successfully", { role: data?.role });
             return data as UserProfile;
         } catch (err) {
-            console.error("Auth: Failed to fetch profile:", err);
+            const normalizedErr = normalizeError(err);
+            console.error("Auth: Failed to fetch profile:", normalizedErr);
+            logError(normalizedErr, 'AuthProvider.fetchProfile');
             return null;
         }
     };
@@ -107,8 +110,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                         setProfile(p);
                     }
                 }
-            } catch (error: any) {
-                console.error('Auth: Initialization failed:', error.message);
+            } catch (error) { // Replaced catch: any
+                const err = normalizeError(error);
+                console.error('Auth: Initialization failed:', err);
+                logError(err, 'AuthProvider.initAuth'); // Log the error
             } finally {
                 console.log("Auth: Initialization complete");
                 setLoading(false);
@@ -119,7 +124,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         // 2. Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-            console.log(`Auth: Event [${event}]`);
+            console.log(`Auth: Event[${event}]`);
             setSession(currentSession);
             const newUser = currentSession?.user ?? null;
             setUser(newUser);

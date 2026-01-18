@@ -16,6 +16,7 @@ import { forensicEyeService, type EvidenceBox } from "@/lib/gemini/forensic-eye.
 import { sentinelAgentService } from "@/lib/gemini/sentinel-agent.service";
 import { ThinkingPanel } from "@/app/components/ThinkingPanel";
 import ForensicEvidenceOverlay from "./components/ForensicEvidenceOverlay";
+import { normalizeError, getUserMessage, logError } from "@/lib/errors/app-errors";
 
 type ScanState = "mode_select" | "idle" | "multi_angle" | "review" | "scanning" | "analyzing" | "analyzing_upload" | "upload_pending" | "complete" | "error";
 

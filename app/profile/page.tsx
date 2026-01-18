@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase/client";
 import { upgradeAnonymousUser, signOut } from "@/lib/supabase/auth.service";
 import { getScanStats } from "@/lib/services/scan-storage.service";
 import { getPrescriptionStats } from "@/lib/services/prescription-storage.service";
+import { normalizeError, getUserMessage, logError } from "@/lib/errors/app-errors";
 
 import { useAuth, type UserProfile } from "@/app/components/providers/AuthProvider";
 
@@ -117,9 +118,11 @@ export default function ProfilePage() {
                 // Pass the new data directly to refresh the global state instantly
                 await refreshProfile(data);
             }
-        } catch (err: any) {
-            console.error("Profile: Save failed:", err);
-            setMessage({ type: 'error', text: 'An unexpected error occurred. Please try again.' });
+        } catch (err) {
+            const error = normalizeError(err);
+            console.error("Profile update error:", error);
+            setMessage({ type: 'error', text: getUserMessage(error) });
+            logError(error, 'ProfilePage.handleSave');
         } finally {
             setUpdating(false);
         }

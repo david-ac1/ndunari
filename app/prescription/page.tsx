@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/app/components/providers/AuthProvider";
+import { supabase } from "@/lib/supabase/client";
+import { normalizeError, getUserMessage, logError } from "@/lib/errors/app-errors";
 import { useVoiceGuide } from "@/lib/hooks/use-voice-guide";
 import { savePrescription } from "@/lib/services/prescription-storage.service";
 import { Shield, Search, FileText, AlertTriangle, Info, CheckCircle2, TrendingUp, Users, Activity } from "lucide-react";
@@ -78,8 +80,11 @@ export default function PrescriptionPage() {
                     warningFlags: data.data.warningFlags,
                 });
             }
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            const error = normalizeError(err);
+            console.error("Analysis failed:", error);
+            setError(getUserMessage(error));
+            logError(error, 'PrescriptionPage.analyzePrescription');
         } finally {
             setAnalyzing(false);
         }

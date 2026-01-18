@@ -75,16 +75,17 @@ class RateLimitManager {
                 this.consecutiveErrors = 0;
                 this.backoffMultiplier = Math.max(1, this.backoffMultiplier * 0.8);
 
-            } catch (error: any) {
+            } catch (error: unknown) {
+                const err = normalizeError(error);
                 // Check if it's a rate limit error
-                if (this.isRateLimitError(error)) {
+                if (this.isRateLimitError(err)) {
                     console.error(`[RATE_LIMIT] Rate limit hit! (consecutive errors: ${this.consecutiveErrors + 1})`);
 
                     this.consecutiveErrors++;
                     this.backoffMultiplier = Math.min(10, this.backoffMultiplier * 2);
 
                     // Extract retry delay from error if available
-                    const retryDelay = this.extractRetryDelay(error);
+                    const retryDelay = this.extractRetryDelay(err);
                     if (retryDelay) {
                         console.log(`[RATE_LIMIT] API requested ${retryDelay}s wait. Pausing queue...`);
                         await this.sleep(retryDelay * 1000);

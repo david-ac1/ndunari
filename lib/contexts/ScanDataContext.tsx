@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getUserScans, saveScan, deleteScan, deleteAllScans } from '@/lib/services/scan-storage.service';
 import { saveScanToHistory, getScanHistory, deleteScanFromHistory, clearScanHistory } from '@/lib/utils/scan-history';
+import { normalizeError, logError } from '@/lib/errors/app-errors';
 
 interface ScanDataContextType {
     scans: any[];
@@ -62,9 +63,11 @@ export function ScanDataProvider({ children }: { children: React.ReactNode }) {
                     localStorage.setItem('ndunari_scan_history', JSON.stringify(historyItems));
                 }
             }
-        } catch (err: any) {
-            console.error('[SCAN_CONTEXT] Fatal error refreshing scans:', err);
-            setError(err.message);
+        } catch (err) {
+            const error = normalizeError(err);
+            console.error('[SCAN_CONTEXT] Fatal error refreshing scans:', error);
+            setError(error.message);
+            logError(error, 'ScanDataContext.refreshScans');
         } finally {
             setIsLoading(false);
         }
@@ -128,9 +131,11 @@ export function ScanDataProvider({ children }: { children: React.ReactNode }) {
             }
 
             return { success: true, scanId: data.id };
-        } catch (err: any) {
-            console.error('[SCAN_CONTEXT] Fatal error adding scan:', err);
-            return { success: false, error: err };
+        } catch (err) {
+            const error = normalizeError(err);
+            console.error('[SCAN_CONTEXT] Fatal error adding scan:', error);
+            logError(error, 'ScanDataContext.addScan');
+            return { success: false, error };
         }
     }, []);
 

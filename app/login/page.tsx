@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { supabase } from "@/lib/supabase/client";
+import { syncManager } from "@/lib/services/sync-manager.service";
+import { normalizeError, getUserMessage, logError } from "@/lib/errors/app-errors";
 import { useAuth } from "@/app/components/providers/AuthProvider";
 import { signInWithEmail, signUpWithEmail, signInWithOAuth } from "@/lib/supabase/auth.service";
 
@@ -54,8 +57,11 @@ function LoginContent() {
                 if (signInErr) throw signInErr;
             }
             router.push(redirectTo);
-        } catch (err: any) {
-            setError(err.message || "Authentication failed");
+        } catch (err) {
+            const error = normalizeError(err);
+            console.error("Login error:", error);
+            setError(getUserMessage(error));
+            logError(error, 'LoginPage.handleSubmit');
         } finally {
             setAuthLoading(false);
         }
@@ -67,9 +73,12 @@ function LoginContent() {
         try {
             const { error: authErr } = await signInWithOAuth(provider);
             if (authErr) throw authErr;
-        } catch (err: any) {
-            setError(err.message || `Failed to sign in with ${provider}`);
-            setAuthLoading(false);
+        } catch (err) {
+            const error = normalizeError(err);
+            console.error("Login error:", error);
+            setError(getUserMessage(error));
+            setAuthLoading(false); // Changed from setLoading to setAuthLoading as per component state
+            logError(error, 'LoginPage.handleLogin');
         }
     };
 
