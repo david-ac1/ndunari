@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-01-17T13:50:39.746Z",
+  "imageSize": 346504,
+  "mimeType": "image/png",
+  "promptLength": 1445,
+  "responseTextLength": 1619,
+  "responseTextPreview": "{\n  \"authenticityScore\": 35,\n  \"drugName\": \"Laifin (Sulphamethoxazole and Pyrimethamine Tablets)\",\n  \"nafdacNumber\": \"NOT_FOUND\",\n  \"batchNumber\": \"LF001\",\n  \"expiryDate\": \"05/2012\",\n  \"findings\": [\n    \"The active ingredient listed (Sulphamethoxazole) is inconsistent with the standard formulation for the brand 'Laifin', which typically contains Sulfadoxine.\",\n    \"No NAFDAC registration number is visible on the primary display or side panels shown in the image.\",\n    \"The product is significant",
+  "finishReason": "STOP",
+  "duration": 15106
+}
+---
+{
+  "timestamp": "2026-01-17T15:22:30.514Z",
+  "imageSize": 221836,
+  "mimeType": "image/png",
+  "promptLength": 1445,
+  "responseTextLength": 1503,
+  "responseTextPreview": "{\n  \"authenticityScore\": 92,\n  \"drugName\": \"Lonart Forte Tablets (Artemether 40 mg + Lumefantrine 240 mg)\",\n  \"nafdacNumber\": \"NOT_FOUND\",\n  \"batchNumber\": \"NOT_FOUND\",\n  \"expiryDate\": \"NOT_FOUND\",\n  \"findings\": [\n    \"High-quality offset printing with clear registration of the 'Lonart Forte' brand name.\",\n    \"Presence of a security hologram/authentication sticker on the right side of the pack.\",\n    \"Correct manufacturer details for Bliss GVS Pharma Ltd. including Indian factory address.\",\n   ",
+  "finishReason": "STOP",
+  "duration": 17473
+}
+---

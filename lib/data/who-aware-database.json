@@ -1,0 +1,261 @@
+{
+    "metadata": {
+        "source": "WHO AWaRe Classification 2023",
+        "lastUpdated": "2024-01",
+        "version": "1.0",
+        "description": "World Health Organization's Access, Watch, Reserve antibiotic classification"
+    },
+    "antibiotics": {
+        "amoxicillin": {
+            "category": "ACCESS",
+            "genericName": "Amoxicillin",
+            "class": "Penicillin",
+            "indications": [
+                "Community-acquired pneumonia",
+                "Otitis media",
+                "Skin infections"
+            ],
+            "notes": "First-line for many common infections"
+        },
+        "ampicillin": {
+            "category": "ACCESS",
+            "genericName": "Ampicillin",
+            "class": "Penicillin",
+            "indications": [
+                "UTI",
+                "Meningitis",
+                "Sepsis"
+            ],
+            "notes": "Broad-spectrum penicillin"
+        },
+        "benzylpenicillin": {
+            "category": "ACCESS",
+            "genericName": "Benzylpenicillin (Penicillin G)",
+            "class": "Penicillin",
+            "indications": [
+                "Streptococcal infections",
+                "Syphilis"
+            ],
+            "notes": "IV/IM administration"
+        },
+        "cloxacillin": {
+            "category": "ACCESS",
+            "genericName": "Cloxacillin",
+            "class": "Penicillin",
+            "indications": [
+                "Staphylococcal skin infections"
+            ],
+            "notes": "Penicillinase-resistant"
+        },
+        "doxycycline": {
+            "category": "ACCESS",
+            "genericName": "Doxycycline",
+            "class": "Tetracycline",
+            "indications": [
+                "Respiratory infections",
+                "STIs",
+                "Malaria"
+            ],
+            "notes": "Avoid in children <8 years"
+        },
+        "metronidazole": {
+            "category": "ACCESS",
+            "genericName": "Metronidazole",
+            "class": "Nitroimidazole",
+            "indications": [
+                "Anaerobic infections",
+                "Protozoal infections"
+            ],
+            "notes": "No alcohol during treatment"
+        },
+        "nitrofurantoin": {
+            "category": "ACCESS",
+            "genericName": "Nitrofurantoin",
+            "class": "Nitrofuran",
+            "indications": [
+                "UTI (uncomplicated)"
+            ],
+            "notes": "First-line for simple UTI in Nigeria"
+        },
+        "trimethoprim": {
+            "category": "ACCESS",
+            "genericName": "Trimethoprim",
+            "class": "Dihydrofolate reductase inhibitor",
+            "indications": [
+                "UTI"
+            ],
+            "notes": "Often combined with sulfamethoxazole"
+        },
+        "azithromycin": {
+            "category": "WATCH",
+            "genericName": "Azithromycin",
+            "class": "Macrolide",
+            "indications": [
+                "Respiratory infections",
+                "STIs"
+            ],
+            "warnings": [
+                "High resistance rates in Nigeria",
+                "Reserve for documented need"
+            ]
+        },
+        "ciprofloxacin": {
+            "category": "WATCH",
+            "genericName": "Ciprofloxacin",
+            "class": "Fluoroquinolone",
+            "indications": [
+                "Complicated UTI",
+                "Typhoid"
+            ],
+            "warnings": [
+                "Widespread resistance in Nigeria",
+                "Not for simple infections",
+                "Tendon rupture risk"
+            ]
+        },
+        "levofloxacin": {
+            "category": "WATCH",
+            "genericName": "Levofloxacin",
+            "class": "Fluoroquinolone",
+            "indications": [
+                "Pneumonia",
+                "UTI"
+            ],
+            "warnings": [
+                "High resistance rates",
+                "Alternative to ciprofloxacin"
+            ]
+        },
+        "ceftriaxone": {
+            "category": "WATCH",
+            "genericName": "Ceftriaxone",
+            "class": "3rd generation cephalosporin",
+            "indications": [
+                "Severe infections",
+                "Meningitis",
+                "Gonorrhea"
+            ],
+            "warnings": [
+                "Hospital use preferred",
+                "Monitor for resistance"
+            ]
+        },
+        "cefixime": {
+            "category": "WATCH",
+            "genericName": "Cefixime",
+            "class": "3rd generation cephalosporin",
+            "indications": [
+                "Gonorrhea",
+                "Respiratory infections"
+            ],
+            "warnings": [
+                "Reserved for specific indications"
+            ]
+        },
+        "clarithromycin": {
+            "category": "WATCH",
+            "genericName": "Clarithromycin",
+            "class": "Macrolide",
+            "indications": [
+                "H. pylori",
+                "Respiratory infections"
+            ],
+            "warnings": [
+                "Drug interactions",
+                "Resistance concerns"
+            ]
+        },
+        "erythromycin": {
+            "category": "WATCH",
+            "genericName": "Erythromycin",
+            "class": "Macrolide",
+            "indications": [
+                "Respiratory infections",
+                "Skin infections"
+            ],
+            "warnings": [
+                "GI side effects common"
+            ]
+        },
+        "meropenem": {
+            "category": "RESERVE",
+            "genericName": "Meropenem",
+            "class": "Carbapenem",
+            "indications": [
+                "Severe hospital infections",
+                "MDR organisms"
+            ],
+            "warnings": [
+                "HOSPITAL ONLY",
+                "Last resort antibiotic",
+                "Resistance threatens global health"
+            ]
+        },
+        "imipenem": {
+            "category": "RESERVE",
+            "genericName": "Imipenem",
+            "class": "Carbapenem",
+            "indications": [
+                "Severe infections",
+                "ICU patients"
+            ],
+            "warnings": [
+                "HOSPITAL ONLY",
+                "Reserved for life-threatening infections"
+            ]
+        },
+        "colistin": {
+            "category": "RESERVE",
+            "genericName": "Colistin",
+            "class": "Polymyxin",
+            "indications": [
+                "MDR Gram-negative infections"
+            ],
+            "warnings": [
+                "CRITICAL - Last line defense",
+                "Nephrotoxic",
+                "IV use only"
+            ]
+        },
+        "linezolid": {
+            "category": "RESERVE",
+            "genericName": "Linezolid",
+            "class": "Oxazolidinone",
+            "indications": [
+                "MRSA",
+                "VRE"
+            ],
+            "warnings": [
+                "RESERVE for resistant Gram-positive",
+                "Bone marrow toxicity"
+            ]
+        },
+        "tigecycline": {
+            "category": "RESERVE",
+            "genericName": "Tigecycline",
+            "class": "Glycylcycline",
+            "indications": [
+                "MDR infections",
+                "Complicated intra-abdominal"
+            ],
+            "warnings": [
+                "RESERVE status",
+                "Hospital use only"
+            ]
+        },
+        "vancomycin": {
+            "category": "WATCH",
+            "genericName": "Vancomycin",
+            "class": "Glycopeptide",
+            "indications": [
+                "MRSA",
+                "C. difficile"
+            ],
+            "warnings": [
+                "Hospital use",
+                "Monitor levels",
+                "Ototoxic/Nephrotoxic"
+            ]
+        }
+    }
+}

@@ -1,0 +1,82 @@
+{
+    "metadata": {
+        "source": "NAFDAC Public Registry (Sample)",
+        "description": "Common registered drugs in Nigeria with NAFDAC numbers",
+        "note": "This is a sample dataset. Full registry available from NAFDAC portal"
+    },
+    "drugs": {
+        "amoxicillin": {
+            "registrationNumber": "A4-1234",
+            "approvedManufacturers": [
+                "GlaxoSmithKline",
+                "Ranbaxy",
+                "Emzor"
+            ],
+            "commonBrands": [
+                "Amoxil",
+                "Ranmoxy"
+            ],
+            "status": "approved"
+        },
+        "ciprofloxacin": {
+            "registrationNumber": "A4-5678",
+            "approvedManufacturers": [
+                "Bayer",
+                "Ranbaxy",
+                "May & Baker"
+            ],
+            "commonBrands": [
+                "Cipro",
+                "Ciproxin"
+            ],
+            "status": "approved",
+            "warnings": [
+                "High resistance in Nigeria - use with caution"
+            ]
+        },
+        "azithromycin": {
+            "registrationNumber": "A4-9012",
+            "approvedManufacturers": [
+                "Pfizer",
+                "Ranbaxy"
+            ],
+            "commonBrands": [
+                "Zithromax"
+            ],
+            "status": "approved"
+        },
+        "metronidazole": {
+            "registrationNumber": "A4-3456",
+            "approvedManufacturers": [
+                "Sanofi",
+                "Emzor"
+            ],
+            "commonBrands": [
+                "Flagyl"
+            ],
+            "status": "approved"
+        },
+        "ceftriaxone": {
+            "registrationNumber": "A4-7890",
+            "approvedManufacturers": [
+                "Roche",
+                "Pfizer"
+            ],
+            "commonBrands": [
+                "Rocephin"
+            ],
+            "status": "approved",
+            "note": "Injectable - hospital use"
+        },
+        "erythromycin": {
+            "registrationNumber": "B4-6269",
+            "approvedManufacturers": [
+                "Danipha Pharmacy Ltd"
+            ],
+            "commonBrands": [
+                "Erythrofaith"
+            ],
+            "status": "approved"
+        }
+    }
+}

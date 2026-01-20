@@ -1,0 +1,18 @@
+{
+    "name": "Ndunari Health Shield",
+    "short_name": "Ndunari",
+    "description": "Decentralized Pharmaceutical Surveillance Network",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#061406",
+    "theme_color": "#22c55e",
+    "icons": [
+        {
+            "src": "/icon.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "orientation": "portrait"
+}

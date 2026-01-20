@@ -1,0 +1,292 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/app/components/providers/AuthProvider";
+import { useScanData } from "@/lib/contexts/ScanDataContext";
+import { type Scan } from "@/lib/supabase/client";
+
+export default function HistoryPage() {
+    const { user } = useAuth();
+    const { scans, isLoading, removeScan, clearAll, refreshScans } = useScanData();
+    const [filter, setFilter] = useState<'all' | 'safe' | 'suspicious' | 'counterfeit'>('all');
+    const [sortBy, setSortBy] = useState<'recent' | 'score'>('recent');
+    const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+    // Apply filters and sorting to scans from context
+    const [filteredHistory, setFilteredHistory] = useState<Scan[]>([]);
+
+    useEffect(() => {
+        let filtered = [...scans];
+
+        if (filter !== 'all') {
+            filtered = filtered.filter(scan => scan.risk_level === filter);
+        }
+
+        if (sortBy === 'recent') {
+            filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        } else {
+            filtered.sort((a, b) => b.authenticity_score - a.authenticity_score);
+        }
+
+        setFilteredHistory(filtered);
+    }, [scans, filter, sortBy]);
+
+    const handleDelete = async (scanId: string) => {
+        await removeScan(scanId);
+    };
+
+    const handleClearAll = async () => {
+        await clearAll();
+        setShowClearConfirm(false);
+    };
+
+    const stats = {
+        total: scans.length,
+        safe: scans.filter(s => s.risk_level === 'safe').length,
+        suspicious: scans.filter(s => s.risk_level === 'suspicious').length,
+        counterfeit: scans.filter(s => s.risk_level === 'counterfeit').length,
+    };
+
+    return (
+        <div className="min-h-screen bg-background-dark">
+            {/* Header */}
+            <header className="sticky top-0 z-20 bg-background-dark/80 backdrop-blur-md border-b border-white/10">
+                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <Link href="/" className="text-primary hover:text-primary-dark transition-colors">
+                            <span className="text-2xl">←</span>
+                        </Link>
+                        <div>
+                            <h1 className="text-2xl font-bold text-white">Scan History</h1>
+                            <p className="text-sm text-white/70">{stats.total} total scans</p>
+                        </div>
+                    </div>
+                    {scans.length > 0 && (
+                        <button
+                            onClick={() => setShowClearConfirm(true)}
+                            className="text-sm text-reserve-red hover:underline"
+                        >
+                            Clear All
+                        </button>
+                    )}
+                </div>
+            </header>
+
+            <main className="max-w-7xl mx-auto px-6 py-8">
+
+                {scans.length === 0 ? (
+                    /* Empty State */
+                    <div className="text-center py-20">
+                        <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/5 flex items-center justify-center">
+                            <span className="text-5xl">📭</span>
+                        </div>
+                        <h2 className="text-2xl font-bold text-white mb-2">No Scan History Yet</h2>
+                        <p className="text-white/70 mb-6">Start scanning drug packages to build your history</p>
+                        <Link
+                            href="/scan"
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-dark transition-colors"
+                        >
+                            <span className="text-xl">📷</span>
+                            Start Scanning
+                        </Link>
+                    </div>
+                ) : (
+                    <>
+                        {/* Stats Cards */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                            <div className="glass-panel p-4 rounded-xl border border-white/10">
+                                <p className="text-3xl font-bold text-primary">{stats.total}</p>
+                                <p className="text-xs text-white/70 mt-1">Total Scans</p>
+                            </div>
+                            <div className="glass-panel p-4 rounded-xl border border-access-green/30">
+                                <p className="text-3xl font-bold text-access-green">{stats.safe}</p>
+                                <p className="text-xs text-white/70 mt-1">Verified Safe</p>
+                            </div>
+                            <div className="glass-panel p-4 rounded-xl border border-watch-orange/30">
+                                <p className="text-3xl font-bold text-watch-orange">{stats.suspicious}</p>
+                                <p className="text-xs text-white/70 mt-1">Suspicious</p>
+                            </div>
+                            <div className="glass-panel p-4 rounded-xl border border-reserve-red/30">
+                                <p className="text-3xl font-bold text-reserve-red">{stats.counterfeit}</p>
+                                <p className="text-xs text-white/70 mt-1">Counterfeit</p>
+                            </div>
+                        </div>
+
+                        {/* Filters & Sort */}
+                        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                            {/* Filter */}
+                            <div className="flex-1">
+                                <label className="text-xs text-white/70 mb-2 block">Filter by Risk</label>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setFilter('all')}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'all'
+                                            ? 'bg-primary text-white'
+                                            : 'bg-white/5 text-white/70 hover:bg-white/10'
+                                            }`}
+                                    >
+                                        All
+                                    </button>
+                                    <button
+                                        onClick={() => setFilter('safe')}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'safe'
+                                            ? 'bg-access-green text-white'
+                                            : 'bg-white/5 text-white/70 hover:bg-white/10'
+                                            }`}
+                                    >
+                                        Safe
+                                    </button>
+                                    <button
+                                        onClick={() => setFilter('suspicious')}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'suspicious'
+                                            ? 'bg-watch-orange text-white'
+                                            : 'bg-white/5 text-white/70 hover:bg-white/10'
+                                            }`}
+                                    >
+                                        Suspicious
+                                    </button>
+                                    <button
+                                        onClick={() => setFilter('counterfeit')}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'counterfeit'
+                                            ? 'bg-reserve-red text-white'
+                                            : 'bg-white/5 text-white/70 hover:bg-white/10'
+                                            }`}
+                                    >
+                                        Counterfeit
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Sort */}
+                            <div>
+                                <label className="text-xs text-white/70 mb-2 block">Sort by</label>
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value as 'recent' | 'score')}
+                                    className="px-4 py-2 rounded-lg bg-white/5 text-white border border-white/10 focus:border-primary focus:outline-none"
+                                >
+                                    <option value="recent">Most Recent</option>
+                                    <option value="score">Highest Score</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Scan List */}
+                        <div className="space-y-4">
+                            {filteredHistory.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <p className="text-white/70">No scans match your filter</p>
+                                </div>
+                            ) : (
+                                filteredHistory.map((scan) => (
+                                    <div
+                                        key={scan.id}
+                                        className="glass-panel p-6 rounded-xl border border-white/10 hover:border-primary/30 transition-colors"
+                                    >
+                                        <div className="flex flex-col lg:flex-row gap-6">
+                                            {/* Image Preview */}
+                                            {scan.image_preview && (
+                                                <div className="flex-shrink-0">
+                                                    <img
+                                                        src={scan.image_preview}
+                                                        alt={scan.drug_name}
+                                                        className="w-full lg:w-32 h-32 rounded-lg object-cover"
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {/* Scan Details */}
+                                            <div className="flex-1 min-w-0">
+                                                {/* Header */}
+                                                <div className="flex items-start justify-between mb-4">
+                                                    <div className="flex-1">
+                                                        <h3 className="text-xl font-bold text-white mb-1">{scan.drug_name}</h3>
+                                                        <p className="text-sm text-white/70">
+                                                            {new Date(scan.created_at).toLocaleString('en-US', {
+                                                                year: 'numeric',
+                                                                month: 'long',
+                                                                day: 'numeric',
+                                                                hour: '2-digit',
+                                                                minute: '2-digit'
+                                                            })}
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleDelete(scan.id)}
+                                                        className="text-reserve-red hover:text-reserve-red/70 transition-colors p-2"
+                                                        title="Delete scan"
+                                                    >
+                                                        <span className="text-xl">🗑️</span>
+                                                    </button>
+                                                </div>
+
+                                                {/* Score Badge */}
+                                                <div className="flex items-center gap-4 mb-4">
+                                                    <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${scan.risk_level === 'safe' ? 'bg-access-green/20 border border-access-green/30' :
+                                                        scan.risk_level === 'suspicious' ? 'bg-watch-orange/20 border border-watch-orange/30' :
+                                                            'bg-reserve-red/20 border border-reserve-red/30'
+                                                        }`}>
+                                                        <span className="text-2xl">
+                                                            {scan.risk_level === 'safe' ? '✅' :
+                                                                scan.risk_level === 'suspicious' ? '⚠️' : '❌'}
+                                                        </span>
+                                                        <div>
+                                                            <p className={`text-lg font-bold ${scan.risk_level === 'safe' ? 'text-access-green' :
+                                                                scan.risk_level === 'suspicious' ? 'text-watch-orange' :
+                                                                    'text-reserve-red'
+                                                                }`}>
+                                                                {scan.authenticity_score}%
+                                                            </p>
+                                                            <p className="text-xs text-white/70 uppercase">
+                                                                {scan.risk_level}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* NAFDAC Info */}
+                                                {scan.nafdac_number && (
+                                                    <div className="mb-3">
+                                                        <span className="text-xs text-white/50 uppercase">NAFDAC Reg.</span>
+                                                        <p className="text-white font-mono">{scan.nafdac_number}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </>
+                )}
+            </main>
+
+            {/* Clear Confirmation Modal */}
+            {showClearConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
+                    <div className="glass-panel p-6 rounded-2xl max-w-md w-full border border-white/10">
+                        <h2 className="text-2xl font-bold text-white mb-4">Clear All History?</h2>
+                        <p className="text-white/70 mb-6">
+                            This will permanently delete all {stats.total} scan{stats.total > 1 ? 's' : ''} from your history. This action cannot be undone.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowClearConfirm(false)}
+                                className="flex-1 py-3 bg-white/10 text-white rounded-xl font-bold hover:bg-white/20 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleClearAll}
+                                className="flex-1 py-3 bg-reserve-red text-white rounded-xl font-bold hover:bg-reserve-red/80 transition-colors"
+                            >
+                                Delete All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
