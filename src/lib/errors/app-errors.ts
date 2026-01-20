@@ -187,9 +187,9 @@ export function logError(error: AppError, context?: string): void {
     const prefix = context ? `[${context}]` : '[Error]';
 
     if (error.type === 'unknown' || error.type === 'database') {
-        console.error(prefix, error);
+        console.error(prefix, error.message, error);
     } else {
-        console.warn(prefix, error);
+        console.warn(prefix, error.message, error);
     }
 
     // TODO: Send to error tracking service (Sentry, LogRocket, etc.)

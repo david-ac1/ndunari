@@ -24,9 +24,9 @@ async function verify() {
     const genAI = new GoogleGenerativeAI(apiKey);
 
     try {
-        console.log("Testing gemini-3-pro-preview...");
+        console.log("Testing gemini-3-pro-image-preview...");
         const model = genAI.getGenerativeModel({
-            model: "gemini-3-pro-preview",
+            model: "gemini-3-pro-image-preview",
             generationConfig: {
                 temperature: 0.1
             }
@@ -44,7 +44,7 @@ async function verify() {
         // Test JSON capability
         console.log("Testing JSON mode...");
         const modelJson = genAI.getGenerativeModel({
-            model: "gemini-3-pro-preview",
+            model: "gemini-3-pro-image-preview",
             generationConfig: {
                 temperature: 0.1,
                 responseMimeType: "application/json"

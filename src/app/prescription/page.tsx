@@ -81,8 +81,9 @@ export default function PrescriptionPage() {
                 });
             }
         } catch (err) {
+            console.error("RAW PRE-NORMALIZATION ERROR:", err);
             const error = normalizeError(err);
-            console.error("Analysis failed:", error);
+            console.error("Stewardship Analysis failed:", error.message);
             setError(getUserMessage(error));
             logError(error, 'PrescriptionPage.analyzePrescription');
         } finally {

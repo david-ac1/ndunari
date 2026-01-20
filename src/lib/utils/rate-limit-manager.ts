@@ -3,6 +3,8 @@
  * Prevents quota exhaustion by queuing requests and enforcing delays
  */
 
+import { normalizeError } from "@/lib/errors/app-errors";
+
 interface QueuedRequest {
     fn: () => Promise<any>;
     resolve: (value: any) => void;

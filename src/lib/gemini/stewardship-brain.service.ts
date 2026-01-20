@@ -1,4 +1,5 @@
-import { getStewardshipBrainModel } from "./config";
+import { getStewardshipBrainModel, retryWithBackoff } from "./config";
+import { rateLimitManager } from "@/lib/utils/rate-limit-manager";
 import { z } from "zod";
 import type { ForensicAnalysis } from "./forensic-eye.service";
 
@@ -55,18 +56,44 @@ export class StewardshipBrainService {
     /**
      * Helper to clean and parse JSON from Gemini
      */
+    /**
+     * Helper to clean and parse JSON from Gemini
+     */
     private safeParseJson(text: string, fallback: any = null) {
         try {
-            const cleanText = text.trim();
-            // Remove markdown code blocks
-            const jsonPart = cleanText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+            if (!text) return fallback;
+            // Aggressive cleansing
+            let cleanText = text.trim().replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
+
+            // Stage 1: Direct Parse
+            try { return JSON.parse(cleanText); } catch (e) { }
+
+            // Stage 2: Markdown Cleansing
+            let jsonPart = cleanText
+                .replace(/^```json\s*/g, '')
+                .replace(/```\s*$/g, '')
+                .replace(/^```\s*/g, '')
+                .trim();
+            try { return JSON.parse(jsonPart); } catch (e) { }
+
+            // Stage 3: Deep Match
+            const firstBrace = jsonPart.indexOf('{');
+            const lastBrace = jsonPart.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+                const innerJson = jsonPart.substring(firstBrace, lastBrace + 1);
+                try { return JSON.parse(innerJson); } catch (e) { }
+            }
+
+            // Stage 4: Regex Extraction
             const match = jsonPart.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
             if (match) {
-                return JSON.parse(match[0]);
+                try { return JSON.parse(match[0]); } catch (e) { }
             }
-            return JSON.parse(jsonPart);
+
+            console.error("Stewardship JSON extraction failed. Raw sample:", text.substring(0, 100));
+            return fallback;
         } catch (error) {
-            console.error("Stewardship JSON parsing failed:", error, "Raw text:", text);
+            console.error("Stewardship parsing error:", error);
             return fallback;
         }
     }
@@ -151,7 +178,7 @@ MULTILINGUAL COUNSELING REQUIREMENTS:
 - Nigerian Pidgin: "Make person fit understand for street"
 - Ensure cultural sensitivity and local context
 
-RESPONSE FORMAT (JSON):
+RESPONSE FORMAT (Return a SINGLE JSON Object):
 {
   "drugName": "<drug name>",
   "awareCategory": "ACCESS" | "WATCH" | "RESERVE" | "UNKNOWN",
@@ -182,14 +209,32 @@ RESPONSE FORMAT (JSON):
   }
 }
 
-Provide a comprehensive stewardship assessment for this drug.`;
+Provide a comprehensive stewardship assessment for this drug. Return ONLY raw JSON.`;
 
-            const result = await this.model.generateContent(prompt);
+
+
+            // === WRAP IN RATE LIMIT QUEUE ===
+            const result = await rateLimitManager.enqueue(
+                () => retryWithBackoff(
+                    () => this.model.generateContent(prompt),
+                    3,
+                    2000
+                ),
+                'normal' // Stewardship is standard priority
+            );
+
             const response = await result.response;
             const text = response.text();
 
             // extraction
-            const json = this.safeParseJson(text);
+            let json = this.safeParseJson(text);
+
+            // Handle array response (common Gemini quirk)
+            if (Array.isArray(json)) {
+                console.log("Detecting array response from Stewardship Brain, unwrapping first result...");
+                json = json[0];
+            }
+
             if (!json) {
                 throw new Error("Failed to extract JSON from Gemini response");
             }
