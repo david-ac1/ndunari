@@ -167,7 +167,7 @@ export default function ProfilePage() {
                                 You hold elevated pharmaceutical surveillance clearance. Your account is authorized to access the National Intelligence Grid to monitor counterfeit clusters, issue recall directives, and analyze regional forensic data.
                             </p>
                             <Link
-                                href="/admin"
+                                href="/admin/dashboard"
                                 className="inline-flex items-center gap-3 px-10 py-4 bg-primary text-black rounded-xl font-black uppercase tracking-wider hover:scale-105 transition-all shadow-xl shadow-primary/30"
                             >
                                 Enter Intelligence Center

@@ -136,7 +136,7 @@ export default function HomePage() {
                     <div className="flex items-center gap-3">
                         {user && profile?.role === 'admin' && (
                             <Link
-                                href="/admin"
+                                href="/admin/dashboard"
                                 className="px-6 py-3 rounded-2xl bg-primary text-black text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(56,189,248,0.4)]"
                             >
                                 <Shield size={14} />

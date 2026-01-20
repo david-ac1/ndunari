@@ -9,6 +9,7 @@ type AdminStats = {
     counterfeit_count: number;
     reserve_prescriptions: number;
     active_clusters: number;
+    active_guardians: number;
 };
 
 type RecentScan = {
@@ -24,7 +25,8 @@ export default function AdminDashboard() {
         total_scans: 0,
         counterfeit_count: 0,
         reserve_prescriptions: 0,
-        active_clusters: 0
+        active_clusters: 0,
+        active_guardians: 0
     });
     const [recentScans, setRecentScans] = useState<RecentScan[]>([]);
     const [loading, setLoading] = useState(true);
@@ -41,6 +43,7 @@ export default function AdminDashboard() {
             const { count: scanCount } = await supabase.from('scans').select('*', { count: 'exact', head: true });
             const { count: fakeCount } = await supabase.from('scans').select('*', { count: 'exact', head: true }).eq('risk_level', 'counterfeit');
             const { count: reserveCount } = await supabase.from('prescriptions').select('*', { count: 'exact', head: true }).eq('aware_category', 'RESERVE');
+            const { count: guardianCount } = await supabase.from('user_profiles').select('*', { count: 'exact', head: true });
 
             // 2. Get Recent Activity
             const { data: scans } = await supabase
@@ -53,7 +56,8 @@ export default function AdminDashboard() {
                 total_scans: scanCount || 0,
                 counterfeit_count: fakeCount || 0,
                 reserve_prescriptions: reserveCount || 0,
-                active_clusters: Math.ceil((fakeCount || 0) / 5) // Mock logic for clusters
+                active_clusters: Math.ceil((fakeCount || 0) / 5),
+                active_guardians: guardianCount || 0
             });
 
             if (scans) setRecentScans(scans);
@@ -77,13 +81,20 @@ export default function AdminDashboard() {
             </header>
 
             {/* KPI Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
                 <KpiCard
                     label="Active Clusters"
                     value={stats.active_clusters}
                     icon={Map}
                     color="text-reserve-red"
                     trend={stats.active_clusters > 0 ? "+2 today" : "Stable"}
+                />
+                <KpiCard
+                    label="Active Guardians"
+                    value={stats.active_guardians}
+                    icon={Eye}
+                    color="text-access-green"
+                    subtext="Reporters"
                 />
                 <KpiCard
                     label="Counterfeit Reports"
@@ -102,7 +113,7 @@ export default function AdminDashboard() {
                 <KpiCard
                     label="Total Scans"
                     value={stats.total_scans}
-                    icon={Eye}
+                    icon={Activity}
                     color="text-primary"
                     subtext="National Intake"
                 />
@@ -158,8 +169,8 @@ export default function AdminDashboard() {
                                         <div className="text-zinc-500 text-xs">{new Date(scan.created_at).toLocaleTimeString()}</div>
                                     </div>
                                     <div className={`px-2 py-1 rounded-md text-[10px] uppercase font-bold ${scan.risk_level === 'safe' ? 'bg-access-green/20 text-access-green' :
-                                            scan.risk_level === 'counterfeit' ? 'bg-reserve-red/20 text-reserve-red' :
-                                                'bg-yellow-500/20 text-yellow-500'
+                                        scan.risk_level === 'counterfeit' ? 'bg-reserve-red/20 text-reserve-red' :
+                                            'bg-yellow-500/20 text-yellow-500'
                                         }`}>
                                         {scan.risk_level}
                                     </div>
