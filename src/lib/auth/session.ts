@@ -8,8 +8,7 @@ import { cookies } from 'next/headers';
  * If no session, signs in anonymously (persisting the user identity).
  */
 export async function ensureSession() {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await createClient();
 
     const { data: { session }, error } = await supabase.auth.getSession();
 

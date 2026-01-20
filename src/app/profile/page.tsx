@@ -468,8 +468,34 @@ export default function ProfilePage() {
                 {/* Settings & Logout */}
                 <section className="flex flex-col gap-4">
                     <button
+                        onClick={async () => {
+                            if (confirm("WARNING: This will delete ALL your scan history and reset your analytics. This action cannot be undone.")) {
+                                const { clearAll } = await import("@/lib/services/scan-storage.service");
+                                // We need to access the context's clearAll if possible, but importing the service directly is cleaner for a destructive action
+                                // Actually, let's use the context hook if available, but since we are inside the component, we can use useScanData()
+                                try {
+                                    // Direct service call to ensure deep clean
+                                    const { deleteAllScans } = await import("@/lib/services/scan-storage.service");
+                                    const { clearScanHistory } = await import("@/lib/utils/scan-history");
+
+                                    await deleteAllScans();
+                                    clearScanHistory();
+
+                                    alert("System reset complete. All data purged.");
+                                    window.location.reload();
+                                } catch (e) {
+                                    alert("Reset failed: " + e);
+                                }
+                            }
+                        }}
+                        className="w-full py-4 glass-panel border border-reserve-red/20 text-reserve-red font-bold rounded-2xl hover:bg-reserve-red/5 transition-colors uppercase tracking-widest text-xs"
+                    >
+                        ⚠️ Factory Reset Data
+                    </button>
+
+                    <button
                         onClick={() => signOut()}
-                        className="w-full py-4 glass-panel border border-reserve-red/20 text-reserve-red font-bold rounded-2xl hover:bg-reserve-red/5 transition-colors"
+                        className="w-full py-4 glass-panel border border-white/10 text-white/60 font-bold rounded-2xl hover:bg-white/5 transition-colors"
                     >
                         Sign Out
                     </button>

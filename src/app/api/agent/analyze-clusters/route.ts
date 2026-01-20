@@ -10,9 +10,8 @@ const genAI = new GoogleGenerativeAI(API_KEY);
 
 export async function GET(request: NextRequest) {
     try {
-        const cookieStore = cookies();
         // Use service role if available for viewing all scans, otherwise basic client (limited by RLS)
-        const supabase = createClient(cookieStore);
+        const supabase = await createClient();
 
         // 1. Fetch recent suspicious scans (Last 24h)
         // Note: in a real scenario, this needs a Service Role client to see ALL users' scans
