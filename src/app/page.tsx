@@ -144,12 +144,13 @@ export default function HomePage() {
                             </Link>
                         )}
                         {(!user || user.is_anonymous) && (
-                            <Link
-                                href="/login"
-                                className="px-6 py-3 rounded-2xl bg-primary text-black text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(56,189,248,0.3)]"
-                            >
-                                Sign In
-                            </Link>
+                            <div className="px-4 py-2 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-2">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                                </span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-white/60">Guardian Active</span>
+                            </div>
                         )}
                         {user && profile?.role !== 'admin' && (
                             <button
