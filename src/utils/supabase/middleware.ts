@@ -54,7 +54,25 @@ export async function updateSession(request: NextRequest) {
         }
     );
 
-    await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // PROTECTED ROUTE CHECK: /admin
+    if (request.nextUrl.pathname.startsWith('/admin')) {
+        if (!user) {
+            return NextResponse.redirect(new URL('/', request.url));
+        }
+
+        const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+        if (profile?.role !== 'admin') {
+            console.warn(`Unauthorized access attempt to ${request.nextUrl.pathname} by user ${user.id}`);
+            return NextResponse.redirect(new URL('/', request.url));
+        }
+    }
 
     return response;
 }

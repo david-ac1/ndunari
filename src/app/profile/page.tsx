@@ -6,7 +6,7 @@ import { Shield } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { supabase } from "@/lib/supabase/client";
-import { upgradeAnonymousUser, signOut } from "@/lib/supabase/auth.service";
+import { signOut } from "@/lib/supabase/auth.service";
 import { getScanStats } from "@/lib/services/scan-storage.service";
 import { getPrescriptionStats } from "@/lib/services/prescription-storage.service";
 import { normalizeError, getUserMessage, logError } from "@/lib/errors/app-errors";
@@ -24,12 +24,8 @@ export default function ProfilePage() {
     const [updating, setUpdating] = useState(false);
 
     // Edit Form State
-    const [editName, setEditName] = useState("");
-    const [editLanguage, setEditLanguage] = useState("english");
     const [editShareData, setEditShareData] = useState(true);
 
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     useEffect(() => {
@@ -77,8 +73,6 @@ export default function ProfilePage() {
     // Initial form sync
     useEffect(() => {
         if (profile) {
-            setEditName(profile.display_name || "");
-            setEditLanguage(profile.preferred_language || "english");
             setEditShareData(profile.share_data !== false);
         }
     }, [profile]);
@@ -92,57 +86,7 @@ export default function ProfilePage() {
         });
     };
 
-    const handleUpdateProfile = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!user) return;
-        setUpdating(true);
-        setMessage(null);
 
-        try {
-            const { data, error } = await supabase
-                .from('user_profiles')
-                .upsert({
-                    id: user.id,
-                    display_name: editName,
-                    preferred_language: editLanguage,
-                    share_data: editShareData,
-                    updated_at: new Date().toISOString(),
-                })
-                .select()
-                .single();
-
-            if (error) {
-                setMessage({ type: 'error', text: error.message });
-            } else if (data) {
-                setMessage({ type: 'success', text: 'Profile updated successfully!' });
-                // Pass the new data directly to refresh the global state instantly
-                await refreshProfile(data);
-            }
-        } catch (err) {
-            const error = normalizeError(err);
-            console.error("Profile update error:", error);
-            setMessage({ type: 'error', text: getUserMessage(error) });
-            logError(error, 'ProfilePage.handleSave');
-        } finally {
-            setUpdating(false);
-        }
-    };
-
-    const handleUpgrade = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setUpgrading(true);
-        setMessage(null);
-
-        const { error } = await upgradeAnonymousUser(email, password);
-
-        if (error) {
-            setMessage({ type: 'error', text: error.message });
-        } else {
-            setMessage({ type: 'success', text: 'Account upgraded successfully! You can now sign in with your email.' });
-            await refreshProfile();
-        }
-        setUpgrading(false);
-    };
 
     const handleSignOut = async () => {
         await signOut();
@@ -264,233 +208,85 @@ export default function ProfilePage() {
                     </div>
                 </section>
 
-                {/* Edit Profile Form */}
+                {/* Surveillance Settings */}
                 <section className="glass-panel p-8 rounded-2xl border border-white/10 mb-8">
                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                        <span>⚙️</span> Customize Profile
+                        <span>📡</span> Surveillance Settings
                     </h3>
-                    <form onSubmit={handleUpdateProfile} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-xs font-bold text-white/50 mb-2 uppercase">Display Name</label>
-                                <input
-                                    type="text"
-                                    value={editName}
-                                    onChange={(e) => setEditName(e.target.value)}
-                                    placeholder="Nneka Obi"
-                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-white/50 mb-2 uppercase">Preferred Language</label>
-                                <select
-                                    value={editLanguage}
-                                    onChange={(e) => setEditLanguage(e.target.value)}
-                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary outline-none appearance-none"
-                                >
-                                    <option value="english">🇬🇧 English</option>
-                                    <option value="pidgin">🇳🇬 Pidgin</option>
-                                    <option value="hausa">🇳🇬 Hausa</option>
-                                    <option value="yoruba">🇳🇬 Yoruba</option>
-                                    <option value="igbo">🇳🇬 Igbo</option>
-                                </select>
-                            </div>
-                        </div>
 
-                        {/* Privacy Toggle */}
-                        <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 relative overflow-hidden">
-                            <div className="absolute left-0 top-0 w-1 h-full bg-primary/30" />
-                            <div className="pl-2">
-                                <p className="text-sm font-bold text-white flex items-center gap-2">
-                                    Public Health Data Sharing
-                                    {editShareData ? (
-                                        <span className="px-2 py-0.5 bg-primary/20 text-primary text-[10px] rounded-full uppercase">Enabled</span>
-                                    ) : (
-                                        <span className="px-2 py-0.5 bg-white/10 text-white/40 text-[10px] rounded-full uppercase">Disabled</span>
-                                    )}
-                                </p>
-                                <p className="text-xs text-white/50">Help us track counterfeit trends by sharing de-identified analytics.</p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setEditShareData(!editShareData)}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${editShareData ? 'bg-primary' : 'bg-white/20'}`}
-                            >
-                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${editShareData ? 'translate-x-6' : 'translate-x-1'}`} />
-                            </button>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row gap-4 items-center">
-                            <button
-                                type="submit"
-                                disabled={updating}
-                                className="w-full sm:w-auto px-8 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-dark transition-all disabled:opacity-50 shadow-lg shadow-primary/20"
-                            >
-                                {updating ? 'Saving...' : 'Save All Changes'}
-                            </button>
-                            {message && (
-                                <div className={`text-sm font-medium animate-in fade-in slide-in-from-left-2 ${message.type === 'success' ? 'text-access-green' : 'text-reserve-red'}`}>
-                                    {message.type === 'success' ? '✓ ' : '× '} {message.text}
-                                </div>
-                            )}
-                        </div>
-                    </form>
-                </section>
-
-                {/* Privacy & Transparency Breakdown */}
-                <section className="glass-panel p-8 rounded-2xl border border-white/10 mb-8">
-                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                        <span>🔍</span> Privacy Transparency
-                    </h3>
-                    <div className="space-y-6">
-                        <div className="flex gap-4 p-4 bg-white/5 rounded-xl border border-white/5">
-                            <div className="text-2xl">👤</div>
-                            <div>
-                                <p className="text-sm font-bold text-white">Always Private</p>
-                                <p className="text-xs text-white/50 mt-1">
-                                    Your Name, Email, and exact location are <span className="text-access-green">never</span> shared with third parties or the public surveillance dashboard.
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex gap-4 p-4 bg-white/5 rounded-xl border border-white/5">
-                            <div className="text-2xl">📉</div>
-                            <div>
-                                <p className="text-sm font-bold text-white uppercase tracking-wider text-primary/80">Surveillance Data (If Enabled)</p>
-                                <ul className="text-xs text-white/50 mt-2 space-y-2 list-disc ml-4">
-                                    <li><span className="text-white/80 font-medium">Drug Name & Batch</span>: Helps identify cluster outbreaks of fakes.</li>
-                                    <li><span className="text-white/80 font-medium">Risk Level</span>: Alerts nearby communities of suspicious products.</li>
-                                    <li><span className="text-white/80 font-medium">Regional Trends</span>: High-level de-identified data (e.g., "5 suspicious scans in Lagos today").</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    <div className="glass-panel p-6 rounded-xl border border-white/10">
-                        <h3 className="text-white font-bold mb-4 flex items-center gap-2">
-                            <span>📷</span> Scan Statistics
-                        </h3>
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-white/70">Total Scans</span>
-                                <span className="text-white font-bold">{stats.scans.total}</span>
-                            </div>
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-white/70">Verified Authenticity</span>
-                                <span className="text-access-green font-bold">{stats.scans.safe} scans</span>
-                            </div>
-                            <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-primary"
-                                    style={{ width: `${stats.scans.total > 0 ? (stats.scans.safe / stats.scans.total) * 100 : 0}%` }}
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="glass-panel p-6 rounded-xl border border-white/10">
-                        <h3 className="text-white font-bold mb-4 flex items-center gap-2">
-                            <span>💊</span> Stewardship Stats
-                        </h3>
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-white/70">Prescriptions Analyzed</span>
-                                <span className="text-white font-bold">{stats.prescriptions.total}</span>
-                            </div>
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-white/70">ACCESS Decisions</span>
-                                <span className="text-access-green font-bold">{stats.prescriptions.access} items</span>
-                            </div>
-                            <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-access-green"
-                                    style={{ width: `${stats.prescriptions.total > 0 ? (stats.prescriptions.access / stats.prescriptions.total) * 100 : 0}%` }}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Account Upgrade (if anonymous) */}
-                {
-                    isAnonymous && (
-                        <section className="glass-panel p-8 rounded-2xl border border-primary/20 mb-8">
-                            <h3 className="text-xl font-bold text-white mb-2">Secure Your Account</h3>
-                            <p className="text-white/70 mb-6">
-                                Convert your anonymous session to a permanent account to access your history from any device.
-                            </p>
-
-                            <form onSubmit={handleUpgrade} className="space-y-4 max-w-md">
-                                <div>
-                                    <label className="block text-xs font-bold text-white/50 mb-2 uppercase">Email Address</label>
-                                    <input
-                                        type="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        placeholder="your@email.com"
-                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary outline-none"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-white/50 mb-2 uppercase">Password</label>
-                                    <input
-                                        type="password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        placeholder="Min 6 characters"
-                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-primary outline-none"
-                                        required
-                                    />
-                                </div>
-
-                                {message && (
-                                    <div className={`p-4 rounded-xl text-sm font-medium ${message.type === 'success' ? 'bg-access-green/10 text-access-green border border-access-green/20' : 'bg-reserve-red/10 text-reserve-red border border-reserve-red/20'
-                                        }`}>
-                                        {message.text}
-                                    </div>
+                    {/* Privacy Toggle */}
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 relative overflow-hidden">
+                        <div className="absolute left-0 top-0 w-1 h-full bg-primary/30" />
+                        <div className="pl-2">
+                            <p className="text-sm font-bold text-white flex items-center gap-2">
+                                Public Health Data Sharing
+                                {editShareData ? (
+                                    <span className="px-2 py-0.5 bg-primary/20 text-primary text-[10px] rounded-full uppercase">Enabled</span>
+                                ) : (
+                                    <span className="px-2 py-0.5 bg-white/10 text-white/40 text-[10px] rounded-full uppercase">Disabled</span>
                                 )}
-
-                                <button
-                                    type="submit"
-                                    disabled={upgrading}
-                                    className="w-full py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
-                                >
-                                    {upgrading ? 'Upgrading...' : 'Save Account'}
-                                </button>
-                            </form>
-                        </section>
-                    )
-                }
+                            </p>
+                            <p className="text-xs text-white/50">Help us track counterfeit trends by sharing de-identified analytics.</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                const newValue = !editShareData;
+                                setEditShareData(newValue);
+                                // Auto-save on toggle
+                                try {
+                                    await supabase
+                                        .from('user_profiles')
+                                        .update({ share_data: newValue })
+                                        .eq('id', user.id);
+                                    refreshProfile({ ...profile!, share_data: newValue });
+                                } catch (e) {
+                                    console.error("Failed to save privacy setting", e);
+                                }
+                            }}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${editShareData ? 'bg-primary' : 'bg-white/20'}`}
+                        >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${editShareData ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                    </div>
+                </section>
 
                 {/* Settings & Logout */}
                 <section className="flex flex-col gap-4">
                     <button
                         onClick={async () => {
-                            if (confirm("WARNING: This will delete ALL your scan history and reset your analytics. This action cannot be undone.")) {
-                                const { clearAll } = await import("@/lib/services/scan-storage.service");
-                                // We need to access the context's clearAll if possible, but importing the service directly is cleaner for a destructive action
-                                // Actually, let's use the context hook if available, but since we are inside the component, we can use useScanData()
+                            if (confirm("WARNING: COMPLETE FACTORY RESET DETAILS:\n\n1. Delete ALL scan records.\n2. Reset 'Display Name' to default.\n3. Reset 'Language' to English.\n4. Reset 'Privacy Settings' to default.\n\nAre you sure you want to perform a TOTAL SYSTEM PURGE?")) {
                                 try {
-                                    // Direct service call to ensure deep clean
+                                    // 1. Purge Data
                                     const { deleteAllScans } = await import("@/lib/services/scan-storage.service");
                                     const { clearScanHistory } = await import("@/lib/utils/scan-history");
-
                                     await deleteAllScans();
                                     clearScanHistory();
 
-                                    alert("System reset complete. All data purged.");
+                                    // 2. Purge Identity Customizations (Supabase)
+                                    // Reset profile to generic defaults
+                                    const { error: profileError } = await supabase
+                                        .from('user_profiles')
+                                        .update({
+                                            display_name: null, // Will fallback to 'Health Guardian'
+                                            preferred_language: 'english',
+                                            share_data: true,
+                                            health_integrity_score: 0
+                                        })
+                                        .eq('id', user.id);
+
+                                    if (profileError) throw profileError;
+
+                                    alert("System reset complete. Identity and Data have been purged.");
                                     window.location.reload();
-                                } catch (e) {
-                                    alert("Reset failed: " + e);
+                                } catch (e: any) {
+                                    alert("Reset failed: " + (e.message || e));
                                 }
                             }
                         }}
                         className="w-full py-4 glass-panel border border-reserve-red/20 text-reserve-red font-bold rounded-2xl hover:bg-reserve-red/5 transition-colors uppercase tracking-widest text-xs"
                     >
-                        ⚠️ Factory Reset Data
+                        ⚠️ Factory Reset (Data + Identity)
                     </button>
 
                     <button
