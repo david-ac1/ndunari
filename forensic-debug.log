@@ -20,3 +20,25 @@
   "duration": 17473
 }
 ---
+{
+  "timestamp": "2026-01-20T09:56:24.061Z",
+  "imageSize": 221836,
+  "mimeType": "image/png",
+  "promptLength": 1445,
+  "responseTextLength": 171,
+  "responseTextPreview": "{\n  \"authenticityScore\": 88,\n  \"drugName\": \"Lonart Forte Tablets (Artemether 40 mg + Lumefantrine 240 mg)\",\n  \"nafdacNumber\": \"NOT_FOUND\",\n  \"batchNumber\": \"NOT_FOUND\",\n  ",
+  "finishReason": "MAX_TOKENS",
+  "duration": 14951
+}
+---
+{
+  "timestamp": "2026-01-20T10:01:11.792Z",
+  "imageSize": 221836,
+  "mimeType": "image/png",
+  "promptLength": 1561,
+  "responseTextLength": 1640,
+  "responseTextPreview": "{\n  \"authenticityScore\": 92,\n  \"drugName\": \"LONART FORTE TABLETS (Artemether 40 mg + Lumefantrine 240 mg)\",\n  \"nafdacNumber\": \"NOT_FOUND\",\n  \"batchNumber\": \"NOT_FOUND\",\n  \"expiryDate\": \"NOT_FOUND\",\n  \"findings\": [\n    \"High-quality offset printing with sharp typography and consistent purple-to-white color gradient.\",\n    \"Presence of a security hologram/authentication sticker on the right side of the primary display panel.\",\n    \"Correct manufacturer branding for Bliss GVS Pharma Ltd including d",
+  "finishReason": "STOP",
+  "duration": 15139
+}
+---

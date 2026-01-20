@@ -141,7 +141,7 @@ export class ForensicEyeService {
         
 Analyze the packaging for authenticity and return a structured DNA report.
 
-STRUCTURE:
+STRUCTURE (Return a SINGLE JSON Object, NOT an Array):
 {
   "authenticityScore": 0-100,
   "drugName": "Exact name and dosage",
@@ -171,7 +171,8 @@ CRITICAL INSTRUCTIONS FOR NAFDAC NUMBER:
 ANALYSIS GUIDELINES:
 - authenticityScore: Based on printing precision, hologram presence, and mark accuracy.
 - riskLevel: safe (85+), suspicious (60-84), counterfeit (<60).
-- packageFingerprint: De-spaced string for unique identification. Use 'X' for missing fields.`;
+- packageFingerprint: De-spaced string for unique identification. Use 'X' for missing fields.
+- IMPORTANT: Return ONLY raw JSON. Do not wrap in markdown code blocks.`;
 
             const imagePart = {
                 inlineData: {
@@ -255,7 +256,14 @@ ANALYSIS GUIDELINES:
                 throw new Error("National Security Protocol: Forensic analysis interrupted due to image content safety triggers.");
             }
 
-            const analysis = this.safeParseJson(text);
+            let analysis = this.safeParseJson(text);
+
+            // Handle array response (common Gemini quirk)
+            if (Array.isArray(analysis)) {
+                console.log("Detecting array response from Gemini, unwrapping first specific...");
+                analysis = analysis[0];
+            }
+
             if (!analysis || typeof analysis !== 'object') {
                 console.error("Failed to extract valid JSON object from response:", text);
                 const sample = text.substring(0, 100).replace(/\n/g, ' ');
