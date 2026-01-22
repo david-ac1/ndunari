@@ -58,10 +58,10 @@ export async function saveScan(scanData: {
     // If we have a fingerprint, check if this exact drug was scanned by this user in the last 5 minutes
     if (scanData.packageFingerprint) {
         const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-        const { data: existingScan } = await supabase
+        const { data: existingScan } = await supabaseClient
             .from('scans')
             .select('id, created_at')
-            .eq('user_id', user.id)
+            .eq('user_id', userId) // Use consistent userId
             .eq('drug_name', scanData.drugName)
             .eq('nafdac_number', scanData.nafdacNumber || null)
             .eq('batch_number', scanData.batchNumber || null)
@@ -77,11 +77,12 @@ export async function saveScan(scanData: {
         }
     }
     // ---------------------------
-    console.log("Supabase: Attempting to insert scan for user", user.id);
-    const { data, error } = await supabase
+    console.log("Supabase: Attempting to insert scan for user", userId);
+    const { data, error } = await supabaseClient
         .from('scans')
         .insert({
-            user_id: user.id,
+            id: scanData.id, // Use explicit ID if provided, typically UUID from route
+            user_id: userId,
             drug_name: scanData.drugName,
             nafdac_number: scanData.nafdacNumber || null,
             batch_number: scanData.batchNumber || null,
@@ -111,10 +112,10 @@ export async function saveScan(scanData: {
 
     // === POST-SAVE VERIFICATION ===
     // Check if duplicate was created despite idempotency check
-    const { data: duplicateCheck } = await supabase
+    const { data: duplicateCheck } = await supabaseClient
         .from('scans')
         .select('id, created_at')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .eq('drug_name', scanData.drugName)
         .eq('nafdac_number', scanData.nafdacNumber || null)
         .order('created_at', { ascending: false })
@@ -133,7 +134,7 @@ export async function saveScan(scanData: {
     }
 
     // Update user profile stats
-    await updateUserStats(user.id, 'scan');
+    await updateUserStats(userId, 'scan', supabaseClient);
 
     return { data, error: null };
 }
@@ -238,24 +239,24 @@ export async function getScanStats(): Promise<{
 /**
  * Update user profile statistics
  */
-async function updateUserStats(userId: string, type: 'scan' | 'prescription') {
+async function updateUserStats(userId: string, type: 'scan' | 'prescription', supabaseClient = supabase) {
     const field = type === 'scan' ? 'total_scans' : 'total_prescriptions_analyzed';
 
-    const { error } = await supabase.rpc('increment', {
+    const { error } = await supabaseClient.rpc('increment', {
         row_id: userId,
         field_name: field,
     });
 
     if (error) {
         // Try alternative method if RPC not available
-        const { data: profile } = await supabase
+        const { data: profile } = await supabaseClient
             .from('user_profiles')
             .select(field)
             .eq('id', userId)
             .single();
 
         if (profile) {
-            await supabase
+            await supabaseClient
                 .from('user_profiles')
                 .update({ [field]: (profile[field as keyof typeof profile] as number) + 1 })
                 .eq('id', userId);
@@ -316,7 +317,7 @@ export async function getGlobalSurveillanceData(): Promise<{
 /**
  * Save multi-angle evidence images to the temporary vault
  */
-export async function saveScanEvidence(scanId: string, evidence: Map<string, string>): Promise<{ success: boolean; error: any }> {
+export async function saveScanEvidence(scanId: string, evidence: Map<string, string>, supabaseClient = supabase): Promise<{ success: boolean; error: any }> {
     try {
         const evidenceEntries = Array.from(evidence.entries()).map(([angle, data]) => ({
             scan_id: scanId,
@@ -324,7 +325,7 @@ export async function saveScanEvidence(scanId: string, evidence: Map<string, str
             image_data: data, // In a real prod app, we'd upload to a bucket and store the URL
         }));
 
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('scan_evidence')
             .insert(evidenceEntries);
 

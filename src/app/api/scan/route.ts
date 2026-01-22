@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
                         id: scanId,
                         userId: user.id,
                         timestamp: new Date().toISOString(),
-                        scanMode: '3d-verification',
+                        scanMode: 'multi', // Use 'multi' to satisfy DB constraint
                         drugName: result.forensic.drugName,
                         nafdacNumber: result.forensic.nafdacNumber,
                         authenticityScore: result.forensic.authenticityScore,
@@ -131,23 +131,20 @@ export async function POST(request: NextRequest) {
                         await supabase.rpc('increment_user_scans', { user_id: user.id });
                         console.log('[API] 3D Scan saved to database:', scanId);
                     }
+
+                    // Store all angle images as evidence
+                    const evidenceMap = new Map<string, string>();
+                    for (const [angle, { buffer }] of Object.entries(images)) {
+                        evidenceMap.set(angle, buffer.toString('base64'));
+                    }
+                    await saveScanEvidence(scanId, evidenceMap, supabase);
+
                 } else {
                     console.warn('[API] No authenticated user - 3D scan not saved to database');
                 }
             } catch (saveError) {
                 console.error('[API] Failed to save 3D scan:', saveError);
             }
-
-            // Store all angle images as evidence - convert to Map
-            const evidenceMap = new Map<string, string>();
-            for (const [angle, { buffer }] of Object.entries(images)) {
-                evidenceMap.set(angle, buffer.toString('base64'));
-            }
-            // saveScanEvidence uses client-side supabase import usually, 
-            // but we might need to handle this carefully. 
-            // For now, let's assume saveScanEvidence is robust or moving it to component logic
-            // Actually, keep it here but wrap in try-catch if needed.
-            await saveScanEvidence(scanId, evidenceMap);
 
             console.log('3D verification scan completed:', {
                 scanId,

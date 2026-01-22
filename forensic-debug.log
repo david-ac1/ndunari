@@ -164,3 +164,36 @@
   "duration": 45830
 }
 ---
+{
+  "timestamp": "2026-01-22T14:45:32.780Z",
+  "imageSize": 115048,
+  "mimeType": "image/jpeg",
+  "promptLength": 2595,
+  "responseTextLength": 1623,
+  "responseTextPreview": "{\n  \"authenticityScore\": 98,\n  \"drugName\": \"Erythrofaith 500 (Erythromycin Stearate Tablets BP 500mg)\",\n  \"nafdacNumber\": \"B4-6289\",\n  \"batchNumber\": \"NOT_VISIBLE\",\n  \"expiryDate\": \"NOT_VISIBLE\",\n  \"findings\": [\n    \"NAFDAC number B4-6289 is officially registered to Erythrofaith-500 in the NAFDAC Greenbook.\",\n    \"Manufacturer (McW Healthcare Pvt Ltd, India) and Applicant (DannyFaith Pharmacy Ltd) match official registry data.\",\n    \"A security hologram/scratch-off authentication label is clearl",
+  "finishReason": "STOP",
+  "duration": 45312
+}
+---
+{
+  "timestamp": "2026-01-22T14:51:48.751Z",
+  "imageSize": 87204,
+  "mimeType": "image/jpeg",
+  "promptLength": 2595,
+  "responseTextLength": 1715,
+  "responseTextPreview": "{\n  \"authenticityScore\": 95,\n  \"drugName\": \"Erythrofaith 500 (Erythromycin Stearate Tablets BP 500mg)\",\n  \"nafdacNumber\": \"B4-6289\",\n  \"batchNumber\": \"NOT_VISIBLE\",\n  \"expiryDate\": \"NOT_VISIBLE\",\n  \"findings\": [\n    \"NAFDAC registration number B4-6289 is officially registered to DannyFaith Pharmacy Limited for Erythrofaith-500 tablets.\",\n    \"The manufacturer, McW Healthcare Pvt Limited (India), is a verified pharmaceutical producer with active registration for this product.\",\n    \"Packaging fea",
+  "finishReason": "STOP",
+  "duration": 43163
+}
+---
+{
+  "timestamp": "2026-01-22T14:58:17.192Z",
+  "imageSize": 105908,
+  "mimeType": "image/jpeg",
+  "promptLength": 2595,
+  "responseTextLength": 1618,
+  "responseTextPreview": "{\n  \"authenticityScore\": 98,\n  \"drugName\": \"Erythrofaith 500 (Erythromycin Stearate Tablets BP 500mg)\",\n  \"nafdacNumber\": \"B4-6289\",\n  \"batchNumber\": \"NOT_VISIBLE\",\n  \"expiryDate\": \"NOT_VISIBLE\",\n  \"findings\": [\n    \"NAFDAC registration number B4-6289 is officially verified in the registry for Erythrofaith-500, registered to DannyFaith Pharmacy Ltd.\",\n    \"The package includes a security hologram/scratch-off verification sticker, a key anti-counterfeiting feature.\",\n    \"The manufacturer, McW He",
+  "finishReason": "STOP",
+  "duration": 34688
+}
+---

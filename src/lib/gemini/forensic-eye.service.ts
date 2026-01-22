@@ -177,9 +177,13 @@ CRITICAL INSTRUCTIONS FOR OBJECT DETECTION:
 CRITICAL INSTRUCTIONS FOR NAFDAC NUMBER:
 1. NAFDAC numbers have two formats:
    A) NEW: NAF-YYYY-NNNNN (e.g. NAF-2023-12345)
-   B) OLD: [LETTER][NUMBER]-[NUMBER] (e.g. B4-6269)
-2. If unreadable, use "NOT_FOUND". If missing (imported), use "NOT_APPLICABLE".
-3. Precision is paramount. Do not hallucinate regulatory codes.
+   B) OLD: [LETTER][NUMBER]-[NUMBER] or [NUMBER]-[NUMBER] (e.g. B4-6269, 04-1234)
+2. If unreadable, use "NOT_FOUND".
+3. **VERIFICATION CAUTION**: 
+   - Many NAFDAC entries are registered under the **GENERIC NAME** (Active Ingredient), not the Brand Name.
+   - Example: "Erythrofaith" might be registered as "Erythromycin".
+   - Do NOT declare a NAFDAC mismatch unless you find a *conclusive* record for that specific number belonging to a *completely different manufacturer or drug class*.
+   - If unsure, do NOT claim "Registered to X". Simply state "Verification Inconclusive".
 
 ANALYSIS GUIDELINES:
 - authenticityScore: Based on printing precision, hologram presence, mark accuracy, AND web verification.
@@ -394,11 +398,15 @@ ANALYSIS GUIDELINES:
 
     /**
      * Validate NAFDAC registration number format
-     * Pattern: NAF-YYYY-NNNNN
+     * Supports both New (NAF-YYYY-NNNNN) and Old (04-1234, B4-1234) formats
      */
     validateNAFDACNumber(nafdacNumber: string): boolean {
-        const pattern = /^NAF-\d{4}-\d{5}$/;
-        return pattern.test(nafdacNumber);
+        // New: NAF-2023-12345
+        const newPattern = /^NAF-\d{4}-\d{5}$/;
+        // Old: 04-1234 or B4-6269 (1-2 chars, 1-2 digits, dash, 4-5 digits)
+        const oldPattern = /^[A-Z0-9]{1,2}\d{0,2}-\d{4,5}$/;
+
+        return newPattern.test(nafdacNumber) || oldPattern.test(nafdacNumber);
     }
 
     /**
