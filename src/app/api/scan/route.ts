@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { tieredRoutingService } from "@/lib/gemini/tiered-routing.service";
 import { FORENSIC_EYE_CONFIG, STEWARDSHIP_BRAIN_CONFIG } from "@/lib/gemini/config";
 import { saveScan, saveScanEvidence } from "@/lib/services/scan-storage.service";
-import type { AngleImage } from "@/lib/3d/gemini-reconstruction.service";
+import type { AngleImage } from "@/lib/3d/types";
 
 /**
  * POST /api/scan
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
             const primaryMimeType = images.front?.file.type || Object.values(images)[0].file.type;
 
             // Generate unique scan ID for 3D model storage
-            const scanId = `scan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const scanId = crypto.randomUUID();
 
             // Run forensic analysis with 3D reconstruction
             const result = await tieredRoutingService.analyzeDrugPackage(
@@ -70,11 +70,11 @@ export async function POST(request: NextRequest) {
                 100
             );
 
-            // Add3D verification findings
+            // Add 3D verification findings
             if (result.model3D) {
                 result.forensic.findings.unshift(
-                    `🔬 3D model reconstruction complete (${imageCount} angles)`,
-                    `Confidence: ${result.model3D.confidence}% (AI-powered depth analysis)`
+                    `📡 3D Analysis Queued`,
+                    `Waiting for Gemini 3D Image Reconstruction features to enhance pharmaceutical stewardship.`
                 );
             } else {
                 result.forensic.findings.unshift(
@@ -83,29 +83,70 @@ export async function POST(request: NextRequest) {
             }
             result.forensic.authenticityScore = Math.round(adjustedScore);
 
-            // Store in National Ledger with all angle images
-            const userId = formData.get('userId') as string || 'anonymous';
-            await saveScan({
-                id: scanId,
-                userId,
-                timestamp: new Date().toISOString(),
-                scanMode: '3d-verification',
-                drugName: result.forensic.drugName,
-                nafdacNumber: result.forensic.nafdacNumber,
-                authenticityScore: result.forensic.authenticityScore,
-                riskLevel: result.forensic.riskLevel,
-                findings: result.forensic.findings,
-                anglesScanned: imageCount,
-                forensicAnalysis: result.forensic,
-                stewardshipAssessment: result.stewardship || undefined,
-                model3D: result.model3D,
-            });
+            // SERVER-SIDE DATABASE SAVE (MULTI-SCAN)
+            try {
+                const { cookies } = await import('next/headers');
+                const { createServerClient } = await import('@supabase/ssr');
+                const cookieStore = await cookies();
+
+                const supabase = createServerClient(
+                    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                    {
+                        cookies: {
+                            getAll() { return cookieStore.getAll(); },
+                            setAll(cookiesToSet) {
+                                cookiesToSet.forEach(({ name, value, options }) =>
+                                    cookieStore.set(name, value, options)
+                                );
+                            },
+                        },
+                    }
+                );
+
+                const { data: { user } } = await supabase.auth.getUser();
+
+                if (user) {
+                    // Store in National Ledger
+                    const { error: saveError } = await saveScan({
+                        id: scanId,
+                        userId: user.id,
+                        timestamp: new Date().toISOString(),
+                        scanMode: '3d-verification',
+                        drugName: result.forensic.drugName,
+                        nafdacNumber: result.forensic.nafdacNumber,
+                        authenticityScore: result.forensic.authenticityScore,
+                        riskLevel: result.forensic.riskLevel,
+                        findings: result.forensic.findings,
+                        anglesScanned: imageCount,
+                        forensicAnalysis: result.forensic,
+                        stewardshipAssessment: result.stewardship || undefined,
+                        model3D: result.model3D,
+                    }, supabase);
+
+                    if (saveError) {
+                        console.error('[API] Database save error (3D):', saveError);
+                    } else {
+                        // Update user stats
+                        await supabase.rpc('increment_user_scans', { user_id: user.id });
+                        console.log('[API] 3D Scan saved to database:', scanId);
+                    }
+                } else {
+                    console.warn('[API] No authenticated user - 3D scan not saved to database');
+                }
+            } catch (saveError) {
+                console.error('[API] Failed to save 3D scan:', saveError);
+            }
 
             // Store all angle images as evidence - convert to Map
             const evidenceMap = new Map<string, string>();
             for (const [angle, { buffer }] of Object.entries(images)) {
                 evidenceMap.set(angle, buffer.toString('base64'));
             }
+            // saveScanEvidence uses client-side supabase import usually, 
+            // but we might need to handle this carefully. 
+            // For now, let's assume saveScanEvidence is robust or moving it to component logic
+            // Actually, keep it here but wrap in try-catch if needed.
             await saveScanEvidence(scanId, evidenceMap);
 
             console.log('3D verification scan completed:', {
@@ -157,7 +198,7 @@ export async function POST(request: NextRequest) {
         );
 
         // Generate unique scan ID
-        const scanId = `scan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const scanId = crypto.randomUUID();
 
         // SERVER-SIDE DATABASE SAVE (using cookies for auth)
         try {

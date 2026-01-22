@@ -67,14 +67,8 @@ export function getForensicEyeModel(useJsonMode = false, useFallback = false, us
     const modelId = useFallback ? FORENSIC_EYE_CONFIG.fallbackModel : FORENSIC_EYE_CONFIG.model;
     console.log(`🔬 Initializing Forensic Eye with model: ${modelId}${useGrounding ? ' (Grounding enabled)' : ''}`);
 
-    const tools = useGrounding ? [{
-        googleSearchRetrieval: {
-            dynamicRetrievalConfig: {
-                mode: DynamicRetrievalMode.MODE_DYNAMIC as any,
-                dynamicThreshold: 0.7 // Search if Gemini's confidence < 70%
-            }
-        }
-    }] : undefined;
+    // Use google_search tool instead of deprecated googleSearchRetrieval
+    const tools = useGrounding ? [{ google_search: {} }] : undefined;
 
     return genAI.getGenerativeModel({
         model: modelId,
@@ -83,7 +77,7 @@ export function getForensicEyeModel(useJsonMode = false, useFallback = false, us
             responseMimeType: useJsonMode ? "application/json" : "text/plain",
         },
         safetySettings: SENTINEL_SAFETY_SETTINGS,
-        tools
+        tools: tools as any
     });
 }
 

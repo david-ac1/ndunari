@@ -28,7 +28,7 @@ export async function saveScan(scanData: {
     forensicAnalysis?: any; // NEW: Full forensic data
     stewardshipAssessment?: any; // NEW: Stewardship data
     model3D?: any; // NEW: 3D model data
-}): Promise<{ data: Scan | null; error: any }> {
+}, supabaseClient = supabase): Promise<{ data: Scan | null; error: any }> { // Allow injection
     // === DIAGNOSTIC LOGGING ===
     const callStack = new Error().stack?.split('\n').slice(2, 5).join('\n') || 'N/A';
     console.log('[LEDGER] saveScan CALLED:', {
@@ -38,17 +38,18 @@ export async function saveScan(scanData: {
         callStack
     });
     // Get current user and privacy preference
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await supabaseClient.auth.getUser();
 
-    if (!user) {
+    if (!user && !scanData.userId) {
         return { data: null, error: new Error('User not authenticated') };
     }
+    const userId = user?.id || scanData.userId!;
 
     // Check privacy preference
-    const { data: profile } = await supabase
+    const { data: profile } = await supabaseClient
         .from('user_profiles')
         .select('share_data')
-        .eq('id', user.id)
+        .eq('id', userId)
         .single();
 
     const sharingEnabled = profile?.share_data !== false;

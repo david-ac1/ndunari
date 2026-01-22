@@ -142,3 +142,25 @@
   "duration": 13294
 }
 ---
+{
+  "timestamp": "2026-01-22T13:10:21.882Z",
+  "imageSize": 86872,
+  "mimeType": "image/jpeg",
+  "promptLength": 2211,
+  "responseTextLength": 1745,
+  "responseTextPreview": "{\n  \"authenticityScore\": 30,\n  \"drugName\": \"Erythrofaith 500 (Erythromycin Stearate Tablets BP 500mg)\",\n  \"nafdacNumber\": \"B4-6269\",\n  \"batchNumber\": \"NOT_VISIBLE\",\n  \"expiryDate\": \"NOT_VISIBLE\",\n  \"findings\": [\n    \"Critical Mismatch: NAFDAC number B4-6269 is registered to 'Eglofedipine' (Nifedipine Retard 20mg) by E-Global Pharm, not Erythromycin.\",\n    \"The legitimate NAFDAC registration number for Erythrofaith-500 is B4-6289.\",\n    \"A Mobile Authentication Service (MAS) scratch-off sticker i",
+  "finishReason": "STOP",
+  "duration": 40247
+}
+---
+{
+  "timestamp": "2026-01-22T14:07:16.632Z",
+  "imageSize": 81164,
+  "mimeType": "image/jpeg",
+  "promptLength": 2211,
+  "responseTextLength": 1733,
+  "responseTextPreview": "{\n  \"authenticityScore\": 15,\n  \"drugName\": \"Erythrofaith 500 (Erythromycin Stearate Tablets BP 500mg)\",\n  \"nafdacNumber\": \"B4-6269\",\n  \"batchNumber\": \"NOT_FOUND\",\n  \"expiryDate\": \"NOT_FOUND\",\n  \"findings\": [\n    \"The NAFDAC number B4-6269 printed on the package is registered to Nifedipine 20mg (E-Global Pharm), not Erythromycin.\",\n    \"The legitimate NAFDAC registration number for Erythrofaith 500 is B4-6289.\",\n    \"A one-digit discrepancy in the NAFDAC number (6269 vs 6289) is a common indicato",
+  "finishReason": "STOP",
+  "duration": 45830
+}
+---

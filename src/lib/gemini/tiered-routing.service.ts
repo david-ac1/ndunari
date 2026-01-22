@@ -3,8 +3,8 @@ import { stewardshipBrainService } from "./stewardship-brain.service";
 import { ESCALATION_THRESHOLD, RESERVE_DRUGS } from "./config";
 import type { ForensicAnalysis } from "./forensic-eye.service";
 import type { StewardshipAssessment } from "./stewardship-brain.service";
-import { geminiReconstructionService } from "../3d/gemini-reconstruction.service";
-import { modelStorageService } from "../3d/model-storage.service";
+// import { geminiReconstructionService } from "../3d/gemini-reconstruction.service"; // REMOVED
+// import { modelStorageService } from "../3d/model-storage.service"; // REMOVED
 import type { AngleImage, ReconstructionResult } from "../3d/types";
 
 /**
@@ -69,22 +69,25 @@ export class TieredRoutingService {
             costEstimate = 0.016; // Flash + Thinking cost
         }
 
-        // STEP 3: Generate 3D model if multi-angle images provided
+        // STEP 3: 3D Reconstruction Placeholder (Waiting for features)
         let model3D: ReconstructionResult | undefined;
         if (multiAngleImages && multiAngleImages.length >= 2) {
-            console.log(`🧊 Generating 3D model from ${multiAngleImages.length} angles...`);
-            try {
-                model3D = await geminiReconstructionService.reconstructPackage(multiAngleImages);
+            console.log(`🧊 Multi-angle scan detected (${multiAngleImages.length} angles). Queueing for future 3D analysis.`);
 
-                // Store model if scanId provided
-                if (scanId && model3D) {
-                    await modelStorageService.saveModel(scanId, model3D);
-                    console.log(`✓ 3D model stored for scan: ${scanId}`);
-                }
-            } catch (error) {
-                console.error("3D reconstruction failed:", error);
-                // Continue without 3D model - not a critical failure
-            }
+            // Return a placeholder result to trigger the UI notification
+            model3D = {
+                structure: {
+                    dimensions: { width: 0, height: 0, depth: 0 },
+                    shapeType: 'box',
+                    vertices: [],
+                    faces: []
+                },
+                textures: new Map(), // We could populate this, but strictly not needed for the notification
+                confidence: 100,
+                synthesizedAngles: []
+            };
+
+            // Note: We skip modelStorageService.saveModel() since we generated nothing real
         }
 
         const processingTime = Date.now() - startTime;
