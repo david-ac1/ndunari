@@ -16,6 +16,14 @@ export async function POST(request: NextRequest) {
         const formData = await request.formData();
         const mode = formData.get('mode') as 'single' | 'multi' | null;
 
+        // Parse Location
+        const latStr = formData.get('latitude') as string | null;
+        const lonStr = formData.get('longitude') as string | null;
+        const location = latStr && lonStr ? {
+            latitude: parseFloat(latStr),
+            longitude: parseFloat(lonStr)
+        } : undefined;
+
         // Multi-angle 3D verification scan
         if (mode === 'multi') {
             const angles = ['front', 'back', 'left', 'right', 'top', 'bottom'];
@@ -112,7 +120,7 @@ export async function POST(request: NextRequest) {
                         id: scanId,
                         userId: user.id,
                         timestamp: new Date().toISOString(),
-                        scanMode: 'multi', // Use 'multi' to satisfy DB constraint
+                        scanMode: 'multi',
                         drugName: result.forensic.drugName,
                         nafdacNumber: result.forensic.nafdacNumber,
                         authenticityScore: result.forensic.authenticityScore,
@@ -122,6 +130,8 @@ export async function POST(request: NextRequest) {
                         forensicAnalysis: result.forensic,
                         stewardshipAssessment: result.stewardship || undefined,
                         model3D: result.model3D,
+                        latitude: location?.latitude,
+                        longitude: location?.longitude,
                     }, supabase);
 
                     if (saveError) {
@@ -229,29 +239,30 @@ export async function POST(request: NextRequest) {
             const { data: { user }, error: authError } = await supabase.auth.getUser();
 
             if (user) {
-                const { data: scanRecord, error: dbError } = await supabase
-                    .from('scans')
-                    .insert({
-                        user_id: user.id,
-                        drug_name: result.forensic.drugName,
-                        nafdac_number: result.forensic.nafdacNumber || null,
-                        authenticity_score: result.forensic.authenticityScore,
-                        risk_level: result.forensic.riskLevel,
-                        findings: result.forensic.findings || null,
-                        scan_mode: 'single',
-                        angles_scanned: 1,
-                        region: null,
-                    })
-                    .select()
-                    .single();
+                // Store in National Ledger using centralized service
+                const { error: saveError } = await saveScan({
+                    id: scanId,
+                    userId: user.id,
+                    timestamp: new Date().toISOString(),
+                    scanMode: 'single',
+                    drugName: result.forensic.drugName,
+                    nafdacNumber: result.forensic.nafdacNumber,
+                    authenticityScore: result.forensic.authenticityScore,
+                    riskLevel: result.forensic.riskLevel,
+                    findings: result.forensic.findings,
+                    anglesScanned: 1,
+                    forensicAnalysis: result.forensic,
+                    stewardshipAssessment: result.stewardship || undefined,
+                    latitude: location?.latitude,
+                    longitude: location?.longitude,
+                }, supabase);
 
-                if (dbError) {
-                    console.error('[API] Database save error:', dbError);
+                if (saveError) {
+                    console.error('[API] Database save error (Single):', saveError);
                 } else {
-                    console.log('[API] Scan saved to database:', scanRecord.id);
-
                     // Update user stats
                     await supabase.rpc('increment_user_scans', { user_id: user.id });
+                    console.log('[API] Single Scan saved to database:', scanId);
                 }
             } else {
                 console.warn('[API] No authenticated user - scan not saved to database');

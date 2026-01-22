@@ -197,3 +197,36 @@
   "duration": 34688
 }
 ---
+{
+  "timestamp": "2026-01-22T15:22:44.436Z",
+  "imageSize": 221836,
+  "mimeType": "image/png",
+  "promptLength": 2595,
+  "responseTextLength": 2094,
+  "responseTextPreview": "{\n  \"authenticityScore\": 92,\n  \"drugName\": \"Lonart Forte Tablets (Artemether 40 mg + Lumefantrine 240 mg)\",\n  \"nafdacNumber\": \"NOT_VISIBLE\",\n  \"batchNumber\": \"NOT_VISIBLE\",\n  \"expiryDate\": \"NOT_VISIBLE\",\n  \"findings\": [\n    \"Manufacturer 'Bliss GVS Pharma Ltd.' is a verified producer of Lonart Forte with the correct factory address in Palghar, India.\",\n    \"Presence of a 'GVS' branded security/authentication sticker on the right side, which is a standard anti-counterfeiting feature for this bran",
+  "finishReason": "STOP",
+  "duration": 75303
+}
+---
+{
+  "timestamp": "2026-01-22T15:27:18.106Z",
+  "imageSize": 221836,
+  "mimeType": "image/png",
+  "promptLength": 2595,
+  "responseTextLength": 507,
+  "responseTextPreview": "{\n  \"authenticityScore\": 92,\n  \"drugName\": \"Lonart Forte Tablets (Artemether 40 mg + Lumefantrine 240 mg)\",\n  \"nafdacNumber\": \"04-9928\",\n  \"batchNumber\": \"GVT11024\",\n  \"expiryDate\": \"11/2024\",\n  \"findings\": [\n    \"Packaging displays the correct mosquito imagery and color scheme associated with the Lonart brand by Bliss GVS Pharma.\",\n    \"Manufacturer address on the box (Ujagar Industrial Estate) is a verified historical registered office for Bliss GVS Pharma Ltd.\",\n    \"A security sticker with t",
+  "finishReason": "MAX_TOKENS",
+  "duration": 85342
+}
+---
+{
+  "timestamp": "2026-01-22T15:31:10.660Z",
+  "imageSize": 221836,
+  "mimeType": "image/png",
+  "promptLength": 2595,
+  "responseTextLength": 1705,
+  "responseTextPreview": "{\n  \"authenticityScore\": 95,\n  \"drugName\": \"Lonart Forte (Artemether 40 mg + Lumefantrine 240 mg)\",\n  \"nafdacNumber\": \"04-9633\",\n  \"batchNumber\": \"NOT_FOUND\",\n  \"expiryDate\": \"NOT_FOUND\",\n  \"findings\": [\n    \"Presence of the official Mobile Authentication Service (MAS) security sticker on the right side for consumer verification.\",\n    \"Manufacturer details for Bliss GVS Pharma Ltd (Mumbai, India) are correctly displayed and match regulatory records.\",\n    \"Packaging design, including the specif",
+  "finishReason": "STOP",
+  "duration": 51532
+}
+---

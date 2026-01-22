@@ -57,6 +57,23 @@ export default function ScanPage() {
     const [isThinking, setIsThinking] = useState(false); // Global busy state
     const [isGuiding, setIsGuiding] = useState(false);  // Agent background pulse state
     const [lastScanPreview, setLastScanPreview] = useState<string | null>(null);
+    const [location, setLocation] = useState<{ latitude: number, longitude: number } | null>(null);
+
+    // Capture Location on Mount
+    useEffect(() => {
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    setLocation({
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    });
+                },
+                (err) => console.log("Geolocation skipped:", err),
+                { enableHighAccuracy: true, timeout: 5000 }
+            );
+        }
+    }, []);
 
     const webcamRef = useRef<Webcam>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -187,6 +204,10 @@ export default function ScanPage() {
         try {
             const formData = new FormData();
             formData.append('mode', 'multi');
+            if (location) {
+                formData.append('latitude', location.latitude.toString());
+                formData.append('longitude', location.longitude.toString());
+            }
 
             const blobPromises = Array.from(multiAngleSession.capturedAngles.entries()).map(async ([angle, data]) => {
                 const res = await fetch(data);
@@ -238,6 +259,10 @@ export default function ScanPage() {
             const formData = new FormData();
             formData.append('image', blob, 'scan.jpg');
             formData.append('mode', 'single');
+            if (location) {
+                formData.append('latitude', location.latitude.toString());
+                formData.append('longitude', location.longitude.toString());
+            }
 
             setScanState('analyzing');
             const apiRes = await fetch('/api/scan', { method: 'POST', body: formData });

@@ -26,7 +26,7 @@ export const FORENSIC_EYE_CONFIG = {
     fallbackModel: "gemini-2.0-flash-exp", // Stable fallback
     generationConfig: {
         temperature: 0.15, // Balanced stability for complex multimodal reasoning
-        maxOutputTokens: 4096, // Increased to prevent truncation
+        maxOutputTokens: 8192, // Increased to prevent truncation
         topP: 0.95,
         topK: 40,
     },
@@ -46,7 +46,7 @@ export const STEWARDSHIP_BRAIN_CONFIG = {
     fallbackModel: "gemini-2.0-flash-exp",
     generationConfig: {
         temperature: 0.1, // Precise clinical reasoning
-        maxOutputTokens: 4096, // For 5 languages + recommendations
+        maxOutputTokens: 8192, // For 5 languages + recommendations
         topP: 0.95,
         topK: 40,
     },

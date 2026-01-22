@@ -28,6 +28,7 @@ const regionCoords: Record<string, { x: number, y: number }> = {
     "Sokoto": { x: 280, y: 100 },
     "Bauchi": { x: 720, y: 280 },
     "Unknown": { x: 500, y: 400 }, // Default center
+    "International": { x: 850, y: 650 }, // Offshore/International Node
 };
 
 export default function MapPage() {
@@ -38,10 +39,18 @@ export default function MapPage() {
     useEffect(() => {
         async function load() {
             setLoading(true);
-            const data = await getGlobalSurveillanceData();
-            setSignals(data);
-            setLoading(false);
-            if (data.length > 0) setSelectedRegion(data[0]);
+            try {
+                const res = await fetch('/api/map-data');
+                const data = await res.json();
+                if (Array.isArray(data)) {
+                    setSignals(data);
+                    if (data.length > 0) setSelectedRegion(data[0]);
+                }
+            } catch (err) {
+                console.error("Failed to load surveillance data", err);
+            } finally {
+                setLoading(false);
+            }
         }
         load();
     }, []);

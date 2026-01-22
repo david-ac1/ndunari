@@ -28,6 +28,8 @@ export async function saveScan(scanData: {
     forensicAnalysis?: any; // NEW: Full forensic data
     stewardshipAssessment?: any; // NEW: Stewardship data
     model3D?: any; // NEW: 3D model data
+    latitude?: number; // NEW
+    longitude?: number; // NEW
 }, supabaseClient = supabase): Promise<{ data: Scan | null; error: any }> { // Allow injection
     // === DIAGNOSTIC LOGGING ===
     const callStack = new Error().stack?.split('\n').slice(2, 5).join('\n') || 'N/A';
@@ -54,6 +56,15 @@ export async function saveScan(scanData: {
 
     const sharingEnabled = profile?.share_data !== false;
 
+    // --- REGION DETERMINATION ---
+    // If we have coords but no region, try to map it to a Nigerian city for the heatmap
+    let finalRegion = scanData.region;
+    if (!finalRegion && scanData.latitude && scanData.longitude && sharingEnabled) {
+        finalRegion = getNearestNigerianCity(scanData.latitude, scanData.longitude);
+    }
+    // Default fallback if privacy enabled or no match
+    finalRegion = sharingEnabled ? (finalRegion || 'Unknown') : 'REDACTED';
+
     // --- IDEMPOTENCY CHECK ---
     // If we have a fingerprint, check if this exact drug was scanned by this user in the last 5 minutes
     if (scanData.packageFingerprint) {
@@ -78,10 +89,16 @@ export async function saveScan(scanData: {
     }
     // ---------------------------
     console.log("Supabase: Attempting to insert scan for user", userId);
+
+    // Format location for PostGIS if coords provided
+    const locationData = (scanData.latitude && scanData.longitude)
+        ? `POINT(${scanData.longitude} ${scanData.latitude})`
+        : null;
+
     const { data, error } = await supabaseClient
         .from('scans')
         .insert({
-            id: scanData.id, // Use explicit ID if provided, typically UUID from route
+            id: scanData.id,
             user_id: userId,
             drug_name: scanData.drugName,
             nafdac_number: scanData.nafdacNumber || null,
@@ -93,7 +110,8 @@ export async function saveScan(scanData: {
             scan_mode: scanData.scanMode || 'single',
             angles_scanned: scanData.anglesScanned || 1,
             image_preview: scanData.imagePreview || null,
-            region: sharingEnabled ? (scanData.region || null) : 'REDACTED',
+            region: finalRegion,
+            location: locationData, // PostGIS field
         })
         .select()
         .single();
@@ -389,4 +407,41 @@ export async function syncLocalScans(localScans: ScanHistoryItem[]): Promise<num
     }
 
     return syncCount;
+}
+
+/**
+ * Simple reverse geocoding for Nigerian Major Cities
+ * Used to bucket scans into regions for the heatmap
+ */
+function getNearestNigerianCity(lat: number, lon: number): string | null {
+    const cities = [
+        { name: "Lagos", lat: 6.5244, lon: 3.3792 },
+        { name: "Abuja", lat: 9.0765, lon: 7.3986 },
+        { name: "Kano", lat: 12.0022, lon: 8.5920 },
+        { name: "Port Harcourt", lat: 4.8156, lon: 7.0498 },
+        { name: "Ibadan", lat: 7.3775, lon: 3.9470 },
+        { name: "Enugu", lat: 6.4584, lon: 7.5464 },
+        { name: "Maiduguri", lat: 11.8311, lon: 13.1510 },
+        { name: "Kaduna", lat: 10.5105, lon: 7.4165 },
+        { name: "Jos", lat: 9.8965, lon: 8.8583 },
+        { name: "Benin City", lat: 6.3350, lon: 5.6037 },
+        { name: "Sokoto", lat: 13.0059, lon: 5.2476 },
+        { name: "Bauchi", lat: 10.3103, lon: 9.8439 }
+    ];
+
+    let nearest = null;
+    let minDist = Infinity;
+
+    for (const city of cities) {
+        const dist = Math.sqrt(Math.pow(city.lat - lat, 2) + Math.pow(city.lon - lon, 2));
+        if (dist < minDist) {
+            minDist = dist;
+            nearest = city.name;
+        }
+    }
+
+    // Threshold: Only map if within ~2 degrees (roughly 200km) to avoid weird mapping for overseas scans
+    if (minDist > 3.0) return "International";
+
+    return nearest;
 }
