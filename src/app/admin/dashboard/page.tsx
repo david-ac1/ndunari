@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { Map, Box, Activity, AlertTriangle, Eye } from "lucide-react";
+import NotificationPanel from "@/components/notifications/NotificationPanel";
 
 type AdminStats = {
     total_scans: number;
@@ -75,9 +76,14 @@ export default function AdminDashboard() {
 
     return (
         <div className="space-y-8">
-            <header>
-                <h1 className="text-3xl font-black text-white uppercase tracking-tight mb-2">Monitor Dashboard</h1>
-                <p className="text-zinc-500">Live surveillance feed across all active zones.</p>
+            <header className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-black text-white uppercase tracking-tight mb-2">Monitor Dashboard</h1>
+                    <p className="text-zinc-500">Live surveillance feed across all active zones.</p>
+                </div>
+                <div className="relative">
+                    <NotificationPanel />
+                </div>
             </header>
 
             {/* KPI Grid */}

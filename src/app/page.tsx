@@ -10,6 +10,7 @@ import { sentinelAgentService, type SentinelDirective } from "@/lib/gemini/senti
 import { ThinkingPanel } from "@/app/components/ThinkingPanel";
 import { Shield, Activity, Search, AlertCircle, Zap, TrendingUp, Map as MapIcon, ChevronRight, Users, Globe, Database, BookOpen } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import NotificationPanel from "@/components/notifications/NotificationPanel";
 
 export default function HomePage() {
     const { user, profile, loading: authLoading } = useAuth();
@@ -134,6 +135,9 @@ export default function HomePage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
+                        {/* Notification Bell */}
+                        <NotificationPanel />
+
                         {user && profile?.role === 'admin' && (
                             <Link
                                 href="/admin/dashboard"

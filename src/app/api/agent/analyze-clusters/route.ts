@@ -137,6 +137,25 @@ CRITICAL:
             codeExecuted: directive.python_execution?.code_ran
         });
 
+        // Create notification if ALERT status
+        if (directive.status === 'ALERT') {
+            try {
+                const { data: notificationId, error: notifError } = await supabase
+                    .rpc('create_directive_notification', {
+                        directive_json: directive
+                    });
+
+                if (notifError) {
+                    console.error('Failed to create notification:', notifError);
+                } else {
+                    console.log('📢 Notification created:', notificationId);
+                }
+            } catch (notifErr) {
+                console.error('Notification creation error:', notifErr);
+                // Don't fail the request if notification fails
+            }
+        }
+
         return NextResponse.json(directive);
 
     } catch (err: any) {
