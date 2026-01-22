@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold, DynamicRetrievalMode } from "@google/generative-ai";
 
 // Get API key (will be validated at runtime when actually used)
 // Support both client-side and server-side environment variables
@@ -60,12 +60,22 @@ export const SENTINEL_SAFETY_SETTINGS = [
 ];
 
 
-export function getForensicEyeModel(useJsonMode = false, useFallback = false) {
+export function getForensicEyeModel(useJsonMode = false, useFallback = false, useGrounding = false) {
     if (!API_KEY && !MOCK_MODE) {
         throw new Error("GEMINI_API_KEY environment variable is required");
     }
     const modelId = useFallback ? FORENSIC_EYE_CONFIG.fallbackModel : FORENSIC_EYE_CONFIG.model;
-    console.log(`🔬 Initializing Forensic Eye with model: ${modelId}`);
+    console.log(`🔬 Initializing Forensic Eye with model: ${modelId}${useGrounding ? ' (Grounding enabled)' : ''}`);
+
+    const tools = useGrounding ? [{
+        googleSearchRetrieval: {
+            dynamicRetrievalConfig: {
+                mode: DynamicRetrievalMode.MODE_DYNAMIC as any,
+                dynamicThreshold: 0.7 // Search if Gemini's confidence < 70%
+            }
+        }
+    }] : undefined;
+
     return genAI.getGenerativeModel({
         model: modelId,
         generationConfig: {
@@ -73,6 +83,7 @@ export function getForensicEyeModel(useJsonMode = false, useFallback = false) {
             responseMimeType: useJsonMode ? "application/json" : "text/plain",
         },
         safetySettings: SENTINEL_SAFETY_SETTINGS,
+        tools
     });
 }
 

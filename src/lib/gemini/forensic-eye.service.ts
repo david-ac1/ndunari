@@ -42,7 +42,8 @@ export class ForensicEyeService {
     private get model() {
         // Dynamic getter ensures we always use the latest config model ID
         // useJsonMode=true to enforce JSON responses
-        return getForensicEyeModel(true);
+        // useGrounding=true to enable real-time manufacturer/NAFDAC verification
+        return getForensicEyeModel(true, false, true);
     }
 
     /**
@@ -154,8 +155,20 @@ STRUCTURE (Return a SINGLE JSON Object, NOT an Array):
   "packageFingerprint": "[NAME]-[NAFDAC]-[BATCH]-[EXPIRY]",
   "evidenceBoxes": [
     { "box_2d": [ymin, xmin, ymax, xmax], "label": "Feature Name" }
-  ]
+  ],
+  "groundingVerification": {
+    "manufacturerVerified": true/false,
+    "nafdacRegistryChecked": true/false,
+    "recallsFound": []
+  }
 }
+
+CRITICAL GROUNDING INSTRUCTIONS (PRIORITY HIGHEST):
+1. If you see a manufacturer name: SEARCH THE WEB to verify it exists and produces this drug.
+2. If you see a NAFDAC number: SEARCH NAFDAC registry to confirm it's registered for this product.
+3. If batch number is visible: SEARCH for any recalls or safety alerts for this batch.
+4. Include search findings in "groundingVerification" and factor into authenticityScore.
+5. If web search contradicts package claims, LOWER score significantly.
 
 CRITICAL INSTRUCTIONS FOR OBJECT DETECTION:
 1. Provide [ymin, xmin, ymax, xmax] normalized to 0-1000 for key features.
@@ -169,7 +182,7 @@ CRITICAL INSTRUCTIONS FOR NAFDAC NUMBER:
 3. Precision is paramount. Do not hallucinate regulatory codes.
 
 ANALYSIS GUIDELINES:
-- authenticityScore: Based on printing precision, hologram presence, and mark accuracy.
+- authenticityScore: Based on printing precision, hologram presence, mark accuracy, AND web verification.
 - riskLevel: safe (85+), suspicious (60-84), counterfeit (<60).
 - packageFingerprint: De-spaced string for unique identification. Use 'X' for missing fields.
 - IMPORTANT: Return ONLY raw JSON. Do not wrap in markdown code blocks.`;
