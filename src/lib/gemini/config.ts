@@ -22,11 +22,11 @@ export const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === "true";
  * - 15 RPM for Gemini 2.0 fallback
  */
 export const FORENSIC_EYE_CONFIG = {
-    model: "gemini-3-pro-image-preview", // User-specified Gemini 3 model
+    model: "gemini-3-flash-preview", // User-confirmed Gemini 3 Flash model
     fallbackModel: "gemini-2.0-flash-exp", // Stable fallback
     generationConfig: {
         temperature: 0.15, // Balanced stability for complex multimodal reasoning
-        maxOutputTokens: 2048,
+        maxOutputTokens: 4096, // Increased to prevent truncation
         topP: 0.95,
         topK: 40,
     },
@@ -42,7 +42,7 @@ export const FORENSIC_EYE_CONFIG = {
  * - Only used for text-based prescription analysis
  */
 export const STEWARDSHIP_BRAIN_CONFIG = {
-    model: "gemini-3-pro-image-preview", // User-specified Gemini 3 model
+    model: "gemini-3-flash-preview", // User-confirmed Gemini 3 Flash model
     fallbackModel: "gemini-2.0-flash-exp",
     generationConfig: {
         temperature: 0.1, // Precise clinical reasoning

@@ -1,6 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 
-// Supabase client for browser (uses anon key)
+// Supabase client for browser - using SSR package for cookie-based auth
+// This ensures auth sessions are sent as cookies to API routes
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
 
@@ -10,13 +11,10 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_A
     }
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true,
-    },
-});
+export const supabase = createBrowserClient(
+    supabaseUrl,
+    supabaseAnonKey
+);
 
 
 // Database types

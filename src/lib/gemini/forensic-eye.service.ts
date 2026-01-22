@@ -223,6 +223,14 @@ ANALYSIS GUIDELINES:
             // Log to file
             ForensicLogger.log(diagnostics);
 
+            // Check for MAX_TOKENS before parsing
+            const finishReason = response.candidates?.[0]?.finishReason;
+            if (finishReason === 'MAX_TOKENS') {
+                console.error('❌ RESPONSE TRUNCATED - MAX_TOKENS HIT');
+                console.error('Response was cut off mid-JSON. Increasing maxOutputTokens...');
+                throw new Error('Forensic analysis incomplete - response truncated. Please try again.');
+            }
+
             // extraction
             if (!text || text.trim().length < 10) {
                 const reason = response.candidates?.[0]?.finishReason;
@@ -258,16 +266,22 @@ ANALYSIS GUIDELINES:
 
             let analysis = this.safeParseJson(text);
 
+
             // Handle array response (common Gemini quirk)
             if (Array.isArray(analysis)) {
-                console.log("Detecting array response from Gemini, unwrapping first specific...");
-                analysis = analysis[0];
+                console.log("Detecting array response from Gemini, unwrapping first element...");
+                if (analysis.length > 0) {
+                    analysis = analysis[0];
+                } else {
+                    throw new Error("Forensic Halt: Gemini returned empty array");
+                }
             }
 
             if (!analysis || typeof analysis !== 'object') {
-                console.error("Failed to extract valid JSON object from response:", text);
-                const sample = text.substring(0, 100).replace(/\n/g, ' ');
-                throw new Error(`Forensic Halt: DNA report data was malformed. Diagnostic Payload: [${sample}...]`);
+                console.error("Failed to extract valid JSON object from response. Type:", typeof analysis);
+                console.error("Analysis value:", JSON.stringify(analysis).substring(0, 500));
+                const sample = text.substring(0, 200).replace(/\n/g, ' ');
+                throw new Error(`Forensic Halt: DNA report data was malformed (type: ${typeof analysis}). Diagnostic Payload: [${sample}...]`);
             }
 
             // --- SENTINEL DATA NORMALIZATION LAYER ---

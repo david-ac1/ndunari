@@ -42,3 +42,103 @@
   "duration": 15139
 }
 ---
+{
+  "timestamp": "2026-01-22T09:07:46.986Z",
+  "imageSize": 346504,
+  "mimeType": "image/png",
+  "promptLength": 1561,
+  "responseTextLength": 1412,
+  "responseTextPreview": "{\n  \"authenticityScore\": 40,\n  \"drugName\": \"Laifin (Sulphamethoxazole and Pyrimethamine Tablets)\",\n  \"nafdacNumber\": \"NOT_FOUND\",\n  \"batchNumber\": \"LF001\",\n  \"expiryDate\": \"05/2012\",\n  \"findings\": [\n    \"NAFDAC registration number is not visible on the packaging.\",\n    \"No holographic security features are present.\",\n    \"Batch number and expiry date are clearly printed on the side flap.\",\n    \"The product expiry date is 05/2012, indicating the image or product is very old.\"\n  ],\n  \"riskLevel\": ",
+  "finishReason": "STOP",
+  "duration": 21775
+}
+---
+{
+  "timestamp": "2026-01-22T10:14:38.373Z",
+  "imageSize": 346504,
+  "mimeType": "image/png",
+  "promptLength": 1561,
+  "responseTextLength": 5,
+  "responseTextPreview": "{\n  \"",
+  "finishReason": "STOP",
+  "duration": 30038
+}
+---
+{
+  "timestamp": "2026-01-22T10:14:38.373Z",
+  "imageSize": 346504,
+  "mimeType": "image/png",
+  "promptLength": 1561,
+  "responseTextLength": 5,
+  "responseTextPreview": "{\n  \"",
+  "finishReason": "STOP",
+  "duration": 30038,
+  "error": "Empty response. Finish Reason: STOP"
+}
+---
+{
+  "timestamp": "2026-01-22T10:22:14.902Z",
+  "imageSize": 346504,
+  "mimeType": "image/png",
+  "promptLength": 1561,
+  "responseTextLength": 1509,
+  "responseTextPreview": "{\n  \"authenticityScore\": 42,\n  \"drugName\": \"Laifin (Sulphamethoxazole and Pyrimethamine Tablets)\",\n  \"nafdacNumber\": \"NOT_FOUND\",\n  \"batchNumber\": \"LF001\",\n  \"expiryDate\": \"05/2012\",\n  \"findings\": [\n    \"NAFDAC registration number is missing from all visible panels, which is a major regulatory violation.\",\n    \"The product is significantly expired (May 2012), posing a severe health risk if consumed.\",\n    \"The batch number 'LF001' is suspiciously generic for a mass-produced pharmaceutical.\",\n   ",
+  "finishReason": "STOP",
+  "duration": 12518
+}
+---
+{
+  "timestamp": "2026-01-22T10:27:28.583Z",
+  "imageSize": 346504,
+  "mimeType": "image/png",
+  "promptLength": 1561,
+  "responseTextLength": 1393,
+  "responseTextPreview": "{\n  \"authenticityScore\": 35,\n  \"drugName\": \"Laifin (Sulphamethoxazole and Pyrimethamine Tablets)\",\n  \"nafdacNumber\": \"NOT_FOUND\",\n  \"batchNumber\": \"LF001\",\n  \"expiryDate\": \"05/2012\",\n  \"findings\": [\n    \"Incorrect active ingredient combination; Laifin is typically Sulfadoxine/Pyrimethamine, not Sulphamethoxazole.\",\n    \"Missing NAFDAC registration number on all visible panels of the packaging.\",\n    \"Product is severely expired (May 2012), posing a significant health risk.\",\n    \"Lack of modern ",
+  "finishReason": "STOP",
+  "duration": 14412
+}
+---
+{
+  "timestamp": "2026-01-22T10:29:36.712Z",
+  "imageSize": 346504,
+  "mimeType": "image/png",
+  "promptLength": 1561,
+  "responseTextLength": 1257,
+  "responseTextPreview": "{\n  \"authenticityScore\": 55,\n  \"drugName\": \"Laifin (Sulphamethoxazole and Pyrimethamine Tablets)\",\n  \"nafdacNumber\": \"NOT_FOUND\",\n  \"batchNumber\": \"LF001\",\n  \"expiryDate\": \"05/2012\",\n  \"findings\": [\n    \"Missing NAFDAC registration number on visible panels, which is a mandatory regulatory requirement.\",\n    \"Batch number LF001 and expiry 05/2012 are clearly legible but the product is long expired.\",\n    \"Standard mosquito graphic used for antimalarial branding is present.\",\n    \"Printing quality",
+  "finishReason": "MAX_TOKENS",
+  "duration": 16581
+}
+---
+{
+  "timestamp": "2026-01-22T10:32:24.211Z",
+  "imageSize": 346504,
+  "mimeType": "image/png",
+  "promptLength": 1561,
+  "responseTextLength": 1470,
+  "responseTextPreview": "{\n  \"authenticityScore\": 10,\n  \"drugName\": \"Laifin (Sulphamethoxazole and Pyrimethamine Tablets)\",\n  \"nafdacNumber\": \"NOT_FOUND\",\n  \"batchNumber\": \"LF001\",\n  \"expiryDate\": \"05/2012\",\n  \"findings\": [\n    \"Incorrect active ingredient combination: lists Sulphamethoxazole instead of the standard Sulfadoxine for this brand.\",\n    \"Missing mandatory NAFDAC registration number on all visible packaging panels.\",\n    \"Product is significantly expired (May 2012), indicating extremely old or poorly managed",
+  "finishReason": "STOP",
+  "duration": 12867
+}
+---
+{
+  "timestamp": "2026-01-22T10:41:53.929Z",
+  "imageSize": 346504,
+  "mimeType": "image/png",
+  "promptLength": 1561,
+  "responseTextLength": 1602,
+  "responseTextPreview": "{\n  \"authenticityScore\": 62,\n  \"drugName\": \"Laifin (Sulphamethoxazole and Pyrimethamine Tablets)\",\n  \"nafdacNumber\": \"NOT_FOUND\",\n  \"batchNumber\": \"LF001\",\n  \"expiryDate\": \"05/2012\",\n  \"findings\": [\n    \"Batch number LF001 is highly generic and frequently seen in low-quality or counterfeit antimalarial packaging.\",\n    \"NAFDAC registration number is not visible on the primary display panels, which is a regulatory requirement.\",\n    \"The product is significantly expired (May 2012), making it unsa",
+  "finishReason": "STOP",
+  "duration": 12858
+}
+---
+{
+  "timestamp": "2026-01-22T11:01:57.284Z",
+  "imageSize": 346504,
+  "mimeType": "image/png",
+  "promptLength": 1561,
+  "responseTextLength": 1441,
+  "responseTextPreview": "{\n  \"authenticityScore\": 45,\n  \"drugName\": \"Laifin (Sulphamethoxazole and Pyrimethamine Tablets)\",\n  \"nafdacNumber\": \"NOT_FOUND\",\n  \"batchNumber\": \"LF001\",\n  \"expiryDate\": \"05/2012\",\n  \"findings\": [\n    \"Product is severely expired (May 2012), posing a significant health risk if consumed.\",\n    \"NAFDAC registration number is missing from all visible packaging surfaces, which is a major regulatory violation.\",\n    \"Batch number LF001 is clearly printed on the side panel but lacks associated secur",
+  "finishReason": "STOP",
+  "duration": 13294
+}
+---

@@ -156,7 +156,75 @@ export async function POST(request: NextRequest) {
             'For comprehensive authentication, use multi-angle 3D scan'
         );
 
+        // Generate unique scan ID
+        const scanId = `scan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+        // SERVER-SIDE DATABASE SAVE (using cookies for auth)
+        try {
+            const { cookies } = await import('next/headers');
+            const { createServerClient } = await import('@supabase/ssr');
+            const cookieStore = await cookies();
+
+            // Debug: Log cookie state
+            const allCookies = cookieStore.getAll();
+            console.log('[API-DEBUG] Total cookies:', allCookies.length);
+            const authCookies = allCookies.filter(c => c.name.includes('supabase') || c.name.includes('auth'));
+            console.log('[API-DEBUG] Auth cookies found:', authCookies.map(c => c.name));
+
+            const supabase = createServerClient(
+                process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                {
+                    cookies: {
+                        getAll() {
+                            return cookieStore.getAll();
+                        },
+                        setAll(cookiesToSet) {
+                            cookiesToSet.forEach(({ name, value, options }) =>
+                                cookieStore.set(name, value, options)
+                            );
+                        },
+                    },
+                }
+            );
+
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+            if (user) {
+                const { data: scanRecord, error: dbError } = await supabase
+                    .from('scans')
+                    .insert({
+                        user_id: user.id,
+                        drug_name: result.forensic.drugName,
+                        nafdac_number: result.forensic.nafdacNumber || null,
+                        authenticity_score: result.forensic.authenticityScore,
+                        risk_level: result.forensic.riskLevel,
+                        findings: result.forensic.findings || null,
+                        scan_mode: 'single',
+                        angles_scanned: 1,
+                        region: null,
+                    })
+                    .select()
+                    .single();
+
+                if (dbError) {
+                    console.error('[API] Database save error:', dbError);
+                } else {
+                    console.log('[API] Scan saved to database:', scanRecord.id);
+
+                    // Update user stats
+                    await supabase.rpc('increment_user_scans', { user_id: user.id });
+                }
+            } else {
+                console.warn('[API] No authenticated user - scan not saved to database');
+            }
+        } catch (saveError) {
+            console.error('[API] Failed to save scan:', saveError);
+            // Don't fail the entire request if DB save fails
+        }
+
         console.log('Single scan completed:', {
+            scanId,
             timestamp: new Date().toISOString(),
             originalScore,
             cappedScore: result.forensic.authenticityScore,
@@ -168,6 +236,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
             {
                 success: true,
+                scanId,
                 data: result,
                 message: result.escalated
                     ? 'Deep analysis completed (Thinking mode)'
