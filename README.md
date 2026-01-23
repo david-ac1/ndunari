@@ -1,4 +1,5 @@
 # Ndunari: The Life-Saving Agentic Health Shield
+<img width="503" height="157" alt="Screenshot 2026-01-23 231601" src="https://github.com/user-attachments/assets/9255aa13-168f-49ef-85ae-aa51c08b9566" />
 
 **A Decentralized Pharmaceutical Surveillance Network Powered by Gemini 3.**
 
@@ -98,6 +99,7 @@ Ndunari has been engineered for reliability in a high-stakes clinical environmen
 ![AMR Statistics](PLACEHOLDER_IMAGE_SC_2)
 <img width="1870" height="813" alt="Screenshot 2026-01-22 142409" src="https://github.com/user-attachments/assets/38fbe6d3-694a-4555-a925-6553d002547a" />
 <img width="625" height="295" alt="Screenshot 2026-01-14 141459" src="https://github.com/user-attachments/assets/248d2ca8-8856-42a9-a141-d236ee26804b" />
+<img width="1196" height="706" alt="Screenshot 2026-01-23 232554" src="https://github.com/user-attachments/assets/710003a6-84b1-48b2-88d4-c25e2e0d2f22" />
 
 ---
 
