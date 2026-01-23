@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { tieredRoutingService } from "@/lib/gemini/tiered-routing.service";
 import { FORENSIC_EYE_CONFIG, STEWARDSHIP_BRAIN_CONFIG } from "@/lib/gemini/config";
 import { saveScan, saveScanEvidence } from "@/lib/services/scan-storage.service";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { AngleImage } from "@/lib/3d/types";
 
 /**
@@ -132,13 +133,13 @@ export async function POST(request: NextRequest) {
                         model3D: result.model3D,
                         latitude: location?.latitude,
                         longitude: location?.longitude,
-                    }, supabase);
+                    }, supabaseAdmin); // Use admin client to bypass RLS for critical data
 
                     if (saveError) {
                         console.error('[API] Database save error (3D):', saveError);
                     } else {
                         // Update user stats
-                        await supabase.rpc('increment_user_scans', { user_id: user.id });
+                        await supabaseAdmin.rpc('increment_user_scans', { user_id: user.id });
                         console.log('[API] 3D Scan saved to database:', scanId);
                     }
 
@@ -147,7 +148,7 @@ export async function POST(request: NextRequest) {
                     for (const [angle, { buffer }] of Object.entries(images)) {
                         evidenceMap.set(angle, buffer.toString('base64'));
                     }
-                    await saveScanEvidence(scanId, evidenceMap, supabase);
+                    await saveScanEvidence(scanId, evidenceMap, supabaseAdmin);
 
                 } else {
                     console.warn('[API] No authenticated user - 3D scan not saved to database');
@@ -255,13 +256,13 @@ export async function POST(request: NextRequest) {
                     stewardshipAssessment: result.stewardship || undefined,
                     latitude: location?.latitude,
                     longitude: location?.longitude,
-                }, supabase);
+                }, supabaseAdmin); // Use admin client to bypass RLS for critical data
 
                 if (saveError) {
                     console.error('[API] Database save error (Single):', saveError);
                 } else {
                     // Update user stats
-                    await supabase.rpc('increment_user_scans', { user_id: user.id });
+                    await supabaseAdmin.rpc('increment_user_scans', { user_id: user.id });
                     console.log('[API] Single Scan saved to database:', scanId);
                 }
             } else {
