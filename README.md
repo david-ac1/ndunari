@@ -23,16 +23,16 @@ In Nigeria, the pharmaceutical supply chain is a matter of life and death.
 
 ![AMR Crisis in Nigeria - Source:[wearegst](https://instagram.com/wearegst?igsh=OWxzNjZkanh6Nzdk)]
 *The silent epidemic: AMR and fake drugs claims thousands of lives annually.*
-![IMG_6068](https://github.com/user-attachments/assets/7bad1789-b1e6-4d0f-9f7d-f4fddf57199a)
-![IMG_6067](https://github.com/user-attachments/assets/7bda4af4-3d4a-4ffd-a510-fd737c4a45c0)
-![IMG_6066](https://github.com/user-attachments/assets/f7bea479-795c-4b40-b9ab-d78f4c3c9ef8)
-![IMG_6064](https://github.com/user-attachments/assets/7809632c-0ae4-4f75-bc3f-27f0248f490b)
-![IMG_6063](https://github.com/user-attachments/assets/9966f24d-a6ce-47fb-bac0-9a4bd20d22f8)
-![IMG_6061](https://github.com/user-attachments/assets/5d5f279f-32c9-45f4-a3d4-cc6252c08257)
-![IMG_6060](https://github.com/user-attachments/assets/afc0cebe-e3ec-402c-8e26-240d763b1e15)
-![IMG_6059](https://github.com/user-attachments/assets/38292418-da2f-4306-ac98-72927240dca6)
-![IMG_6058](https://github.com/user-attachments/assets/88bc5913-01fa-4534-b0e1-7a5871d4cf6b)
-![IMG_6057](https://github.com/user-attachments/assets/ee4936d1-4e89-4bee-90b6-ebd2ad9d1c5a)
+<img src="https://github.com/user-attachments/assets/7bad1789-b1e6-4d0f-9f7d-f4fddf57199a" width="300" />
+<img src="https://github.com/user-attachments/assets/7bda4af4-3d4a-4ffd-a510-fd737c4a45c0" width="300" />
+<img src="https://github.com/user-attachments/assets/f7bea479-795c-4b40-b9ab-d78f4c3c9ef8" width="300" />
+<img src="https://github.com/user-attachments/assets/7809632c-0ae4-4f75-bc3f-27f0248f490b" width="300" />
+<img src="https://github.com/user-attachments/assets/9966f24d-a6ce-47fb-bac0-9a4bd20d22f8" width="300" />
+<img src="https://github.com/user-attachments/assets/5d5f279f-32c9-45f4-a3d4-cc6252c08257" width="300" />
+<img src="https://github.com/user-attachments/assets/afc0cebe-e3ec-402c-8e26-240d763b1e15" width="300" />
+<img src="https://github.com/user-attachments/assets/38292418-da2f-4306-ac98-72927240dca6" width="300" />
+<img src="https://github.com/user-attachments/assets/88bc5913-01fa-4534-b0e1-7a5871d4cf6b" width="300" />
+<img src="https://github.com/user-attachments/assets/ee4936d1-4e89-4bee-90b6-ebd2ad9d1c5a" width="300" />
 
 ---
 
