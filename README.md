@@ -22,7 +22,8 @@ In Nigeria, the pharmaceutical supply chain is a matter of life and death.
 *   **Counterfeit Proliferation**: Without a public API for verification, millions of citizens unknowingly purchase substandard drugs that lead to treatment failure and death.
 
 ![AMR Crisis in Nigeria - Source:[wearegst](https://instagram.com/wearegst?igsh=OWxzNjZkanh6Nzdk)]
-*The silent epidemic: AMR and fake drugs claims thousands of lives annually.*
+*The silent epidemic: AMR and fake drugs claim thousands of lives annually.*
+
 <img src="https://github.com/user-attachments/assets/ee4936d1-4e89-4bee-90b6-ebd2ad9d1c5a" width="300" />
 <img src="https://github.com/user-attachments/assets/88bc5913-01fa-4534-b0e1-7a5871d4cf6b" width="300" />
 <img src="https://github.com/user-attachments/assets/38292418-da2f-4306-ac98-72927240dca6" width="300" />
@@ -95,6 +96,8 @@ Ndunari has been engineered for reliability in a high-stakes clinical environmen
 *   **Narị Multilingual Counselor**: Access shouldn't be limited by language. Ndunari speaks **5 Nigerian languages** (English, Pidgin, Yoruba, Hausa, Igbo) fluently, breaking down barriers to care.
 
 ![AMR Statistics](PLACEHOLDER_IMAGE_SC_2)
+<img width="1870" height="813" alt="Screenshot 2026-01-22 142409" src="https://github.com/user-attachments/assets/38fbe6d3-694a-4555-a925-6553d002547a" />
+<img width="625" height="295" alt="Screenshot 2026-01-14 141459" src="https://github.com/user-attachments/assets/248d2ca8-8856-42a9-a141-d236ee26804b" />
 
 ---
 
