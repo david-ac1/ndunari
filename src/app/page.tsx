@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState, useCallback } from "react";
 import { VoiceController } from "@/app/components/VoiceController";
 import { useAuth } from "@/app/components/providers/AuthProvider";
@@ -11,6 +12,7 @@ import { ThinkingPanel } from "@/app/components/ThinkingPanel";
 import { Shield, Activity, Search, AlertCircle, Zap, TrendingUp, Map as MapIcon, ChevronRight, Users, Globe, Database, BookOpen } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import NotificationPanel from "@/components/notifications/NotificationPanel";
+import SplashScreen from "@/app/components/SplashScreen";
 
 export default function HomePage() {
     const { user, profile, loading: authLoading } = useAuth();
@@ -108,6 +110,7 @@ export default function HomePage() {
 
     return (
         <div className="relative min-h-screen flex flex-col overflow-hidden pb-24 lg:pb-8 bg-background-dark text-white">
+            <SplashScreen />
             {/* Background Aesthetics */}
             <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
             <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
@@ -115,23 +118,37 @@ export default function HomePage() {
             {/* Header */}
             <header className="relative z-20 px-6 py-8">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Link href="/profile" className="w-14 h-14 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center font-black text-2xl text-primary hover:scale-105 transition-all">
-                            {displayName?.[0] || 'N'}
+                    <div className="flex items-center gap-6">
+                        {/* App Logo */}
+                        <Link href="/" className="relative h-12 w-32 hidden md:block opacity-90 hover:opacity-100 transition-opacity">
+                            <Image
+                                src="/logo.png"
+                                alt="Ndunari Logo"
+                                fill
+                                className="object-contain rounded-lg"
+                                priority
+                            />
                         </Link>
-                        <div>
-                            <h1 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2">
-                                {displayName}
-                                {profile?.role === 'admin' && (
-                                    <span className="px-2 py-0.5 rounded-md bg-primary text-black text-[8px] font-black tracking-widest">
-                                        NATIONAL ADMIN
-                                    </span>
-                                )}
-                                <span className={`w-2 h-2 rounded-full animate-pulse ${user ? 'bg-primary' : 'bg-white/20'}`} />
-                            </h1>
-                            <p className="text-[10px] font-bold text-white/40 uppercase tracking-[0.3em]">
-                                {user ? (profile?.role === 'admin' ? 'Command Center Active' : 'Sentinel Active') : 'Guest Mode'}
-                            </p>
+                        <div className="h-8 w-px bg-white/10 hidden md:block" />
+
+                        <div className="flex items-center gap-4">
+                            <Link href="/profile" className="w-14 h-14 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center font-black text-2xl text-primary hover:scale-105 transition-all">
+                                {displayName?.[0] || 'N'}
+                            </Link>
+                            <div>
+                                <h1 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2">
+                                    {displayName}
+                                    {profile?.role === 'admin' && (
+                                        <span className="px-2 py-0.5 rounded-md bg-primary text-black text-[8px] font-black tracking-widest">
+                                            NATIONAL ADMIN
+                                        </span>
+                                    )}
+                                    <span className={`w-2 h-2 rounded-full animate-pulse ${user ? 'bg-primary' : 'bg-white/20'}`} />
+                                </h1>
+                                <p className="text-[10px] font-bold text-white/40 uppercase tracking-[0.3em]">
+                                    {user ? (profile?.role === 'admin' ? 'Command Center Active' : 'Sentinel Active') : 'Guest Mode'}
+                                </p>
+                            </div>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
