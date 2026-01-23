@@ -70,6 +70,18 @@ Ndunari has been engineered for reliability in a high-stakes clinical environmen
 
 *   **Agentic Coordinator Logic**: The central brain intelligently manages handoffs between the *Forensic Eye* (Vision) and *Stewardship Brain* (Reasoning), ensuring the right model is used for the right task.
 *   **Thought Signature Protocol**: To prevent "hallucinations" or malformed JSON that leads to 400 errors, I implemented a strict Thought Signature protocol. Every agent response includes a verifiable reasoning trace before the final output.
+    ```typescript
+    // Real-world example of an Agent's Thought Signature
+    interface AgentResponse {
+      status: 'success' | 'escalated';
+      thoughtSignature: {
+        id: "sig_8f7a9d2",
+        timestamp: "2026-01-23T14:00:00Z",
+        reasoning_trace: "Analyzed holographic overlay. Optical variable ink shift absent. High probability of counterfeit."
+      };
+      data: { ... }
+    }
+    ```
 *   **High-Resolution Vision Pipeline**: Ndunari bypasses standard image compression to feed raw, high-fidelity visual data to Gemini, enabling the detection of micro-text and hologram flaws.
 *   **PWA-Native**: Built as a Progressive Web App, Ndunari offers **zero-friction access**. It requires no app store download, works offline, and is accessible on low-end devices typical in rural Nigeria.
 
@@ -107,6 +119,31 @@ graph TD
     Result --> |"Verified Data"| Supabase
     Result --> |"Guidance"| Voice[Narị Voice Guide]
 ```
+
+---
+
+## 🚀 How to Run (Quick Start)
+
+You can run the full PWA locally in 3 steps:
+
+1.  **Install Dependencies**:
+    ```bash
+    npm install
+    ```
+
+2.  **Set Environment Variables**:
+    Create a `.env.local` file with your Gemini and Supabase keys:
+    ```bash
+    NEXT_PUBLIC_GEMINI_API_KEY=...
+    NEXT_PUBLIC_SUPABASE_URL=...
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+    ```
+
+3.  **Run Development Server**:
+    ```bash
+    npm run dev
+    ```
+    Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 ---
 
