@@ -161,25 +161,31 @@ export async function saveScan(scanData: {
  * Get all scans for current user
  */
 export async function getUserScans(limit = 50): Promise<{ data: Scan[] | null; error: any }> {
-    const { data: { user } } = await supabase.auth.getUser();
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
 
-    if (!user) {
-        return { data: null, error: new Error('User not authenticated') };
+        if (!session) {
+            return { data: null, error: new Error('User not authenticated') };
+        }
+
+        // Use the new server-side API which uses Admin client to bypass flaky RLS
+        const response = await fetch(`/api/user/scans?limit=${limit}`, {
+            headers: {
+                'Authorization': `Bearer ${session.access_token}`
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to fetch scans');
+        }
+
+        const { data } = await response.json();
+        return { data, error: null };
+    } catch (err: any) {
+        console.error('Error fetching scans (API):', err);
+        return { data: null, error: err };
     }
-
-    const { data, error } = await supabase
-        .from('scans')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(limit);
-
-    if (error) {
-        console.error('Error fetching scans:', error);
-        return { data: null, error };
-    }
-
-    return { data, error: null };
 }
 
 /**
