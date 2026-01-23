@@ -60,7 +60,7 @@ export async function saveScan(scanData: {
     // If we have coords but no region, try to map it to a Nigerian city for the heatmap
     let finalRegion = scanData.region;
     if (!finalRegion && scanData.latitude && scanData.longitude && sharingEnabled) {
-        finalRegion = getNearestNigerianCity(scanData.latitude, scanData.longitude);
+        finalRegion = getNearestNigerianCity(scanData.latitude, scanData.longitude) || undefined;
     }
     // Default fallback if privacy enabled or no match
     finalRegion = sharingEnabled ? (finalRegion || 'Unknown') : 'REDACTED';
