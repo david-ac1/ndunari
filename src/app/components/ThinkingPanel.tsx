@@ -27,9 +27,9 @@ export function ThinkingPanel({ thoughts, isAnalyzing, agentName = "Ndunari Sent
     }, [thoughts]);
 
     return (
-        <div className="glass-panel rounded-xl border border-white/10 overflow-hidden bg-black/40 backdrop-blur-xl">
+        <div className="rounded-xl border border-primary/10 overflow-hidden bg-white dark:bg-black/40 backdrop-blur-xl shadow-lg">
             {/* Header */}
-            <div className="px-4 py-2 border-b border-white/10 flex items-center justify-between bg-white/5">
+            <div className="px-4 py-2 border-b border-primary/10 flex items-center justify-between bg-gray-50 dark:bg-white/5">
                 <div className="flex items-center justify-between w-full"> {/* Adjusted to make inner div take full width */}
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
@@ -69,8 +69,8 @@ export function ThinkingPanel({ thoughts, isAnalyzing, agentName = "Ndunari Sent
                             animate={{ opacity: 1 }}
                             className="flex flex-col items-center justify-center py-6 text-white/20"
                         >
-                            <Brain size={24} className="mb-2 opacity-10" />
-                            <span className="text-[10px] uppercase tracking-tighter italic">Awaiting Signal</span>
+                            <Brain size={24} className="mb-2 opacity-10 text-forest-green dark:text-white" />
+                            <span className="text-[10px] uppercase tracking-tighter italic text-gray-400 dark:text-white/20">Awaiting Signal</span>
                         </motion.div>
                     ) : (
                         displayThoughts.map((thought, index) => (
@@ -87,12 +87,12 @@ export function ThinkingPanel({ thoughts, isAnalyzing, agentName = "Ndunari Sent
                                     {thought.level === 'system' && <Terminal size={12} className="text-white/40" />}
                                 </div>
                                 <div className="flex-1">
-                                    <span className={`font-bold mr-2 ${thought.level === 'forensic' ? 'text-yellow-400/80' :
-                                        thought.level === 'sentinel' ? 'text-primary/80' : 'text-white/40'
+                                    <span className={`font-bold mr-2 ${thought.level === 'forensic' ? 'text-yellow-600 dark:text-yellow-400/80' :
+                                        thought.level === 'sentinel' ? 'text-primary' : 'text-gray-400 dark:text-white/40'
                                         }`}>
                                         [{thought.level.toUpperCase()}]
                                     </span>
-                                    <span className="text-white/90 leading-relaxed shadow-sm">
+                                    <span className="text-gray-800 dark:text-white/90 leading-relaxed shadow-sm">
                                         {thought.text}
                                     </span>
                                 </div>

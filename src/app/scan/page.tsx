@@ -17,6 +17,24 @@ import { sentinelAgentService } from "@/lib/gemini/sentinel-agent.service";
 import { ThinkingPanel } from "@/app/components/ThinkingPanel";
 import ForensicEvidenceOverlay from "./components/ForensicEvidenceOverlay";
 import { normalizeError, getUserMessage, logError } from "@/lib/errors/app-errors";
+import {
+    Camera,
+    Search,
+    AlertTriangle,
+    BarChart2,
+    CheckCircle,
+    ScanLine,
+    Info,
+    Zap,
+    Upload,
+    History,
+    ArrowLeft,
+    Settings,
+    Shield,
+    Plus,
+    Minus,
+    FileText
+} from "lucide-react";
 
 type ScanState = "mode_select" | "idle" | "multi_angle" | "review" | "scanning" | "analyzing" | "analyzing_upload" | "upload_pending" | "complete" | "error";
 
@@ -44,18 +62,17 @@ interface ScanResult {
 export default function ScanPage() {
     const { user } = useAuth();
     const { speak, stop, speaking, enabled } = useVoiceGuide();
-    const { refreshScans } = useScanData(); // Use centralized state
+    const { refreshScans } = useScanData();
     const [scanState, setScanState] = useState<ScanState>("mode_select");
     const [scanMode, setScanMode] = useState<ScanMode | null>(null);
     const [multiAngleSession, setMultiAngleSession] = useState<MultiAngleScanSession | null>(null);
-    const [currentThought, setCurrentThought] = useState("");
     const [result, setResult] = useState<ScanResult | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [showHistory, setShowHistory] = useState(false);
     const [scanHistory, setScanHistory] = useState<ScanHistoryItem[]>([]);
     const [thoughts, setThoughts] = useState<{ id: string, text: string, level: 'forensic' | 'sentinel' | 'system', timestamp: Date }[]>([]);
-    const [isThinking, setIsThinking] = useState(false); // Global busy state
-    const [isGuiding, setIsGuiding] = useState(false);  // Agent background pulse state
+    const [isThinking, setIsThinking] = useState(false);
+    const [isGuiding, setIsGuiding] = useState(false);
     const [lastScanPreview, setLastScanPreview] = useState<string | null>(null);
     const [location, setLocation] = useState<{ latitude: number, longitude: number } | null>(null);
 
@@ -99,8 +116,6 @@ export default function ScanPage() {
 
     // Live Guidance Loop (Action Era)
     useEffect(() => {
-        // Only run guidance if the camera is explicitly in IDLE mode
-        // This prevents interference during mode selection, scanning, and upload analysis
         const isCameraActive = scanState === 'idle';
 
         if (isCameraActive) {
@@ -109,21 +124,15 @@ export default function ScanPage() {
             };
 
             const interval = setInterval(async () => {
-                // Capture current frame for real-time analysis
                 const screenshot = webcamRef.current?.getScreenshot();
-
                 if (screenshot) {
                     setIsGuiding(true);
                     const guidance = await sentinelAgentService.generateLiveGuidance(screenshot);
                     addThought(guidance, 'sentinel');
                     if (enabled) speak(guidance);
-
-                    // Small delay to show the 'Pulse' visually
                     setTimeout(() => setIsGuiding(false), 800);
-                } else {
-                    console.log("Sentinel: No camera frame available, skipping live guidance pulse.");
                 }
-            }, 4000); // Pulse every 4s for high-immersion guidance
+            }, 4000);
 
             return () => clearInterval(interval);
         } else {
@@ -139,7 +148,6 @@ export default function ScanPage() {
         ]);
     }, []);
 
-    // Video Constraints
     const videoConstraints = {
         width: { ideal: 4096 },
         height: { ideal: 2160 },
@@ -147,14 +155,12 @@ export default function ScanPage() {
         aspectRatio: 16 / 9,
     };
 
-    // Mode Selection logic
     const handleModeSelect = useCallback((mode: ScanMode) => {
         setScanMode(mode);
         if (mode === 'multi') {
             setMultiAngleSession(createScanSession(mode));
             setScanState('multi_angle');
         } else {
-            // "Quick Upload" - Transition to upload-first UI
             setScanState('upload_pending');
             setThoughts(prev => [...prev, { id: Date.now().toString(), text: "Ready for National Ledger upload. Please select a high-contrast forensic specimen.", level: 'system', timestamp: new Date() }]);
         }
@@ -189,12 +195,10 @@ export default function ScanPage() {
         setMultiAngleSession(null);
         setResult(null);
         setError(null);
-        setCurrentThought('');
         setIsThinking(false);
         setLastScanPreview(null);
     };
 
-    // Core Analysis logic
     const handleAnalyzeMultiAngle = useCallback(async () => {
         if (!multiAngleSession) return;
         setScanState('analyzing');
@@ -224,8 +228,6 @@ export default function ScanPage() {
             setResult({ ...data.data, scanMode: 'multi', anglesScanned: multiAngleSession.completedCount });
             setLastScanPreview(multiAngleSession.capturedAngles.get('front') || Array.from(multiAngleSession.capturedAngles.values())[0]);
             setScanState('complete');
-
-            // API already saved to Supabase - refresh UI from context
             await refreshScans();
 
         } catch (err: any) {
@@ -234,7 +236,7 @@ export default function ScanPage() {
         } finally {
             setIsThinking(false);
         }
-    }, [multiAngleSession, user]);
+    }, [multiAngleSession, user, location, refreshScans]);
 
     const processScan = useCallback(async (imageSource: string | Blob, source: 'camera' | 'upload' = 'camera') => {
         setScanState(source === 'camera' ? 'scanning' : 'analyzing_upload');
@@ -273,8 +275,6 @@ export default function ScanPage() {
             setResult({ ...data.data, scanMode: 'single', anglesScanned: 1 });
             setLastScanPreview(preview);
             setScanState('complete');
-
-            // API already saved to Supabase - refresh UI from context
             await refreshScans();
 
         } catch (err: any) {
@@ -283,7 +283,7 @@ export default function ScanPage() {
         } finally {
             setIsThinking(false);
         }
-    }, [user, refreshScans]);
+    }, [user, location, refreshScans]);
 
 
     const captureImage = useCallback(async () => {
@@ -332,260 +332,242 @@ export default function ScanPage() {
     }
 
     return (
-        <div className="relative min-h-screen w-full bg-background-dark overflow-hidden flex flex-col">
-            {/* Camera Viewport or Document Placeholder */}
-            {scanState !== 'analyzing_upload' && scanState !== 'upload_pending' ? (
-                <div className="absolute inset-0 z-0 transition-opacity duration-700">
-                    <Webcam
-                        ref={webcamRef}
-                        audio={false}
-                        screenshotFormat="image/jpeg"
-                        videoConstraints={videoConstraints}
-                        className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/90 pointer-events-none" />
+        <div className="relative min-h-screen w-full bg-background-dark overflow-hidden flex flex-col font-display">
+            {/* Top Navigation Bar */}
+            <header className="flex items-center justify-between whitespace-nowrap border-b border-primary/10 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md px-6 md:px-10 py-3 z-50">
+                <div className="flex items-center gap-4 text-background-dark dark:text-white">
+                    <Link href="/" className="size-8 text-primary hover:scale-110 transition-transform">
+                        <ArrowLeft size={24} />
+                    </Link>
+                    <h2 className="text-xl font-bold leading-tight tracking-tight">Ndunari</h2>
                 </div>
-            ) : (
-                <div className="absolute inset-0 z-0 bg-[#0a0a0a] flex items-center justify-center overflow-hidden">
-                    {/* Animated background for document processing */}
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: [0.1, 0.2, 0.1] }}
-                        transition={{ duration: 4, repeat: Infinity }}
-                        className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/20 via-transparent to-transparent"
-                    />
-                    <div className="relative z-10 flex flex-col items-center gap-6">
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="w-32 h-44 border-2 border-primary/30 rounded-lg bg-white/5 backdrop-blur-3xl flex items-center justify-center relative overflow-hidden"
-                        >
-                            <div className="text-6xl opacity-40">📄</div>
-                            {scanState === 'analyzing_upload' && (
+                <div className="hidden md:flex flex-1 justify-center gap-8">
+                    <Link href="/" className="text-background-dark dark:text-white/80 text-sm font-medium hover:text-primary transition-colors">Dashboard</Link>
+                    <Link href="/history" className="text-background-dark dark:text-white/80 text-sm font-medium hover:text-primary transition-colors">History</Link>
+                    <span className="text-primary text-sm font-bold border-b-2 border-primary pb-1">Forensic Scanner</span>
+                </div>
+                <div className="flex items-center gap-3">
+                    <button className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                        <Settings size={20} />
+                    </button>
+                    <div className="h-8 w-[1px] bg-primary/20 mx-1"></div>
+                    <div className="flex items-center gap-2 px-2 py-1 bg-primary text-white rounded-lg text-xs font-bold">
+                        <Shield size={14} />
+                        SECURE
+                    </div>
+                </div>
+            </header>
+
+            <div className="flex flex-1 overflow-hidden relative">
+                {/* Sidebar Navigation (Desktop) */}
+                <aside className="hidden lg:flex w-64 flex-col justify-between bg-white dark:bg-background-dark border-r border-primary/10 p-4">
+                    <div className="flex flex-col gap-6">
+                        <div>
+                            <h1 className="text-background-dark dark:text-white text-base font-bold">Forensic Mode</h1>
+                            <p className="text-primary text-xs font-semibold uppercase tracking-wider">AI Medical Safety</p>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-primary text-white shadow-lg shadow-primary/20 cursor-pointer">
+                                <Camera size={20} />
+                                <p className="text-sm font-semibold leading-normal">Live Scan</p>
+                            </div>
+                            <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-background-dark dark:text-white/70 hover:bg-primary/10 transition-colors cursor-pointer">
+                                <Search size={20} />
+                                <p className="text-sm font-medium leading-normal">Batch Lookup</p>
+                            </div>
+                            <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-background-dark dark:text-white/70 hover:bg-primary/10 transition-colors cursor-pointer">
+                                <AlertTriangle size={20} />
+                                <p className="text-sm font-medium leading-normal">Safety Alerts</p>
+                            </div>
+                            <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-background-dark dark:text-white/70 hover:bg-primary/10 transition-colors cursor-pointer">
+                                <BarChart2 size={20} />
+                                <p className="text-sm font-medium leading-normal">Analytics</p>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                {/* Main Scanner Content */}
+                <section id="main-content" className="flex-1 flex flex-col relative bg-black overflow-hidden">
+                    {/* Camera Viewfinder */}
+                    <div className="absolute inset-0 z-0">
+                        {scanState !== 'analyzing_upload' && scanState !== 'upload_pending' ? (
+                            <Webcam
+                                ref={webcamRef}
+                                audio={false}
+                                screenshotFormat="image/jpeg"
+                                videoConstraints={videoConstraints}
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <div className="absolute inset-0 bg-background-dark flex items-center justify-center">
+                                {/* Upload/Analysis Placeholder - Keep simple for now */}
+                                <div className="text-center">
+                                    <div className="text-6xl mb-4">{scanState === 'analyzing_upload' ? '📄' : '📤'}</div>
+                                    <p className="text-white/40 font-bold uppercase tracking-widest">{scanState === 'analyzing_upload' ? 'Analyzing...' : 'Ready for Upload'}</p>
+                                </div>
+                            </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent pointer-events-none" />
+                    </div>
+
+                    {/* Viewfinder UI Overlays */}
+                    <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center z-10">
+                        {/* Scan Brackets */}
+                        <div className="relative w-[80%] max-w-[500px] h-[300px] border border-white/10 rounded-xl">
+                            <div className="absolute -top-1 -left-1 w-10 h-10 border-t-4 border-l-4 border-primary rounded-tl-xl"></div>
+                            <div className="absolute -top-1 -right-1 w-10 h-10 border-t-4 border-r-4 border-primary rounded-tr-xl"></div>
+                            <div className="absolute -bottom-1 -left-1 w-10 h-10 border-b-4 border-l-4 border-primary rounded-bl-xl"></div>
+                            <div className="absolute -bottom-1 -right-1 w-10 h-10 border-b-4 border-r-4 border-primary rounded-br-xl"></div>
+
+                            {/* Scanning Line Animation */}
+                            {(scanState === 'scanning' || scanState === 'analyzing' || scanState === 'idle') && (
                                 <motion.div
                                     animate={{ top: ["0%", "100%", "0%"] }}
-                                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                                    className="absolute left-0 right-0 h-1 bg-primary/60 shadow-[0_0_15px_rgba(56,189,248,0.8)]"
+                                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                                    className="absolute left-0 right-0 h-[2px] bg-primary/50 shadow-[0_0_15px_#11d452] opacity-50"
                                 />
                             )}
-                            {scanState === 'upload_pending' && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-primary/10 animate-pulse">
-                                    <span className="text-3xl">+</span>
+
+                            {/* Help Text */}
+                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10">
+                                <p className="text-white text-xs font-medium tracking-wide">
+                                    {scanState === 'upload_pending' ? 'UPLOAD IMAGE' : 'ALIGN PACKAGING WITHIN BRACKETS'}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Glassmorphic Badges (Mockups for Look & Feel) */}
+                        {isGuiding && (
+                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="absolute top-[25%] left-[60%] glass-panel p-3 rounded-xl flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/20">
+                                <div className="size-8 rounded-full bg-primary flex items-center justify-center text-white">
+                                    <Zap size={16} />
                                 </div>
-                            )}
-                        </motion.div>
-                        <p className="text-primary/60 font-mono text-[10px] uppercase tracking-[0.4em] animate-pulse">
-                            {scanState === 'analyzing_upload' ? 'Scanning Image Buffer...' : 'Awaiting Forensic Document...'}
-                        </p>
+                                <div>
+                                    <p className="text-[10px] text-white/50 font-bold uppercase tracking-tighter">AI Insight</p>
+                                    <p className="text-sm font-extrabold text-white">Live Analysis</p>
+                                </div>
+                            </motion.div>
+                        )}
+                    </div>
+
+                    {/* Bottom Scanner Controls */}
+                    <div className="mt-auto relative z-30 flex flex-col items-center pb-8 pt-10 px-6 bg-gradient-to-t from-black/80 to-transparent">
+                        {/* Main Controls Row */}
+                        <div className="flex items-center gap-12">
+                            <button className="size-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-all">
+                                <Zap size={24} />
+                            </button>
+
+                            <div className="relative group cursor-pointer" onClick={scanState === 'idle' ? captureImage : (scanState === 'upload_pending' ? () => fileInputRef.current?.click() : resetScan)}>
+                                <div className="size-20 rounded-full border-4 border-white flex items-center justify-center p-1 active:scale-95 transition-transform">
+                                    <div className={`size-full rounded-full shadow-lg transition-all ${scanState === 'upload_pending' ? 'bg-watch-orange' : 'bg-primary group-hover:bg-primary/90'}`}></div>
+                                </div>
+                                <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-white text-[10px] font-bold tracking-widest whitespace-nowrap">
+                                    {scanState === 'upload_pending' ? 'UPLOAD' : 'CAPTURE'}
+                                </span>
+                            </div>
+
+                            <div className="flex flex-col gap-1 bg-white/10 border border-white/20 rounded-full p-1">
+                                <button className="size-10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors">
+                                    <Plus size={20} />
+                                </button>
+                                <button className="size-10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors">
+                                    <Minus size={20} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Secondary Actions */}
+                        <div className="mt-8 px-6 py-2 rounded-full bg-white/5 backdrop-blur-md border border-white/10 flex gap-4 pointer-events-auto">
+                            <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 text-white text-xs font-bold py-1 hover:text-primary transition-colors">
+                                <Upload size={16} /> UPLOAD IMAGE
+                            </button>
+                            <div className="w-[1px] bg-white/10"></div>
+                            <button onClick={loadHistory} className="flex items-center gap-2 text-white text-xs font-bold py-1 hover:text-primary transition-colors">
+                                <History size={16} /> SESSION LOG
+                            </button>
+                            <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileUpload} />
+                        </div>
+                    </div>
+                </section>
+
+                {/* Right Sidebar (Analysis Details) - Desktop Only */}
+                <aside className="hidden xl:flex w-80 flex-col bg-white dark:bg-background-dark border-l border-primary/10 overflow-y-auto">
+                    <div className="p-6">
+                        <h3 className="text-lg font-bold text-background-dark dark:text-white mb-4">Real-time Analysis</h3>
+                        <div className="space-y-4">
+                            {/* Dynamic Content or Placeholders */}
+                            <ThinkingPanel thoughts={thoughts} isAnalyzing={isThinking} mode="live" />
+
+                            <div className="pt-4 border-t border-primary/10">
+                                <h4 className="text-xs font-bold text-background-dark/40 dark:text-white/40 uppercase mb-3">Live Feed Status</h4>
+                                <div className="flex items-center justify-between py-2">
+                                    <span className="text-sm text-background-dark/70 dark:text-white/70">Neural Engine</span>
+                                    <span className="text-xs font-bold text-primary">ACTIVE</span>
+                                </div>
+                                <div className="flex items-center justify-between py-2">
+                                    <span className="text-sm text-background-dark/70 dark:text-white/70">Resolution</span>
+                                    <span className="text-xs font-bold text-background-dark dark:text-white">4K UHD</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+
+            {/* Results Modal (Overlay) - Reusing existing logic but styled better */}
+            {scanState === 'complete' && result && (
+                <div className="fixed inset-0 z-[60] bg-black/90 p-6 overflow-y-auto flex items-center justify-center animate-in fade-in zoom-in-95 duration-300">
+                    <div className="w-full max-w-md bg-white dark:bg-background-dark rounded-3xl p-6 shadow-2xl space-y-6 border border-white/10">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <h2 className="text-2xl font-black text-forest-green dark:text-white uppercase tracking-tight">Analysis Report</h2>
+                                <p className="text-sm font-bold text-primary">{result.forensic.drugName}</p>
+                            </div>
+                            <button onClick={resetScan} className="w-10 h-10 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center font-bold text-gray-500 dark:text-white">✕</button>
+                        </div>
+
+                        <div className={`p-6 rounded-2xl border-l-4 ${result.forensic.riskLevel === 'safe' ? 'bg-access-green/10 border-access-green' :
+                            result.forensic.riskLevel === 'suspicious' ? 'bg-watch-orange/10 border-watch-orange' :
+                                'bg-reserve-red/10 border-reserve-red'
+                            }`}>
+                            <p className="text-lg font-black uppercase tracking-tighter text-foreground">
+                                {result.forensic.riskLevel === 'safe' ? 'Verified Authentic' :
+                                    result.forensic.riskLevel === 'suspicious' ? 'Verification Required' : 'Counterfeit Suspected'}
+                            </p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <h3 className="text-xs font-bold uppercase text-gray-400 tracking-widest">Forensic Findings</h3>
+                            <ul className="space-y-2">
+                                {result.forensic.findings.map((f, i) => (
+                                    <li key={i} className="flex gap-3 text-sm items-start">
+                                        <CheckCircle size={16} className="text-primary mt-1 shrink-0" />
+                                        <span className="font-medium text-gray-700 dark:text-gray-300">{f}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <button onClick={resetScan} className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-lg hover:bg-primary-dark transition-colors">
+                            New Scan
+                        </button>
                     </div>
                 </div>
             )}
 
-            {/* Header */}
-            <header className="relative z-30 pt-6 px-4">
-                <div className="flex items-center justify-between p-4 glass-panel rounded-2xl bg-black/40 backdrop-blur-md border border-white/10">
-                    <Link href="/" className="w-10 h-10 rounded-full hover:bg-white/10 text-white flex items-center justify-center transition-colors">
-                        <span className="text-xl">←</span>
-                    </Link>
-                    <div className="text-center">
-                        <h1 className="text-sm font-black tracking-[0.2em] text-white uppercase italic">Ndunari Sentinel</h1>
-                        <p className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${scanState === 'analyzing_upload' ? 'text-primary' : 'text-emerald-500'}`}>
-                            {scanState === 'analyzing_upload' ? 'National Ledger Integrated' : 'Guardian Live Enabled'}
-                        </p>
-                    </div>
-                    <button className="w-10 h-10 rounded-full hover:bg-white/10 text-white flex items-center justify-center">
-                        <span className="text-xl">💡</span>
-                    </button>
-                </div>
-            </header>
-
-            {/* Main Scanning View */}
-            <main className="flex-1 relative z-10 flex flex-col items-center justify-center p-6 pb-32">
-                <div className="w-full max-w-lg space-y-6">
-                    {/* Thinking Monologue (Action Era Feature) */}
-                    <ThinkingPanel
-                        thoughts={thoughts}
-                        isAnalyzing={isThinking || isGuiding || scanState === 'analyzing_upload'}
-                        mode={scanState === 'analyzing_upload' ? 'document' : 'live'}
-                    />
-
-                    {/* Central Reticle */}
-                    <div className="relative aspect-square w-full max-w-sm mx-auto group">
-                        <div className="absolute inset-0 border border-white/10 rounded-3xl bg-white/5 backdrop-blur-[2px]" />
-
-                        {/* Braces - Only show for live scan */}
-                        {scanState !== 'analyzing_upload' && (
-                            <>
-                                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-2xl" />
-                                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-2xl" />
-                                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-2xl" />
-                                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-2xl" />
-                            </>
-                        )}
-
-                        {/* Scan Line */}
-                        {(scanState === 'scanning' || scanState === 'analyzing') && (
-                            <motion.div
-                                animate={{ top: ["0%", "100%", "0%"] }}
-                                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                                className="absolute left-2 right-2 h-0.5 bg-primary shadow-[0_0_15px_rgba(56,189,248,0.8)] z-20"
-                            />
-                        )}
-
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            {scanState === 'idle' && <span className="text-white/20 text-xs font-bold uppercase tracking-widest animate-pulse">Align Package</span>}
-                            {(scanState === 'analyzing_upload' || scanState === 'upload_pending') && (
-                                <div className="text-center space-y-4">
-                                    <div className="text-5xl animate-bounce">{scanState === 'analyzing_upload' ? '📄' : '📤'}</div>
-                                    <p className="text-xs font-black text-primary uppercase tracking-[0.2em]">
-                                        {scanState === 'analyzing_upload' ? 'Analyzing Document...' : 'Upload Specimen'}
-                                    </p>
-                                </div>
-                            )}
-                            {isGuiding && scanState !== 'analyzing_upload' && scanState !== 'upload_pending' && <div className="text-5xl animate-bounce">🧠</div>}
-                        </div>
+            {/* Error Modal */}
+            {scanState === 'error' && (
+                <div className="fixed inset-0 z-[60] bg-black/90 p-6 flex items-center justify-center">
+                    <div className="w-full max-w-xs bg-white dark:bg-gray-800 rounded-3xl p-8 text-center space-y-6">
+                        <AlertTriangle size={48} className="mx-auto text-reserve-red" />
+                        <h2 className="text-xl font-black uppercase text-white">Analysis Failed</h2>
+                        <p className="text-sm text-gray-400">{error}</p>
+                        <button onClick={resetScan} className="w-full py-4 bg-white/10 text-white font-bold rounded-2xl hover:bg-white/20">Try Again</button>
                     </div>
                 </div>
-            </main>
-
-            {/* Controls */}
-            <footer className="absolute bottom-0 left-0 w-full z-30 p-10 flex flex-col items-center gap-6">
-                <div className="flex items-center gap-8">
-                    <button onClick={loadHistory} className="w-12 h-12 rounded-full glass-panel flex items-center justify-center group relative" title="Scan History">
-                        <span className="group-hover:scale-125 transition-transform text-lg">📁</span>
-                        <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[8px] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-bold uppercase tracking-widest bg-black/60 px-2 py-1 rounded">Logbook</span>
-                    </button>
-
-                    <button
-                        onClick={scanState === 'idle' ? captureImage : (scanState === 'upload_pending' ? () => fileInputRef.current?.click() : resetScan)}
-                        disabled={isThinking}
-                        className={`w-20 h-20 rounded-full border-4 border-white flex items-center justify-center bg-primary shadow-[0_0_20px_rgba(56,189,248,0.4)] disabled:opacity-50 transition-all hover:scale-105 ${scanState === 'upload_pending' ? 'bg-watch-orange' : ''}`}
-                    >
-                        <span className="text-white text-3xl">
-                            {scanState === 'complete' ? '↻' : (scanState === 'upload_pending' ? '📤' : '📷')}
-                        </span>
-                    </button>
-
-                    <button onClick={() => fileInputRef.current?.click()} className="w-12 h-12 rounded-full glass-panel flex items-center justify-center group relative" title="Upload Document">
-                        <span className="group-hover:scale-125 transition-transform text-lg">📂</span>
-                        <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[8px] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-bold uppercase tracking-widest bg-black/60 px-2 py-1 rounded">Upload</span>
-                    </button>
-                    <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileUpload} />
-                </div>
-
-                <p className="text-[10px] text-white/40 font-bold uppercase tracking-[0.3em]">
-                    {scanState === 'analyzing_upload' ? 'Scanning National Ledger...' : scanMode === 'single' ? 'Standard Forensic Mode' : 'Initializing Sentinel...'}
-                </p>
-            </footer>
-
-            {/* Results Overlay */}
-            {
-                scanState === 'complete' && result && (
-                    <div className="absolute inset-0 z-50 bg-black/90 p-6 overflow-y-auto flex items-center justify-center">
-                        <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-2xl space-y-6">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <h2 className="text-2xl font-black text-forest-green dark:text-white uppercase tracking-tight">Analysis Report</h2>
-                                    <p className="text-sm font-bold text-primary">{result.forensic.drugName}</p>
-                                </div>
-                                <button onClick={resetScan} className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center font-bold">✕</button>
-                            </div>
-
-                            <div className={`p-6 rounded-2xl border-b-8 ${result.forensic.riskLevel === 'safe' ? 'bg-access-green/10 border-access-green' :
-                                result.forensic.riskLevel === 'suspicious' ? 'bg-watch-orange/10 border-watch-orange' :
-                                    'bg-reserve-red/10 border-reserve-red'
-                                }`}>
-                                <div className="flex justify-between items-center mb-2">
-                                    <span className="text-xs font-bold uppercase opacity-60">Authenticity Score</span>
-                                    <span className="text-2xl font-black">{result.forensic.authenticityScore}%</span>
-                                </div>
-                                <p className="text-lg font-black uppercase tracking-tighter">
-                                    {result.forensic.riskLevel === 'safe' ? 'Verified Authentic' :
-                                        result.forensic.riskLevel === 'suspicious' ? 'Verification Required' : 'Counterfeit Suspected'}
-                                </p>
-                            </div>
-
-                            <div className="space-y-2">
-                                <h3 className="text-xs font-bold uppercase text-white/40 tracking-widest">Findings</h3>
-                                <ul className="space-y-2">
-                                    {result.forensic.findings.slice(0, 4).map((f, i) => (
-                                        <li key={i} className="flex gap-2 text-sm items-start">
-                                            <span className="text-primary mt-1">•</span>
-                                            <span className="font-medium text-gray-700 dark:text-gray-300">{f}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-
-                            {/* Forensic Evidence Visualizer (Wow Factor) */}
-                            {lastScanPreview && result.forensic.evidenceBoxes && result.forensic.evidenceBoxes.length > 0 && (
-                                <div className="space-y-3">
-                                    <h3 className="text-xs font-bold uppercase text-white/40 tracking-widest">Forensic Evidence</h3>
-                                    <div className="relative aspect-video rounded-2xl overflow-hidden border-2 border-primary/30 group">
-                                        <img src={lastScanPreview} className="w-full h-full object-cover" alt="Evidence" />
-                                        <ForensicEvidenceOverlay boxes={result.forensic.evidenceBoxes} />
-                                        <div className="absolute top-2 right-2 bg-primary/20 backdrop-blur-md px-2 py-1 rounded-lg border border-primary/30">
-                                            <p className="text-[8px] text-primary font-black uppercase tracking-tighter">AI Annotated</p>
-                                        </div>
-                                    </div>
-                                    <p className="text-[10px] text-white/40 font-medium italic text-center">
-                                        * Gemini 3 has pinpointed security feature anomalies above
-                                    </p>
-                                </div>
-                            )}
-
-                            <div className="flex gap-4">
-                                <button onClick={() => speaking ? stop() : handleReadScanResults()} className="flex-1 py-4 bg-primary/10 text-primary font-black rounded-2xl border-2 border-primary/20">
-                                    {speaking ? 'Stop Narị' : 'Narị Audio'}
-                                </button>
-                                <button onClick={resetScan} className="flex-[2] py-4 bg-primary text-white font-black rounded-2xl shadow-lg">New Scan</button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-
-            {/* Error Overlay */}
-            {
-                scanState === 'error' && (
-                    <div className="absolute inset-0 z-50 bg-black/90 p-6 flex items-center justify-center">
-                        <div className="w-full max-w-xs bg-white dark:bg-gray-800 rounded-3xl p-8 text-center space-y-6">
-                            <div className="text-6xl">⚠️</div>
-                            <h2 className="text-xl font-black uppercase">Forensic Halt</h2>
-                            <p className="text-sm text-gray-500">{error || 'Unknown analysis exception'}</p>
-                            <button onClick={resetScan} className="w-full py-4 bg-reserve-red text-white font-black rounded-2xl">Retry Scan</button>
-                        </div>
-                    </div>
-                )
-            }
-
-            {/* History Overlay (Simplified for MVP) */}
-            {
-                showHistory && (
-                    <div className="absolute inset-0 z-50 bg-black/90 p-6 overflow-y-auto">
-                        <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-3xl p-6 mx-auto">
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-xl font-black uppercase">Sentinel Logs</h2>
-                                <button onClick={() => setShowHistory(false)} className="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-xl text-xs font-bold">Close</button>
-                            </div>
-                            <div className="space-y-4">
-                                {scanHistory.map(scan => (
-                                    <div key={scan.id} className="p-4 rounded-2xl border-2 bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
-                                        <div>
-                                            <p className="font-black text-sm">{scan.drugName}</p>
-                                            <p className="text-[10px] uppercase font-bold opacity-50">{new Date(scan.timestamp).toLocaleDateString()}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="font-black text-primary">{scan.authenticityScore}%</p>
-                                            <button onClick={() => handleDeleteScan(scan.id)} className="text-[10px] font-bold text-reserve-red uppercase">Delete</button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-        </div >
+            )}
+        </div>
     );
 }

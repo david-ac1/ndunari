@@ -1,302 +1,218 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Shield } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-
-import { supabase } from "@/lib/supabase/client";
-import { signOut } from "@/lib/supabase/auth.service";
-import { getScanStats } from "@/lib/services/scan-storage.service";
-import { getPrescriptionStats } from "@/lib/services/prescription-storage.service";
-import { normalizeError, getUserMessage, logError } from "@/lib/errors/app-errors";
-
-import { useAuth, type UserProfile } from "@/app/components/providers/AuthProvider";
+import { useAuth } from "@/app/components/providers/AuthProvider";
+import { useScanData } from "@/lib/contexts/ScanDataContext";
+import { supabase } from "@/lib/supabase/client"; // For updates
+import { Loader2, User, Save, Shield, Clock, AlertTriangle, CheckCircle, FileText } from "lucide-react";
 
 export default function ProfilePage() {
-    const { user, profile, refreshProfile, loading: authLoading } = useAuth();
     const router = useRouter();
-    const [stats, setStats] = useState({
-        scans: { total: 0, safe: 0 },
-        prescriptions: { total: 0, access: 0 }
-    });
-    const [upgrading, setUpgrading] = useState(false);
-    const [updating, setUpdating] = useState(false);
+    const { user, profile, refreshProfile, loading } = useAuth();
+    const { scans } = useScanData();
 
-    // Edit Form State
-    const [editShareData, setEditShareData] = useState(true);
-
+    // Form State
+    const [displayName, setDisplayName] = useState(profile?.display_name || "");
+    const [bio, setBio] = useState(profile?.bio || "");
+    const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-    useEffect(() => {
-        if (!authLoading && !user) {
-            router.push('/');
-        }
-    }, [user, authLoading, router]);
-
-    useEffect(() => {
-        if (user) {
-            fetchStats();
-
-            // 1. REHYDRATION ON FOCUS
-            const handleVisibilityChange = () => {
-                if (document.visibilityState === 'visible') {
-                    console.log("Profile: Visibility restored. Re-syncing stats...");
-                    fetchStats();
-                    refreshProfile();
-                }
-            };
-            document.addEventListener('visibilitychange', handleVisibilityChange);
-
-            // 2. REAL-TIME PROFILE STATS LISTENER
-            const profileSub = supabase
-                .channel(`profile_stats:${user.id}`)
-                .on('postgres_changes', {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'user_profiles',
-                    filter: `id=eq.${user.id}`
-                }, (payload) => {
-                    console.log("Profile: Real-time stat update detected", payload.new);
-                    fetchStats(); // Refresh local calculated stats
-                    refreshProfile(payload.new as UserProfile); // Update global context
-                })
-                .subscribe();
-
-            return () => {
-                document.removeEventListener('visibilitychange', handleVisibilityChange);
-                supabase.removeChannel(profileSub);
-            };
-        }
-    }, [user, refreshProfile]);
-
-    // Initial form sync
+    // Update local state when profile loads
     useEffect(() => {
         if (profile) {
-            setEditShareData(profile.share_data !== false);
+            setDisplayName(profile.display_name || "");
+            setBio(profile.bio || "");
         }
     }, [profile]);
 
-    const fetchStats = async () => {
-        const scanStats = await getScanStats();
-        const prescriptionStats = await getPrescriptionStats();
-        setStats({
-            scans: { total: scanStats.total, safe: scanStats.safe },
-            prescriptions: { total: prescriptionStats.total, access: prescriptionStats.access }
-        });
+    // Redirect if not logged in
+    useEffect(() => {
+        if (!loading && !user) {
+            router.push('/login');
+        }
+    }, [user, loading, router]);
+
+    // Stats calculation
+    const totalScans = scans.length;
+    const safeScans = scans.filter(s => s.risk_level === 'safe').length;
+    const threatScans = totalScans - safeScans;
+    const healthScore = totalScans > 0 ? Math.round((safeScans / totalScans) * 100) : 100;
+
+    const handleSave = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!user) return;
+        setSaving(true);
+        setMessage(null);
+
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update({
+                    display_name: displayName,
+                    bio: bio,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', user.id);
+
+            if (error) throw error;
+
+            await refreshProfile();
+            setMessage({ type: 'success', text: "Profile updated successfully." });
+        } catch (err: any) {
+            setMessage({ type: 'error', text: err.message });
+        } finally {
+            setSaving(false);
+        }
     };
 
-
-
-    const handleSignOut = async () => {
-        await signOut();
-        router.push('/');
-    };
-
-    if (authLoading) {
+    if (loading || !user) {
         return (
-            <div className="min-h-screen bg-background-dark flex items-center justify-center">
-                <div className="animate-spin text-primary text-4xl">⏳</div>
+            <div className="flex h-[50vh] items-center justify-center">
+                <Loader2 className="animate-spin text-primary" size={32} />
             </div>
         );
     }
 
-    if (!user) return null; // Redirection handled in useEffect
-
-    const isAnonymous = user.is_anonymous;
-
     return (
-        <div className="min-h-screen bg-background-dark">
-            <header className="sticky top-0 z-20 bg-background-dark/80 backdrop-blur-md border-b border-white/10">
-                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-4">
-                    <Link href="/" className="text-primary hover:text-primary-dark transition-colors">
-                        <span className="text-2xl">←</span>
-                    </Link>
-                    <h1 className="text-2xl font-bold text-white">Your Profile</h1>
+        <div className="flex flex-col bg-background-light dark:bg-background-dark min-h-screen">
+            {/* Note: Header is global in layout, but we need room for it */}
+            <div className="max-w-4xl mx-auto w-full px-6 py-8 space-y-8 pb-20">
+
+                {/* Profile Header Card */}
+                <div className="relative rounded-3xl overflow-hidden bg-white dark:bg-surface-dark border border-gray-200 dark:border-white/5 shadow-sm">
+                    {/* Cover Photo Gradient */}
+                    <div className="h-32 bg-gradient-to-r from-forest-green to-primary"></div>
+
+                    <div className="px-8 pb-8 flex flex-col md:flex-row items-center md:items-end -mt-12 gap-6">
+                        {/* Avatar */}
+                        <div className="relative h-24 w-24 rounded-full border-4 border-white dark:border-surface-dark bg-white shadow-md overflow-hidden">
+                            {profile?.avatar_url ? (
+                                <Image src={profile.avatar_url} alt="You" fill className="object-cover" />
+                            ) : (
+                                <div className="h-full w-full flex items-center justify-center bg-gray-100 text-gray-400">
+                                    <User size={40} />
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex-1 text-center md:text-left mb-2">
+                            <h1 className="text-2xl font-black text-forest-green dark:text-white">{displayName || "Guardian"}</h1>
+                            <p className="text-sm text-gray-500 font-medium">{user.email}</p>
+                        </div>
+
+                        <div className="flex flex-col items-center md:items-end">
+                            <div className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Health Integrity Score</div>
+                            <div className={`text-4xl font-black ${healthScore >= 90 ? 'text-access-green' : healthScore >= 70 ? 'text-watch-orange' : 'text-reserve-red'}`}>
+                                {healthScore}%
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </header>
 
-            <main className="max-w-4xl mx-auto px-6 py-8">
-                {/* Profile Overview */}
-                <section className="glass-panel p-8 rounded-2xl border border-white/10 mb-8 relative overflow-hidden">
-                    <div className="absolute right-0 top-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl -mr-10 -mt-10" />
-                    <div className="flex flex-col md:flex-row items-center gap-6 relative z-10">
-                        <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center text-4xl border-2 border-primary/30">
-                            👤
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {/* Left Column: Stats & Form */}
+                    <div className="md:col-span-2 space-y-8">
+                        {/* Stats Grid */}
+                        <div className="grid grid-cols-3 gap-4">
+                            <div className="p-4 rounded-2xl bg-white dark:bg-surface-dark border border-gray-100 dark:border-white/5 text-center">
+                                <div className="text-2xl font-black text-primary">{totalScans}</div>
+                                <div className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Total Scans</div>
+                            </div>
+                            <div className="p-4 rounded-2xl bg-white dark:bg-surface-dark border border-gray-100 dark:border-white/5 text-center">
+                                <div className="text-2xl font-black text-access-green">{safeScans}</div>
+                                <div className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Safe</div>
+                            </div>
+                            <div className="p-4 rounded-2xl bg-white dark:bg-surface-dark border border-gray-100 dark:border-white/5 text-center">
+                                <div className="text-2xl font-black text-reserve-red">{threatScans}</div>
+                                <div className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Blocked</div>
+                            </div>
                         </div>
-                        <div className="flex-1 text-center md:text-left">
-                            <h2 className="text-2xl font-bold text-white mb-1 flex items-center gap-2">
-                                {profile?.display_name || 'Health Guardian'}
-                                {profile?.role === 'admin' && (
-                                    <span className="px-2 py-0.5 rounded-md bg-primary text-black text-[10px] font-black tracking-widest uppercase">
-                                        Admin
-                                    </span>
-                                )}
+
+                        {/* Edit Profile Form */}
+                        <section className="p-6 rounded-3xl bg-white dark:bg-surface-dark border border-gray-200 dark:border-white/5 shadow-sm">
+                            <h2 className="text-lg font-bold text-forest-green dark:text-white flex items-center gap-2 mb-6">
+                                <SettingsIcon size={20} className="text-primary" />
+                                Public Profile Settings
                             </h2>
-                            <p className="text-white/60 text-sm mb-4">
-                                {isAnonymous ? 'Anonymous Account' : user.email}
-                            </p>
-                            <div className="flex flex-wrap gap-3">
-                                <div className="inline-flex items-center gap-2 px-4 py-2 bg-access-green/20 border border-access-green/30 rounded-lg text-access-green">
-                                    <span className="font-bold">Health Integrity Score:</span>
-                                    <span className="text-xl">{profile?.health_integrity_score || 0}</span>
+
+                            <form onSubmit={handleSave} className="space-y-6">
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Display Name</label>
+                                    <input
+                                        type="text"
+                                        value={displayName}
+                                        onChange={(e) => setDisplayName(e.target.value)}
+                                        className="w-full p-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 text-forest-green dark:text-white focus:border-primary outline-none transition-colors"
+                                    />
                                 </div>
-                                <button
-                                    onClick={() => refreshProfile()}
-                                    className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/60 text-xs font-bold hover:bg-white/10 transition-all uppercase"
-                                >
-                                    🔄 Refresh Authorization
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Admin Controls (if admin) */}
-                {profile?.role === 'admin' && (
-                    <section className="glass-panel p-8 rounded-2xl border border-primary/40 bg-primary/10 mb-8 relative overflow-hidden shadow-[0_0_30px_rgba(56,189,248,0.1)]">
-                        <div className="absolute right-0 bottom-0 w-48 h-48 bg-primary/10 rounded-full blur-3xl -mr-16 -mb-16" />
-                        <div className="relative z-10">
-                            <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-3">
-                                <div className="p-2 bg-primary rounded-lg text-black">
-                                    <Shield size={20} />
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Guardian Bio</label>
+                                    <textarea
+                                        rows={3}
+                                        value={bio}
+                                        onChange={(e) => setBio(e.target.value)}
+                                        placeholder="Share your commitment to medication safety..."
+                                        className="w-full p-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 text-forest-green dark:text-white focus:border-primary outline-none transition-colors"
+                                    />
                                 </div>
-                                National Administrator Access
-                            </h3>
-                            <p className="text-white/80 mb-6 text-sm max-w-2xl leading-relaxed">
-                                You hold elevated pharmaceutical surveillance clearance. Your account is authorized to access the National Intelligence Grid to monitor counterfeit clusters, issue recall directives, and analyze regional forensic data.
-                            </p>
-                            <Link
-                                href="/admin/dashboard"
-                                className="inline-flex items-center gap-3 px-10 py-4 bg-primary text-black rounded-xl font-black uppercase tracking-wider hover:scale-105 transition-all shadow-xl shadow-primary/30"
-                            >
-                                Enter Intelligence Center
-                                <span className="text-xl">→</span>
-                            </Link>
-                        </div>
-                    </section>
-                )}
 
-                {/* Privacy Guard Status */}
-                <section className={`glass-panel p-6 rounded-2xl border mb-8 transition-all ${editShareData ? 'border-primary/30 bg-primary/5' : 'border-access-green/30 bg-access-green/5'}`}>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${editShareData ? 'bg-primary/20 text-primary' : 'bg-access-green/20 text-access-green'}`}>
-                                {editShareData ? '📡' : '🛡️'}
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-white">Privacy Guard Status</h3>
-                                <div className="flex items-center gap-2">
-                                    <span className={`h-2 w-2 rounded-full animate-pulse ${editShareData ? 'bg-primary' : 'bg-access-green'}`} />
-                                    <p className={`text-sm font-bold uppercase tracking-wider ${editShareData ? 'text-primary' : 'text-access-green'}`}>
-                                        {editShareData ? 'Contributing to Surveillance' : 'Privacy Protection Mode'}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="text-right hidden sm:block">
-                            <p className="text-xs text-white/40 uppercase font-bold mb-1">Current Sync</p>
-                            <p className="text-sm text-white font-medium">Cloud Persistence Active</p>
-                        </div>
-                    </div>
-                    <div className="mt-4 pt-4 border-t border-white/5">
-                        <p className="text-xs text-white/60 leading-relaxed">
-                            {editShareData
-                                ? "Your de-identified scan data is helping health authorities track counterfeit drug trends in your region. Personal identity is never shared."
-                                : "Your scan history is available only to you. We've disabled regional surveillance contributions for your account."}
-                        </p>
-                    </div>
-                </section>
-
-                {/* Surveillance Settings */}
-                <section className="glass-panel p-8 rounded-2xl border border-white/10 mb-8">
-                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                        <span>📡</span> Surveillance Settings
-                    </h3>
-
-                    {/* Privacy Toggle */}
-                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 relative overflow-hidden">
-                        <div className="absolute left-0 top-0 w-1 h-full bg-primary/30" />
-                        <div className="pl-2">
-                            <p className="text-sm font-bold text-white flex items-center gap-2">
-                                Public Health Data Sharing
-                                {editShareData ? (
-                                    <span className="px-2 py-0.5 bg-primary/20 text-primary text-[10px] rounded-full uppercase">Enabled</span>
-                                ) : (
-                                    <span className="px-2 py-0.5 bg-white/10 text-white/40 text-[10px] rounded-full uppercase">Disabled</span>
+                                {message && (
+                                    <div className={`p-3 rounded-lg text-xs font-bold ${message.type === 'success' ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'}`}>
+                                        {message.text}
+                                    </div>
                                 )}
-                            </p>
-                            <p className="text-xs text-white/50">Help us track counterfeit trends by sharing de-identified analytics.</p>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={async () => {
-                                const newValue = !editShareData;
-                                setEditShareData(newValue);
-                                // Auto-save on toggle
-                                try {
-                                    await supabase
-                                        .from('user_profiles')
-                                        .update({ share_data: newValue })
-                                        .eq('id', user.id);
-                                    refreshProfile({ ...profile!, share_data: newValue });
-                                } catch (e) {
-                                    console.error("Failed to save privacy setting", e);
-                                }
-                            }}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${editShareData ? 'bg-primary' : 'bg-white/20'}`}
-                        >
-                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${editShareData ? 'translate-x-6' : 'translate-x-1'}`} />
-                        </button>
+
+                                <div className="flex justify-end">
+                                    <button
+                                        type="submit"
+                                        disabled={saving}
+                                        className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary-dark disabled:opacity-50 transition-all"
+                                    >
+                                        {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                                        Save Changes
+                                    </button>
+                                </div>
+                            </form>
+                        </section>
                     </div>
-                </section>
 
-                {/* Settings & Logout */}
-                <section className="flex flex-col gap-4">
-                    <button
-                        onClick={async () => {
-                            if (confirm("WARNING: COMPLETE FACTORY RESET DETAILS:\n\n1. Delete ALL scan records.\n2. Reset 'Display Name' to default.\n3. Reset 'Language' to English.\n4. Reset 'Privacy Settings' to default.\n\nAre you sure you want to perform a TOTAL SYSTEM PURGE?")) {
-                                try {
-                                    // 1. Purge Data
-                                    const { deleteAllScans } = await import("@/lib/services/scan-storage.service");
-                                    const { clearScanHistory } = await import("@/lib/utils/scan-history");
-                                    await deleteAllScans();
-                                    clearScanHistory();
-
-                                    // 2. Purge Identity Customizations (Supabase)
-                                    // Reset profile to generic defaults
-                                    const { error: profileError } = await supabase
-                                        .from('user_profiles')
-                                        .update({
-                                            display_name: null, // Will fallback to 'Health Guardian'
-                                            preferred_language: 'english',
-                                            share_data: true,
-                                            health_integrity_score: 0
-                                        })
-                                        .eq('id', user.id);
-
-                                    if (profileError) throw profileError;
-
-                                    alert("System reset complete. Identity and Data have been purged.");
-                                    window.location.reload();
-                                } catch (e: any) {
-                                    alert("Reset failed: " + (e.message || e));
-                                }
-                            }
-                        }}
-                        className="w-full py-4 glass-panel border border-reserve-red/20 text-reserve-red font-bold rounded-2xl hover:bg-reserve-red/5 transition-colors uppercase tracking-widest text-xs"
-                    >
-                        ⚠️ Factory Reset (Data + Identity)
-                    </button>
-
-                    <button
-                        onClick={() => signOut()}
-                        className="w-full py-4 glass-panel border border-white/10 text-white/60 font-bold rounded-2xl hover:bg-white/5 transition-colors"
-                    >
-                        Sign Out
-                    </button>
-                </section>
-            </main >
-        </div >
+                    {/* Right Column: Recent History (Mini) */}
+                    <div className="space-y-6">
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1">Recent Protection Log</h3>
+                        <div className="space-y-3">
+                            {scans.length === 0 ? (
+                                <p className="text-sm text-gray-500 italic px-2">No history recorded yet.</p>
+                            ) : (
+                                scans.slice(0, 5).map(scan => (
+                                    <div key={scan.id} className="p-4 rounded-2xl bg-white dark:bg-surface-dark border border-gray-100 dark:border-white/5 flex items-start gap-3">
+                                        <div className={`mt-0.5 ${scan.risk_level === 'safe' ? 'text-access-green' : 'text-reserve-red'}`}>
+                                            {scan.risk_level === 'safe' ? <CheckCircle size={16} /> : <AlertTriangle size={16} />}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-bold text-forest-green dark:text-white truncate">{scan.drug_name}</p>
+                                            <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">
+                                                <Clock size={10} /> {new Date(scan.created_at).toLocaleDateString()}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
+}
+
+// Icon helper
+function SettingsIcon({ size, className }: { size: number, className?: string }) {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+    )
 }

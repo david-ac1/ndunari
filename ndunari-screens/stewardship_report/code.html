@@ -3,266 +3,357 @@
 <html class="light" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Stewardship Report - Ndunari</title>
-<!-- Fonts -->
-<link href="https://fonts.googleapis.com" rel="preconnect"/>
-<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
-<!-- Icons -->
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<!-- Tailwind CSS -->
+<title>Antibiotic Stewardship Report - Ndunari</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <script id="tailwind-config">
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            colors: {
-              "primary": "#4bb814",
-              "deep-forest": "#162111",
-              "warning-amber": "#ffb020",
-              "reserve-red": "#e63946",
-              "background-light": "#f6f8f6",
-              "background-dark": "#162111",
-              "surface-light": "#ffffff",
-              "surface-dark": "#1e2b18",
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#11d452",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#102216",
+                        "access": "#11d452",
+                        "watch": "#FFBF00",
+                        "reserve": "#EF4444",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
             },
-            fontFamily: {
-              "display": ["Manrope", "sans-serif"]
-            },
-            borderRadius: {
-              "DEFAULT": "0.5rem",
-              "lg": "0.75rem",
-              "xl": "1rem",
-              "2xl": "1.5rem",
-              "full": "9999px"
-            },
-            backdropBlur: {
-              xs: '2px',
-            }
-          },
-        },
-      }
+        }
     </script>
 <style>
-        .glass-panel {
+        .glass-card {
             background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
-        .dark .glass-panel {
-            background: rgba(30, 43, 24, 0.7);
+        .dark .glass-card {
+            background: rgba(16, 34, 22, 0.7);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .hide-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .hide-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
     </style>
-<style>
-    body {
-      min-height: max(884px, 100dvh);
-    }
-  </style>
-  </head>
-<body class="bg-background-light dark:bg-background-dark font-display text-deep-forest dark:text-gray-100 antialiased overflow-x-hidden">
-<div class="relative min-h-screen w-full flex flex-col max-w-md mx-auto shadow-2xl bg-background-light dark:bg-background-dark">
-<!-- Top Navigation / Header -->
-<header class="sticky top-0 z-50 glass-panel px-4 py-3 flex items-center justify-between transition-colors duration-300">
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+<div class="flex h-screen overflow-hidden">
+<!-- Side Navigation -->
+<aside class="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark flex flex-col shrink-0">
+<div class="p-6">
 <div class="flex items-center gap-3">
-<button class="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-deep-forest dark:text-white hover:bg-primary/20 transition-colors">
-<span class="material-symbols-outlined text-2xl">account_circle</span>
-</button>
+<div class="bg-primary size-10 rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined">health_metrics</span>
 </div>
-<h1 class="text-lg font-bold tracking-tight">Stewardship Report</h1>
-<div class="flex items-center gap-2">
-<button class="flex items-center justify-center w-10 h-10 rounded-full bg-transparent text-deep-forest dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+<div class="flex flex-col">
+<h1 class="text-lg font-bold leading-tight">Ndunari</h1>
+<p class="text-primary text-xs font-semibold uppercase tracking-wider">AI Medical Safety</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-2 py-4">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">verified_user</span>
+<span class="text-sm font-medium">Drug Verification</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary text-white font-medium shadow-lg shadow-primary/20" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-sm">Stewardship Reports</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="text-sm font-medium">Prescription Logs</span>
+</a>
+<div class="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="#">
 <span class="material-symbols-outlined">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+</div>
+</nav>
+<div class="p-4 border-t border-slate-100 dark:border-slate-800">
+<div class="flex items-center gap-3 p-2">
+<div class="size-8 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="User profile avatar icon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6lSiY-BXmpR2wvp2sWkyAJ406ZKW5eMPMf_NoIC_n3dh4d08aAkKdjx2DOA3sZr2hxJu5q1yocZa4qNFHdYOruN6LQgsDlMdzCAmqnvVXS8FoqGjNJCmwapdqehpjZPf-7mEEvhyvVbiRCoFyXsmE5DDPieEBkhqVWA0ZXO0Y7ruS1JcLIytDZqqQBZH3jN5LU17gUeeeNP29WgAZHHoIFHd46e04EiYf0S2ki5GJ7CjN3CkGxAy8-V42RIH4ToRK0xW4XLTjXMb6"/>
+</div>
+<div class="flex flex-col min-w-0">
+<p class="text-sm font-semibold truncate">Dr. Chidi Okoro</p>
+<p class="text-[10px] text-slate-500 uppercase">Lagos Gen Hospital</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col overflow-y-auto relative">
+<!-- Top Nav Bar -->
+<header class="sticky top-0 z-10 flex items-center justify-between bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-8 py-4">
+<div class="flex flex-col">
+<h2 class="text-xl font-bold tracking-tight">Antibiotic Stewardship Report</h2>
+<p class="text-sm text-slate-500">WHO AWaRe Classification Analysis • Nigeria Regional Data</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
+<input class="pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm w-64 focus:ring-2 focus:ring-primary" placeholder="Search antibiotics..." type="text"/>
+</div>
+<button class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined text-lg">download</span>
+                        Download PDF
+                    </button>
+<button class="bg-slate-100 dark:bg-slate-800 p-2 rounded-lg text-slate-600 dark:text-slate-400">
+<span class="material-symbols-outlined text-xl">print</span>
+</button>
+<button class="bg-slate-100 dark:bg-slate-800 p-2 rounded-lg text-slate-600 dark:text-slate-400">
+<span class="material-symbols-outlined text-xl">notifications</span>
 </button>
 </div>
 </header>
-<!-- Main Content -->
-<main class="flex-1 px-4 pb-24 pt-4 flex flex-col gap-6">
-<!-- Summary Card (Fintech Style) -->
-<section class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-deep-forest to-[#2a3e20] text-white p-6 shadow-lg">
-<div class="absolute top-0 right-0 p-4 opacity-10">
-<span class="material-symbols-outlined text-9xl">shield_moon</span>
-</div>
-<div class="relative z-10">
-<p class="text-sm font-medium text-gray-300 mb-1 uppercase tracking-wider">Safety Index</p>
-<div class="flex items-end gap-3 mb-4">
-<span class="text-5xl font-bold tracking-tight">92%</span>
-<div class="flex items-center gap-1 text-primary bg-white/10 px-2 py-1 rounded mb-2 backdrop-blur-sm">
-<span class="material-symbols-outlined text-sm font-bold">trending_up</span>
-<span class="text-xs font-bold text-white">Low Risk</span>
+<div class="p-8 space-y-8">
+<!-- Stats Overview -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<div class="glass-card p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col gap-1">
+<p class="text-slate-500 text-sm font-medium">Total Prescriptions</p>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-extrabold tracking-tight">1,248</span>
+<span class="text-primary text-xs font-bold">+5.2%</span>
 </div>
 </div>
-<!-- AI Insight Micro-Card -->
-<div class="mt-4 bg-white/10 backdrop-blur-md border border-white/10 rounded-xl p-3 flex items-start gap-3">
-<div class="bg-primary/20 p-1.5 rounded-lg shrink-0">
-<span class="material-symbols-outlined text-primary text-sm">auto_awesome</span>
+<div class="glass-card p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col gap-1">
+<p class="text-slate-500 text-sm font-medium">Avg. Compliance</p>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-extrabold tracking-tight">92%</span>
+<span class="text-access text-xs font-bold">Optimal</span>
 </div>
-<p class="text-xs text-gray-200 leading-relaxed">
-<span class="font-bold text-white">Ndunari AI:</span> Based on local resistance patterns in Lagos, Ciprofloxacin shows reduced efficacy this season.
+</div>
+<div class="glass-card p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col gap-1">
+<p class="text-slate-500 text-sm font-medium">Resistance Warnings</p>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-extrabold tracking-tight">14</span>
+<span class="text-reserve text-xs font-bold">+12%</span>
+</div>
+</div>
+<!-- Calendar Picker Integration -->
+<div class="glass-card p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+<div class="flex flex-col">
+<p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Selected Period</p>
+<p class="text-sm font-bold">Oct 1 - Oct 30, 2023</p>
+</div>
+<button class="bg-primary/10 text-primary p-2 rounded-lg">
+<span class="material-symbols-outlined">calendar_today</span>
+</button>
+</div>
+</div>
+<!-- AWaRe Traffic Light Section -->
+<div>
+<h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">traffic</span>
+                        WHO AWaRe Classification Overview
+                    </h3>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- ACCESS Card -->
+<div class="glass-card rounded-xl border-l-8 border-access overflow-hidden shadow-lg transition-transform hover:scale-[1.01]">
+<div class="p-6 flex flex-col h-full">
+<div class="flex justify-between items-start mb-4">
+<div class="bg-access/10 text-access p-3 rounded-xl">
+<span class="material-symbols-outlined text-3xl">check_circle</span>
+</div>
+<span class="bg-access/20 text-access text-[10px] font-bold px-2 py-1 rounded-full uppercase">Low Risk</span>
+</div>
+<h4 class="text-2xl font-extrabold mb-1">Access</h4>
+<p class="text-slate-500 text-sm leading-relaxed mb-6">First-line antibiotics widely available for 26 common infections. Low potential for resistance development.</p>
+<div class="mt-auto">
+<div class="flex justify-between text-sm font-bold mb-2">
+<span>Current Usage</span>
+<span class="text-access">68%</span>
+</div>
+<div class="w-full bg-slate-200 dark:bg-slate-700 h-3 rounded-full overflow-hidden mb-6">
+<div class="bg-access h-full" style="width: 68%"></div>
+</div>
+<div class="space-y-2">
+<p class="text-[10px] font-bold uppercase text-slate-400">Common Drugs</p>
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-xs">Amoxicillin</span>
+<span class="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-xs">Doxycycline</span>
+<span class="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-xs">Metronidazole</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- WATCH Card -->
+<div class="glass-card rounded-xl border-l-8 border-watch overflow-hidden shadow-lg transition-transform hover:scale-[1.01]">
+<div class="p-6 flex flex-col h-full">
+<div class="flex justify-between items-start mb-4">
+<div class="bg-watch/10 text-watch p-3 rounded-xl">
+<span class="material-symbols-outlined text-3xl">visibility</span>
+</div>
+<span class="bg-watch/20 text-watch text-[10px] font-bold px-2 py-1 rounded-full uppercase">Moderate Risk</span>
+</div>
+<h4 class="text-2xl font-extrabold mb-1">Watch</h4>
+<p class="text-slate-500 text-sm leading-relaxed mb-6">Antibiotics with higher resistance potential. Recommended for specific clinical indications only.</p>
+<div class="mt-auto">
+<div class="flex justify-between text-sm font-bold mb-2">
+<span>Current Usage</span>
+<span class="text-watch">24%</span>
+</div>
+<div class="w-full bg-slate-200 dark:bg-slate-700 h-3 rounded-full overflow-hidden mb-6">
+<div class="bg-watch h-full" style="width: 24%"></div>
+</div>
+<div class="space-y-2">
+<p class="text-[10px] font-bold uppercase text-slate-400">Common Drugs</p>
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-xs">Ciprofloxacin</span>
+<span class="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-xs">Azithromycin</span>
+<span class="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-xs">Ceftriaxone</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- RESERVE Card -->
+<div class="glass-card rounded-xl border-l-8 border-reserve overflow-hidden shadow-lg transition-transform hover:scale-[1.01]">
+<div class="p-6 flex flex-col h-full">
+<div class="flex justify-between items-start mb-4">
+<div class="bg-reserve/10 text-reserve p-3 rounded-xl">
+<span class="material-symbols-outlined text-3xl">dangerous</span>
+</div>
+<span class="bg-reserve/20 text-reserve text-[10px] font-bold px-2 py-1 rounded-full uppercase">High Risk</span>
+</div>
+<h4 class="text-2xl font-extrabold mb-1">Reserve</h4>
+<p class="text-slate-500 text-sm leading-relaxed mb-6">Last-resort options for multi-drug resistant infections. Must be protected to maintain effectiveness.</p>
+<div class="mt-auto">
+<div class="flex justify-between text-sm font-bold mb-2">
+<span>Current Usage</span>
+<span class="text-reserve">8%</span>
+</div>
+<div class="w-full bg-slate-200 dark:bg-slate-700 h-3 rounded-full overflow-hidden mb-6">
+<div class="bg-reserve h-full" style="width: 8%"></div>
+</div>
+<div class="space-y-2">
+<p class="text-[10px] font-bold uppercase text-slate-400">Common Drugs</p>
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-xs">Colistin</span>
+<span class="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-xs">Linezolid</span>
+<span class="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-xs">Fosfomycin</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Detailed Breakdown Table -->
+<div class="glass-card rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+<div class="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-white/50 dark:bg-slate-900/50">
+<h4 class="font-bold text-lg">Detailed Prescription Insights</h4>
+<div class="flex items-center gap-2">
+<span class="text-xs text-slate-500">Filter by category:</span>
+<select class="text-xs border-slate-200 dark:border-slate-700 rounded bg-transparent dark:bg-slate-800 focus:ring-primary">
+<option>All Categories</option>
+<option>Access</option>
+<option>Watch</option>
+<option>Reserve</option>
+</select>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-slate-50 dark:bg-slate-800/50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
+<tr>
+<th class="px-6 py-4">Antibiotic Name</th>
+<th class="px-6 py-4">Classification</th>
+<th class="px-6 py-4">Total Prescribed</th>
+<th class="px-6 py-4">Safety Status</th>
+<th class="px-6 py-4">AI Insight</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
+<tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+<td class="px-6 py-4 font-semibold">Amoxicillin/Clavulanate</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1 text-access font-bold"><div class="size-2 rounded-full bg-access"></div> Access</span>
+</td>
+<td class="px-6 py-4">428 cases</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 rounded bg-access/10 text-access text-[11px] font-bold">Standard Use</span>
+</td>
+<td class="px-6 py-4 text-slate-500 italic">Optimal first-line choice for RTI cases.</td>
+</tr>
+<tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+<td class="px-6 py-4 font-semibold">Ciprofloxacin</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1 text-watch font-bold"><div class="size-2 rounded-full bg-watch"></div> Watch</span>
+</td>
+<td class="px-6 py-4">152 cases</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 rounded bg-watch/10 text-watch text-[11px] font-bold">High usage flag</span>
+</td>
+<td class="px-6 py-4 text-slate-500 italic">Verify typhoid diagnosis before prescribing.</td>
+</tr>
+<tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+<td class="px-6 py-4 font-semibold">Ceftriaxone</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1 text-watch font-bold"><div class="size-2 rounded-full bg-watch"></div> Watch</span>
+</td>
+<td class="px-6 py-4">98 cases</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 rounded bg-access/10 text-access text-[11px] font-bold">Clinical Align</span>
+</td>
+<td class="px-6 py-4 text-slate-500 italic">Used in 85% of inpatient surgical prophylaxis.</td>
+</tr>
+<tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+<td class="px-6 py-4 font-semibold">Colistin</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1 text-reserve font-bold"><div class="size-2 rounded-full bg-reserve"></div> Reserve</span>
+</td>
+<td class="px-6 py-4">12 cases</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 rounded bg-reserve/10 text-reserve text-[11px] font-bold">Risk of Resistance</span>
+</td>
+<td class="px-6 py-4 text-slate-500 italic">Critical: Only for MDR infections.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/20 text-center">
+<button class="text-primary text-xs font-bold hover:underline">View All Prescription Data</button>
+</div>
+</div>
+<!-- Footer Context -->
+<div class="flex flex-col lg:flex-row gap-6 p-6 glass-card rounded-xl border border-slate-200 dark:border-slate-800">
+<div class="lg:w-2/3">
+<h5 class="font-bold flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-primary">info</span>
+                            Ndunari AI Stewardship Note
+                        </h5>
+<p class="text-sm text-slate-500 leading-relaxed">
+                            Based on regional data for Lagos and surrounding states, there is a noted 15% increase in the prescription of 'Watch' category antibiotics for uncomplicated urinary tract infections. Ndunari AI recommends reviewing the latest NCDC clinical guidelines to shift towards 'Access' category options where appropriate to reduce long-term resistance risks.
                         </p>
 </div>
+<div class="lg:w-1/3 flex flex-col justify-center items-center lg:items-end">
+<div class="flex -space-x-3 mb-3">
+<div class="size-8 rounded-full border-2 border-white dark:border-slate-900 bg-slate-300" data-alt="Reviewer 1 avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB2r4YpOyRtPYDHtrgKi0gxFUKzlL47l0yV_DSfeGvPnGKF1a0G01BnE96MWzEGaX4kIKKwlqHSrq4BVW_GIEuc_HVaFnDzXdc6x4IWHBQOeR3HT5GQl8r3RukYzNKeEToCZuhuRMmqV0T5jj6wzmt6CRx7_XKYWz9aQbDiEtiKa1kDkxHUP_yBTLrJjdDuM5yyI4aXpua3x0mSgjCocDcTe1mL3j1bpwr0ONyE2RTFufuYqe0wyLwORgiEBSDlbgWoWl8JPUXzkGES"); background-size: cover;'></div>
+<div class="size-8 rounded-full border-2 border-white dark:border-slate-900 bg-slate-300" data-alt="Reviewer 2 avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAixHLDc_dG-27pFuf_TTOSOHUT-YQ1uxfxERRpdTjE7QnJof64nL0hRscmmGomdlMJNsfaum9ae8m1jcqoMpdYm-TOxQfq5nJUQWXsmiTfOENaAdc44EaiaOcjTGAk_zBchHhrq87wsC9hkbYiq2EvJtsce_aTd1eFg_4Y5ymTRpOeEvqVi0DsuViXhuBUYIYeg48GcTcPX1ILGy0GZWgGJ1Tex4_FH9PiLS6a1J4kBj0KhOcmG3JY2bvglLRNNRX2ijnH_Djtqovp"); background-size: cover;'></div>
+<div class="size-8 rounded-full border-2 border-white dark:border-slate-900 bg-primary flex items-center justify-center text-[10px] text-white font-bold">+4</div>
 </div>
-</section>
-<!-- Search Bar -->
-<div class="relative">
-<span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined">search</span>
-<input class="w-full pl-11 pr-4 py-3 bg-white dark:bg-surface-dark border-none rounded-xl shadow-sm text-sm focus:ring-2 focus:ring-primary focus:outline-none placeholder:text-gray-400 dark:text-white" placeholder="Search antibiotics (e.g., Amoxicillin)" type="text"/>
-</div>
-<!-- Chips / Filters -->
-<div class="flex gap-3 overflow-x-auto hide-scrollbar pb-1">
-<button class="shrink-0 px-4 py-2 bg-deep-forest dark:bg-white text-white dark:text-deep-forest text-sm font-bold rounded-full shadow-sm">
-                    All
-                </button>
-<button class="shrink-0 px-4 py-2 bg-white dark:bg-surface-dark border border-gray-100 dark:border-gray-700 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-full hover:bg-gray-50 dark:hover:bg-white/5 transition flex items-center gap-2">
-<span class="w-2 h-2 rounded-full bg-primary"></span>
-                    Access
-                </button>
-<button class="shrink-0 px-4 py-2 bg-white dark:bg-surface-dark border border-gray-100 dark:border-gray-700 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-full hover:bg-gray-50 dark:hover:bg-white/5 transition flex items-center gap-2">
-<span class="w-2 h-2 rounded-full bg-warning-amber"></span>
-                    Watch
-                </button>
-<button class="shrink-0 px-4 py-2 bg-white dark:bg-surface-dark border border-gray-100 dark:border-gray-700 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-full hover:bg-gray-50 dark:hover:bg-white/5 transition flex items-center gap-2">
-<span class="w-2 h-2 rounded-full bg-reserve-red"></span>
-                    Reserve
-                </button>
-</div>
-<!-- Traffic Light Sections -->
-<div class="space-y-6">
-<!-- ACCESS - Green Group -->
-<section>
-<div class="flex items-center justify-between mb-3 px-1">
-<h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Access — First Choice</h3>
-<span class="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full">Safe</span>
-</div>
-<div class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden divide-y divide-gray-100 dark:divide-gray-800">
-<!-- Item 1 -->
-<div class="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group">
-<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">check_circle</span>
-</div>
-<div class="flex-1">
-<h4 class="font-bold text-base dark:text-white">Amoxicillin</h4>
-<p class="text-xs text-gray-500 dark:text-gray-400">500mg • Tablet • 3x Daily</p>
-</div>
-<span class="material-symbols-outlined text-gray-300">chevron_right</span>
-</div>
-<!-- Item 2 -->
-<div class="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group">
-<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">check_circle</span>
-</div>
-<div class="flex-1">
-<h4 class="font-bold text-base dark:text-white">Ampicillin</h4>
-<p class="text-xs text-gray-500 dark:text-gray-400">250mg • Capsule • 4x Daily</p>
-</div>
-<span class="material-symbols-outlined text-gray-300">chevron_right</span>
+<p class="text-[11px] font-bold text-slate-400">Report verified by Stewardship Committee</p>
 </div>
 </div>
-</section>
-<!-- WATCH - Amber Group -->
-<section>
-<div class="flex items-center justify-between mb-3 px-1">
-<h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Watch — Monitor Closely</h3>
-<span class="bg-warning-amber/10 text-warning-amber text-[10px] font-bold px-2 py-0.5 rounded-full">Caution</span>
-</div>
-<div class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden divide-y divide-gray-100 dark:divide-gray-800">
-<!-- Item 1 -->
-<div class="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group relative overflow-hidden">
-<!-- Amber Left Border Indicator -->
-<div class="absolute left-0 top-0 bottom-0 w-1 bg-warning-amber"></div>
-<div class="w-10 h-10 rounded-full bg-warning-amber/10 flex items-center justify-center shrink-0 ml-1">
-<span class="material-symbols-outlined text-warning-amber group-hover:scale-110 transition-transform">warning</span>
-</div>
-<div class="flex-1">
-<h4 class="font-bold text-base dark:text-white">Ciprofloxacin</h4>
-<p class="text-xs text-gray-500 dark:text-gray-400">500mg • Tablet • Nigeria STD Guidelines</p>
-</div>
-<div class="flex flex-col items-end gap-1">
-<span class="text-[10px] font-bold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-1.5 py-0.5 rounded">High Res.</span>
-<span class="material-symbols-outlined text-gray-300">chevron_right</span>
-</div>
-</div>
-<!-- Item 2 -->
-<div class="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group relative overflow-hidden">
-<div class="absolute left-0 top-0 bottom-0 w-1 bg-warning-amber"></div>
-<div class="w-10 h-10 rounded-full bg-warning-amber/10 flex items-center justify-center shrink-0 ml-1">
-<span class="material-symbols-outlined text-warning-amber group-hover:scale-110 transition-transform">warning</span>
-</div>
-<div class="flex-1">
-<h4 class="font-bold text-base dark:text-white">Azithromycin</h4>
-<p class="text-xs text-gray-500 dark:text-gray-400">250mg • Capsule</p>
-</div>
-<span class="material-symbols-outlined text-gray-300">chevron_right</span>
-</div>
-</div>
-</section>
-<!-- RESERVE - Red Group -->
-<section>
-<div class="flex items-center justify-between mb-3 px-1">
-<h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Reserve — Last Resort</h3>
-<span class="bg-reserve-red/10 text-reserve-red text-[10px] font-bold px-2 py-0.5 rounded-full">Danger</span>
-</div>
-<div class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden relative">
-<!-- Background texture for danger zone -->
-<div class="absolute inset-0 bg-red-50 dark:bg-red-900/10 z-0 pointer-events-none"></div>
-<div class="relative z-10 p-4 flex items-center gap-4 hover:bg-white/40 dark:hover:bg-white/5 transition-colors cursor-pointer group">
-<!-- Red Left Border Indicator -->
-<div class="absolute left-0 top-0 bottom-0 w-1 bg-reserve-red"></div>
-<div class="w-10 h-10 rounded-full bg-reserve-red/10 flex items-center justify-center shrink-0 ml-1">
-<span class="material-symbols-outlined text-reserve-red group-hover:scale-110 transition-transform">lock</span>
-</div>
-<div class="flex-1">
-<h4 class="font-bold text-base text-gray-900 dark:text-white">Colistin</h4>
-<p class="text-xs text-gray-500 dark:text-gray-400">Injectable • Hospital Use Only</p>
-</div>
-<div class="flex flex-col items-end gap-1">
-<span class="text-[10px] font-bold bg-reserve-red/10 text-reserve-red px-1.5 py-0.5 rounded">Restricted</span>
-<span class="material-symbols-outlined text-gray-400">chevron_right</span>
-</div>
-</div>
-</div>
-</section>
 </div>
 </main>
-<!-- Bottom Navigation -->
-<nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 glass-panel border-t border-gray-200 dark:border-white/10 pb-5 pt-3 px-6 rounded-t-2xl">
-<div class="flex items-center justify-between">
-<button class="flex flex-col items-center gap-1 group">
-<span class="material-symbols-outlined text-gray-400 group-hover:text-primary transition-colors">home</span>
-<span class="text-[10px] font-medium text-gray-400 group-hover:text-primary transition-colors">Home</span>
-</button>
-<button class="flex flex-col items-center gap-1 group">
-<span class="material-symbols-outlined text-deep-forest dark:text-primary transition-colors">medical_services</span>
-<span class="text-[10px] font-bold text-deep-forest dark:text-primary transition-colors">Report</span>
-</button>
-<div class="relative -top-6">
-<button class="flex items-center justify-center w-14 h-14 rounded-full bg-primary text-white shadow-xl shadow-primary/30 hover:scale-105 transition-transform">
-<span class="material-symbols-outlined text-2xl">qr_code_scanner</span>
-</button>
 </div>
-<button class="flex flex-col items-center gap-1 group">
-<span class="material-symbols-outlined text-gray-400 group-hover:text-primary transition-colors">history</span>
-<span class="text-[10px] font-medium text-gray-400 group-hover:text-primary transition-colors">History</span>
-</button>
-<button class="flex flex-col items-center gap-1 group">
-<span class="material-symbols-outlined text-gray-400 group-hover:text-primary transition-colors">person</span>
-<span class="text-[10px] font-medium text-gray-400 group-hover:text-primary transition-colors">Profile</span>
-</button>
-</div>
-</nav>
-</div>
-<script>
-        // Simple theme toggle logic for demonstration
-        // Check local storage or system preference on load would go here in a real app
-    </script>
 </body></html>

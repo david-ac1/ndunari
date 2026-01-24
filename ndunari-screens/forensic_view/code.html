@@ -3,9 +3,9 @@
 <html class="light" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Ndunari Forensic View</title>
+<title>Ndunari - Drug Forensic Scanner</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <script id="tailwind-config">
@@ -14,10 +14,10 @@
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#4bb814",
+                        "primary": "#11d452",
                         "background-light": "#f6f8f6",
-                        "background-dark": "#162111",
-                        "warning": "#FFC107", // Amber/Warning
+                        "background-dark": "#102216",
+                        "warning-amber": "#f59e0b",
                     },
                     fontFamily: {
                         "display": ["Manrope", "sans-serif"]
@@ -33,136 +33,236 @@
         }
     </script>
 <style>
-        /* Custom utilities for glassmorphism since pure tailwind utilities can be repetitive */
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.1);
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
-        .glass-dark {
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+        .dark .glass-card {
+            background: rgba(16, 34, 22, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
+        .scan-bracket {
+            border: 3px solid #11d452;
+            width: 60px;
+            height: 60px;
+        }
+        .shutter-ring {
+            box-shadow: 0 0 0 4px rgba(17, 212, 82, 0.2);
+        }
     </style>
-<style>
-    body {
-      min-height: max(884px, 100dvh);
-    }
-  </style>
-  </head>
-<body class="bg-background-dark font-display text-white overflow-hidden h-screen w-screen relative">
-<!-- 1. Full Screen Camera Viewport (Simulated) -->
-<div class="absolute inset-0 z-0 w-full h-full bg-black">
-<!-- Background Image simulating the camera feed -->
-<div class="w-full h-full bg-center bg-cover bg-no-repeat opacity-80" data-alt="Close up of a medicine box on a table viewed through a smartphone camera lens" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAWNjM2cmGvyor5wWkpNorh6pTqbH7Pe58Au8acdzLlpSPwoYLsOzKwtimBKStyn90n53p1GOfDtnwXXuwZ5ZoK1UvvcitobDHf4mRL9bkW3tPmslUkQRgaAE6b9v7WW78UUAhMui2pzsk4SJ6rNQy9Nd0NMgGdV-fcHdkJMuPVxBWt6YKaOddsU7KNFZwni60KABGMjrwt5YdLsVQAVuwu3jUf9QYbV7VobH3m5iU8riEhpkYEChrnFX6YmuLTwziRC0TBQUFugSJc');">
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark transition-colors duration-300">
+<div class="relative flex h-screen w-full flex-col overflow-hidden">
+<!-- Top Navigation Bar -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-primary/10 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md px-6 md:px-10 py-3 z-50">
+<div class="flex items-center gap-4 text-background-dark dark:text-white">
+<div class="size-8 text-primary">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M24 18.4228L42 11.475V34.3663C42 34.7796 41.7457 35.1504 41.3601 35.2992L24 42V18.4228Z" fill="currentColor" fill-rule="evenodd"></path>
+<path clip-rule="evenodd" d="M24 8.18819L33.4123 11.574L24 15.2071L14.5877 11.574L24 8.18819ZM9 15.8487L21 20.4805V37.6263L9 32.9945V15.8487ZM27 37.6263V20.4805L39 15.8487V32.9945L27 37.6263ZM25.354 2.29885C24.4788 1.98402 23.5212 1.98402 22.646 2.29885L4.98454 8.65208C3.7939 9.08038 3 10.2097 3 11.475V34.3663C3 36.0196 4.01719 37.5026 5.55962 38.098L22.9197 44.7987C23.6149 45.0671 24.3851 45.0671 25.0803 44.7987L42.4404 38.098C43.9828 37.5026 45 36.0196 45 34.3663V11.475C45 10.2097 44.2061 9.08038 43.0155 8.65208L25.354 2.29885Z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
 </div>
-<!-- Gradient Overlay for readability at top and bottom -->
-<div class="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80 pointer-events-none"></div>
+<h2 class="text-xl font-bold leading-tight tracking-tight">Ndunari</h2>
 </div>
-<!-- 2. Top Header (Glassmorphic) -->
-<header class="absolute top-0 left-0 w-full z-30 pt-safe-top">
-<div class="flex items-center justify-between px-6 py-4 glass-dark mx-4 mt-4 rounded-xl">
-<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/10 transition-colors text-white">
-<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+<div class="hidden md:flex flex-1 justify-center gap-8">
+<a class="text-background-dark dark:text-white/80 text-sm font-medium hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="text-background-dark dark:text-white/80 text-sm font-medium hover:text-primary transition-colors" href="#">History</a>
+<a class="text-primary text-sm font-bold border-b-2 border-primary pb-1" href="#">Forensic Scanner</a>
+<a class="text-background-dark dark:text-white/80 text-sm font-medium hover:text-primary transition-colors" href="#">Stewardship</a>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined">settings</span>
 </button>
-<h1 class="text-base font-bold tracking-wide text-white uppercase opacity-90">
-                Ndunari <span class="text-primary font-extrabold">Scan</span>
-</h1>
-<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/10 transition-colors text-white">
-<span class="material-symbols-outlined text-[24px]">flash_on</span>
-</button>
+<div class="h-8 w-[1px] bg-primary/20 mx-1"></div>
+<div class="flex items-center gap-2 px-2 py-1 bg-primary text-white rounded-lg text-xs font-bold">
+<span class="material-symbols-outlined text-sm">shield</span>
+                    SECURE
+                </div>
 </div>
 </header>
-<!-- 3. Central Scanning Area (Reticle & AR Tooltips) -->
-<main class="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none">
-<!-- Scanning Reticle -->
-<div class="relative w-72 h-72 border border-white/10 rounded-3xl bg-white/5 shadow-2xl backdrop-blur-[2px]">
+<main class="flex flex-1 overflow-hidden relative">
+<!-- Sidebar Navigation -->
+<aside class="hidden lg:flex w-64 flex-col justify-between bg-white dark:bg-background-dark border-r border-primary/10 p-4">
+<div class="flex flex-col gap-6">
+<div>
+<h1 class="text-background-dark dark:text-white text-base font-bold">Forensic Mode</h1>
+<p class="text-primary text-xs font-semibold uppercase tracking-wider">AI Medical Safety</p>
+</div>
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-primary text-white shadow-lg shadow-primary/20 cursor-pointer">
+<span class="material-symbols-outlined">photo_camera</span>
+<p class="text-sm font-semibold leading-normal">Live Scan</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-background-dark dark:text-white/70 hover:bg-primary/10 transition-colors cursor-pointer">
+<span class="material-symbols-outlined">search</span>
+<p class="text-sm font-medium leading-normal">Batch Lookup</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-background-dark dark:text-white/70 hover:bg-primary/10 transition-colors cursor-pointer">
+<span class="material-symbols-outlined">warning</span>
+<p class="text-sm font-medium leading-normal">Safety Alerts</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-background-dark dark:text-white/70 hover:bg-primary/10 transition-colors cursor-pointer">
+<span class="material-symbols-outlined">analytics</span>
+<p class="text-sm font-medium leading-normal">Analytics</p>
+</div>
+</div>
+</div>
+<div class="bg-primary/5 rounded-xl p-4 border border-primary/10">
+<p class="text-xs text-background-dark/60 dark:text-white/40 mb-2">Recent Scan Result</p>
+<div class="flex items-center gap-2">
+<div class="size-2 rounded-full bg-primary animate-pulse"></div>
+<p class="text-sm font-bold text-background-dark dark:text-white">Augmentin 625mg</p>
+</div>
+<p class="text-[10px] text-primary font-bold mt-1">GENUINE • BATCH OK</p>
+</div>
+</aside>
+<!-- Main Scanner Content -->
+<section class="flex-1 flex flex-col relative bg-black overflow-hidden">
+<!-- Camera Viewfinder Background -->
+<div class="absolute inset-0 z-0 overflow-hidden">
+<img class="w-full h-full object-cover opacity-60 grayscale-[20%] brightness-75 scale-105" data-alt="Drug packaging on a medical surface being scanned by a camera" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAI_fJ1puuxqL0kiBUw4JB-XAL3AeM1f_Ng0nkopbClfQq6534aFhqBxTjZyVFaMrFQhsXsTAVYuMrEP5f2rhd6R7qu5wElZFORRRNfjUD_H1S4pLnjegFmwK_PggypmOTYLxNqltnJmjH5g2rxlHgtqp8EBxt06JVD3CmgixJh__06A5xdz7VbaPOud3nvejysislXTnNDKujOP2kOAGzjaiaXWV5p1ZmyRuWw-k0q3iuTuuOVIk30zCvQyZIjrLx_ZnOBmdvritLU"/>
+</div>
+<!-- Breadcrumbs Overlay -->
+<div class="relative z-20 flex flex-wrap gap-2 p-6 bg-gradient-to-b from-black/60 to-transparent">
+<a class="text-white/70 text-sm font-medium hover:text-primary transition-colors" href="#">Medical Safety</a>
+<span class="text-white/40 text-sm font-medium">/</span>
+<span class="text-white text-sm font-bold">Forensic Scanner</span>
+</div>
+<!-- Viewfinder UI Overlays -->
+<div class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+<!-- Scan Brackets -->
+<div class="relative w-[80%] max-w-[500px] h-[300px] border border-white/20 rounded-xl">
 <!-- Corner Brackets -->
-<div class="absolute top-0 left-0 w-12 h-12 border-t-[4px] border-l-[4px] border-primary rounded-tl-2xl -mt-0.5 -ml-0.5"></div>
-<div class="absolute top-0 right-0 w-12 h-12 border-t-[4px] border-r-[4px] border-primary rounded-tr-2xl -mt-0.5 -mr-0.5"></div>
-<div class="absolute bottom-0 left-0 w-12 h-12 border-b-[4px] border-l-[4px] border-primary rounded-bl-2xl -mb-0.5 -ml-0.5"></div>
-<div class="absolute bottom-0 right-0 w-12 h-12 border-b-[4px] border-r-[4px] border-primary rounded-br-2xl -mb-0.5 -mr-0.5"></div>
-<!-- Scanning Line (Static representation of movement) -->
-<div class="absolute top-1/2 left-4 right-4 h-[2px] bg-primary/80 shadow-[0_0_15px_rgba(75,184,20,0.8)]"></div>
-</div>
-<!-- AR Tooltip 1: Verified (Positioned relative to center) -->
-<div class="absolute -translate-y-48 translate-x-16 pointer-events-auto">
-<div class="glass-panel flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg transform transition-all hover:scale-105 cursor-pointer">
-<div class="flex items-center justify-center w-8 h-8 rounded-full bg-primary/20 text-primary">
-<span class="material-symbols-outlined text-[20px]">verified_user</span>
-</div>
-<div class="flex flex-col">
-<span class="text-xs font-semibold text-primary uppercase tracking-wider">Verified</span>
-<span class="text-sm font-bold text-white">Safety Seal Intact</span>
-</div>
-<!-- Connector Line -->
-<div class="absolute top-full left-6 h-8 w-[1px] bg-white/40"></div>
-<div class="absolute top-[calc(100%+32px)] left-6 w-2 h-2 bg-white rounded-full"></div>
+<div class="absolute -top-1 -left-1 scan-bracket rounded-tl-xl border-b-0 border-r-0"></div>
+<div class="absolute -top-1 -right-1 scan-bracket rounded-tr-xl border-b-0 border-l-0"></div>
+<div class="absolute -bottom-1 -left-1 scan-bracket rounded-bl-xl border-t-0 border-r-0"></div>
+<div class="absolute -bottom-1 -right-1 scan-bracket rounded-br-xl border-t-0 border-l-0"></div>
+<!-- Scanning Line Animation -->
+<div class="absolute left-0 right-0 top-1/2 h-[2px] bg-primary/50 shadow-[0_0_15px_#11d452] opacity-50"></div>
+<!-- Help Text -->
+<div class="absolute -top-12 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10">
+<p class="text-white text-xs font-medium tracking-wide">ALIGN PACKAGING WITHIN BRACKETS</p>
 </div>
 </div>
-<!-- AR Tooltip 2: Warning/Checking (Positioned relative to center) -->
-<div class="absolute translate-y-48 -translate-x-20 pointer-events-auto">
-<!-- Connector Line (Upwards) -->
-<div class="absolute bottom-[calc(100%+32px)] right-6 w-2 h-2 bg-warning rounded-full"></div>
-<div class="absolute bottom-full right-6 h-8 w-[1px] bg-warning/60"></div>
-<div class="glass-panel flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border-warning/30">
-<div class="flex items-center justify-center w-8 h-8 rounded-full bg-warning/20 text-warning animate-spin-slow">
-<span class="material-symbols-outlined text-[20px]">sync</span>
+<!-- Glassmorphic Badges (Floating Labels) -->
+<!-- Positive Verification -->
+<div class="absolute top-[25%] left-[60%] glass-card p-3 rounded-xl flex items-center gap-3 pointer-events-auto border-primary/30 animate-pulse transition-all hover:scale-105">
+<div class="size-8 rounded-full bg-primary flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-lg font-bold">check_circle</span>
 </div>
-<div class="flex flex-col">
-<span class="text-xs font-semibold text-warning uppercase tracking-wider">Processing</span>
-<span class="text-sm font-bold text-white">Checking NAFDAC...</span>
+<div>
+<p class="text-[10px] text-background-dark/50 dark:text-white/50 font-bold uppercase tracking-tighter">Security Feature</p>
+<p class="text-sm font-extrabold text-background-dark dark:text-white">Hologram Verified</p>
 </div>
 </div>
+<!-- Information Badge -->
+<div class="absolute bottom-[40%] left-[20%] glass-card p-3 rounded-xl flex items-center gap-3 pointer-events-auto transition-all hover:scale-105">
+<div class="size-8 rounded-full bg-white dark:bg-background-dark border border-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-lg">barcode</span>
 </div>
+<div>
+<p class="text-[10px] text-background-dark/50 dark:text-white/50 font-bold uppercase tracking-tighter">OCR Detected</p>
+<p class="text-sm font-mono font-bold text-background-dark dark:text-white">Batch ID: #NG-8821</p>
+</div>
+</div>
+<!-- Warning Amber Badge -->
+<div class="absolute top-[45%] left-[75%] glass-card p-3 rounded-xl flex items-center gap-3 pointer-events-auto border-warning-amber/40 bg-warning-amber/10 transition-all hover:scale-105">
+<div class="size-8 rounded-full bg-warning-amber flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-lg">warning</span>
+</div>
+<div>
+<p class="text-[10px] text-warning-amber/80 font-bold uppercase tracking-tighter">Stewardship Alert</p>
+<p class="text-sm font-extrabold text-background-dark dark:text-white">Verify Prescription</p>
+</div>
+</div>
+</div>
+<!-- Bottom Scanner Controls -->
+<div class="mt-auto relative z-30 flex flex-col items-center pb-8 pt-10 px-6 bg-gradient-to-t from-black/80 to-transparent">
+<div class="flex items-center gap-12">
+<!-- Flash Toggle -->
+<button class="size-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-all">
+<span class="material-symbols-outlined">flash_on</span>
+</button>
+<!-- Main Shutter Button -->
+<div class="relative group cursor-pointer">
+<div class="size-20 rounded-full border-4 border-white flex items-center justify-center p-1 shutter-ring transition-transform active:scale-95">
+<div class="size-full rounded-full bg-primary shadow-lg group-hover:bg-primary/90 transition-all"></div>
+</div>
+<span class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-white text-[10px] font-bold tracking-widest">CAPTURE</span>
+</div>
+<!-- Zoom Controls -->
+<div class="flex flex-col gap-1 bg-white/10 border border-white/20 rounded-full p-1">
+<button class="size-10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors">
+<span class="material-symbols-outlined">add</span>
+</button>
+<button class="size-10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors">
+<span class="material-symbols-outlined">remove</span>
+</button>
+</div>
+</div>
+<div class="mt-8 glass-card border-white/10 px-6 py-2 rounded-full flex gap-4 pointer-events-auto">
+<button class="flex items-center gap-2 text-background-dark dark:text-white text-xs font-bold py-1">
+<span class="material-symbols-outlined text-sm">upload</span>
+                            UPLOAD IMAGE
+                        </button>
+<div class="w-[1px] bg-background-dark/10 dark:bg-white/10"></div>
+<button class="flex items-center gap-2 text-background-dark dark:text-white text-xs font-bold py-1">
+<span class="material-symbols-outlined text-sm">history</span>
+                            SESSION LOG
+                        </button>
+</div>
+</div>
+</section>
+<!-- Information Panel (Right side) -->
+<aside class="hidden xl:flex w-80 flex-col bg-white dark:bg-background-dark border-l border-primary/10 overflow-y-auto">
+<div class="p-6">
+<h3 class="text-lg font-bold text-background-dark dark:text-white mb-4">Real-time Analysis</h3>
+<div class="space-y-4">
+<div class="p-4 rounded-xl bg-background-light dark:bg-primary/5 border border-primary/10">
+<p class="text-xs font-bold text-primary mb-1">DRUG IDENTITY</p>
+<p class="text-base font-extrabold text-background-dark dark:text-white">Amoxicillin Trihydrate</p>
+<p class="text-xs text-background-dark/60 dark:text-white/40">Broad-spectrum Antibiotic</p>
+</div>
+<div class="p-4 rounded-xl bg-background-light dark:bg-primary/5 border border-primary/10">
+<p class="text-xs font-bold text-primary mb-1">MANUFACTURER</p>
+<p class="text-sm font-bold text-background-dark dark:text-white">GlaxoSmithKline (Nigeria)</p>
+<p class="text-xs text-background-dark/60 dark:text-white/40">Verified Facility #4421-B</p>
+</div>
+<div class="p-4 rounded-xl border border-warning-amber/30 bg-warning-amber/5">
+<div class="flex items-center gap-2 text-warning-amber mb-2">
+<span class="material-symbols-outlined text-sm">warning</span>
+<p class="text-xs font-bold">STEWARDSHIP WARNING</p>
+</div>
+<p class="text-xs leading-relaxed text-background-dark/80 dark:text-white/80">
+                                This antibiotic requires a valid registered prescription. Ensure dosage aligns with NAFDAC guidelines for patient age/weight.
+                            </p>
+</div>
+<div class="pt-4 border-t border-primary/10">
+<h4 class="text-xs font-bold text-background-dark/40 dark:text-white/40 uppercase mb-3">Live Feed Status</h4>
+<div class="flex items-center justify-between py-2">
+<span class="text-sm text-background-dark/70 dark:text-white/70">Neural Engine</span>
+<span class="text-xs font-bold text-primary">ACTIVE</span>
+</div>
+<div class="flex items-center justify-between py-2">
+<span class="text-sm text-background-dark/70 dark:text-white/70">Resolution</span>
+<span class="text-xs font-bold text-background-dark dark:text-white">4K UHD</span>
+</div>
+<div class="flex items-center justify-between py-2">
+<span class="text-sm text-background-dark/70 dark:text-white/70">Encryption</span>
+<span class="text-xs font-bold text-background-dark dark:text-white">AES-256</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-auto p-6 bg-primary/5">
+<button class="w-full bg-primary text-white font-bold py-3 rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-100 transition-all">
+                        GENERATE REPORT
+                    </button>
+</div>
+</aside>
 </main>
-<!-- 4. Bottom Controls (Action Sheet) -->
-<footer class="absolute bottom-0 left-0 w-full z-30 pb-10 pt-6 px-6 flex flex-col items-center">
-<!-- Meta Text Instruction -->
-<div class="mb-8 text-center">
-<p class="text-white/90 text-sm font-medium bg-black/40 px-4 py-2 rounded-full backdrop-blur-sm border border-white/10 inline-flex items-center gap-2">
-<span class="material-symbols-outlined text-[18px]">center_focus_strong</span>
-                Align the medication box within the frame
-            </p>
 </div>
-<!-- Camera Controls Row -->
-<div class="flex items-center justify-between w-full max-w-sm gap-8">
-<!-- Gallery / History Button -->
-<button class="flex flex-col items-center gap-1 group">
-<div class="w-12 h-12 rounded-full glass-dark flex items-center justify-center group-hover:bg-white/20 transition-all">
-<span class="material-symbols-outlined text-white">photo_library</span>
-</div>
-<span class="text-xs font-medium text-white/70">History</span>
-</button>
-<!-- Primary Capture Button -->
-<button class="relative group cursor-pointer transform active:scale-95 transition-transform">
-<!-- Outer Glow Ring -->
-<div class="absolute -inset-1 bg-primary/30 rounded-full blur-md group-hover:bg-primary/50 transition-all"></div>
-<!-- Outer Stroke Ring -->
-<div class="w-20 h-20 rounded-full border-[3px] border-white flex items-center justify-center relative z-10">
-<!-- Inner Fill -->
-<div class="w-16 h-16 rounded-full bg-primary flex items-center justify-center shadow-inner">
-<span class="material-symbols-outlined text-white text-[32px]">qr_code_scanner</span>
-</div>
-</div>
-</button>
-<!-- Manual Input Button -->
-<button class="flex flex-col items-center gap-1 group">
-<div class="w-12 h-12 rounded-full glass-dark flex items-center justify-center group-hover:bg-white/20 transition-all">
-<span class="material-symbols-outlined text-white">keyboard</span>
-</div>
-<span class="text-xs font-medium text-white/70">Manual</span>
-</button>
-</div>
-<!-- Mode Indicator -->
-<div class="mt-6">
-<button class="text-xs font-bold tracking-widest uppercase text-white/50 hover:text-white transition-colors flex items-center gap-1">
-                Forensic Scan Mode
-                <span class="material-symbols-outlined text-[14px]">expand_less</span>
-</button>
-</div>
-</footer>
 </body></html>

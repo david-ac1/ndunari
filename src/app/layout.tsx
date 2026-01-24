@@ -4,6 +4,7 @@ import { PWAUpdater } from "@/app/components/PWAUpdater";
 import { AuthProvider } from "@/app/components/providers/AuthProvider";
 import { ScanDataProvider } from "@/lib/contexts/ScanDataContext";
 import { ErrorBoundary } from "@/app/components/ErrorBoundary";
+import SkipLink from "@/app/components/SkipLink";
 import "./globals.css";
 
 const inter = Inter({
@@ -53,8 +54,9 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en" className="dark">
+        <html lang="en">
             <body className={`${inter.variable} ${manrope.variable} font-sans`}>
+                <SkipLink />
                 <PWAUpdater />
                 <ErrorBoundary>
                     <AuthProvider>

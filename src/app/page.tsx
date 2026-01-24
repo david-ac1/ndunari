@@ -1,44 +1,53 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useEffect, useState, useCallback } from "react";
-import { VoiceController } from "@/app/components/VoiceController";
 import { useAuth } from "@/app/components/providers/AuthProvider";
 import { supabase } from "@/lib/supabase/client";
 import { useScanData } from "@/lib/contexts/ScanDataContext";
 import { sentinelAgentService, type SentinelDirective } from "@/lib/gemini/sentinel-agent.service";
-import { ThinkingPanel } from "@/app/components/ThinkingPanel";
-import { Shield, Activity, Search, AlertCircle, Zap, TrendingUp, Map as MapIcon, ChevronRight, Users, Globe, Database, BookOpen } from "lucide-react";
+import {
+    ShieldCheck,
+    ArrowRight,
+    HeartPulse,
+    Scan,
+    FileText,
+    CheckCircle,
+    MoreHorizontal,
+    Activity,
+    Shield,
+    Clock,
+    Map as MapIcon,
+    TrendingUp,
+    Database,
+    BookOpen,
+    Globe,
+    Zap
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import NotificationPanel from "@/components/notifications/NotificationPanel";
 import SplashScreen from "@/app/components/SplashScreen";
+import Header from "@/app/components/Header";
+import MobileNav from "@/app/components/MobileNav";
+import { ThinkingPanel } from "@/app/components/ThinkingPanel";
+import { AlertCircle } from "lucide-react";
 
 export default function HomePage() {
-    const { user, profile, loading: authLoading } = useAuth();
-    const { scans, isLoading: scansLoading, refreshScans } = useScanData();
+    const { user, loading: authLoading } = useAuth();
+    const { scans, refreshScans } = useScanData();
     const [stats, setStats] = useState({ total: 0, safe: 0, suspicious: 0, counterfeit: 0 });
-    const [configError, setConfigError] = useState<string | null>(null);
 
     // Sentinel State
     const [directives, setDirectives] = useState<SentinelDirective[]>([]);
+    // Agentic Thinking State
     const [isSentinelThinking, setIsSentinelThinking] = useState(false);
     const [sentinelThoughts, setSentinelThoughts] = useState<{ id: string, text: string, level: 'forensic' | 'sentinel' | 'system', timestamp: Date }[]>([]);
 
-    const displayName = profile?.display_name || user?.email?.split('@')[0] || "Health Guardian";
-
     const loadHistoryAndAnalyze = useCallback(async () => {
         setIsSentinelThinking(true);
-        setSentinelThoughts([{ id: '1', text: "Sentinel Node Online. Initiating historical audit...", level: 'system', timestamp: new Date() }]);
+        const thought1Id = Math.random().toString(36).substring(7);
+        setSentinelThoughts([{ id: thought1Id, text: "Sentinel Node Online. Initiating historical audit...", level: 'system', timestamp: new Date() }]);
 
         try {
-            // 0. Vital Check: Env Vars
-            const hasSupabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-            if (!hasSupabase) {
-                setSentinelThoughts(prev => [...prev, { id: 'env-err', text: "CRITICAL: Cloud Grid Config Missing. Check Env Vars.", level: 'system', timestamp: new Date() }]);
-                setConfigError("Supabase Configuration Missing");
-            }
-
             // Stats are calculated from scans provided by ScanDataContext
             const scanList = scans.map(s => ({
                 id: s.id,
@@ -57,36 +66,38 @@ export default function HomePage() {
                 counterfeit: scanList.filter(s => s.riskLevel === 'counterfeit').length
             });
 
-            // 2. Autonomous Sentinel Analysis
-            setSentinelThoughts(prev => [...prev, { id: '2', text: "Identifying regional pattern anomalies...", level: 'sentinel', timestamp: new Date() }]);
-            const newDirectives = await sentinelAgentService.analyzeSurveillanceLogs(scanList.slice(0, 50));
-            setDirectives(newDirectives);
-            setSentinelThoughts(prev => [...prev, { id: '3', text: `Audit complete. ${newDirectives.length} directives issued.`, level: 'system', timestamp: new Date() }]);
+            // Autonomous Sentinel Analysis (Client-side trigger for now)
+            if (scanList.length > 0) {
+                const thought2Id = Math.random().toString(36).substring(7);
+                setSentinelThoughts(prev => [...prev, { id: thought2Id, text: "Analyzing regional threat vectors...", level: 'sentinel', timestamp: new Date() }]);
 
+                const newDirectives = await sentinelAgentService.analyzeSurveillanceLogs(scanList.slice(0, 50));
+                setDirectives(newDirectives);
+
+                const thought3Id = Math.random().toString(36).substring(7);
+                setSentinelThoughts(prev => [...prev, { id: thought3Id, text: `Threat assessment complete. ${newDirectives.length} directives active.`, level: 'system', timestamp: new Date() }]);
+            } else {
+                const thought2Id = Math.random().toString(36).substring(7);
+                setSentinelThoughts(prev => [...prev, { id: thought2Id, text: "No anomalous patterns in recent logs.", level: 'system', timestamp: new Date() }]);
+            }
         } finally {
             setIsSentinelThinking(false);
         }
     }, [scans]);
 
     useEffect(() => {
-        if (authLoading) return; // Wait for auth to be ready
-
-        // Initial load
+        if (authLoading) return;
         loadHistoryAndAnalyze();
 
-        // 1. REHYDRATION ON FOCUS
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
-                console.log("Home: Visibility restored. Re-syncing...");
                 loadHistoryAndAnalyze();
             }
         };
         document.addEventListener('visibilitychange', handleVisibilityChange);
 
-        // 2. LIVE SCAN LISTENER
         let scanSubscription: any = null;
         if (user) {
-            console.log("Home: Setting up real-time scan listener for", user.id);
             scanSubscription = supabase
                 .channel(`public:scans:${user.id}`)
                 .on('postgres_changes', {
@@ -94,9 +105,8 @@ export default function HomePage() {
                     schema: 'public',
                     table: 'scans',
                     filter: `user_id=eq.${user.id}`
-                }, (payload) => {
-                    console.log("Home: New scan detected in real-time", payload.new);
-                    loadHistoryAndAnalyze(); // Refresh everything when a new scan is added
+                }, () => {
+                    refreshScans();
                 })
                 .subscribe();
         }
@@ -105,238 +115,170 @@ export default function HomePage() {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             if (scanSubscription) supabase.removeChannel(scanSubscription);
         };
-    }, [user?.id, authLoading]); // Only re-run when user ID or auth state changes
+    }, [user?.id, authLoading, loadHistoryAndAnalyze, refreshScans]);
 
 
     return (
-        <div className="relative min-h-screen flex flex-col overflow-hidden pb-24 lg:pb-8 bg-background-dark text-white">
+        <div className="relative min-h-screen flex flex-col bg-background-light dark:bg-background-dark text-forest-green dark:text-white transition-colors duration-300">
             <SplashScreen />
-            {/* Background Aesthetics */}
-            <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-            <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
+            <Header />
 
-            {/* Header */}
-            <header className="relative z-20 px-6 py-8">
-                <div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-6">
-                        {/* App Logo */}
-                        <Link href="/" className="relative h-12 w-32 hidden md:block opacity-90 hover:opacity-100 transition-opacity">
-                            <Image
-                                src="/logo.png"
-                                alt="Ndunari Logo"
-                                fill
-                                className="object-contain rounded-lg"
-                                priority
-                            />
-                        </Link>
-                        <div className="h-8 w-px bg-white/10 hidden md:block" />
+            {/* Note: Added id="main-content" for accessibility */}
+            <main id="main-content" className="flex-1 w-full max-w-[1240px] mx-auto px-4 py-8 md:px-8 space-y-8 pb-24 lg:pb-12">
 
-                        <div className="flex items-center gap-4">
-                            <Link href="/profile" className="w-14 h-14 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center font-black text-2xl text-primary hover:scale-105 transition-all">
-                                {displayName?.[0] || 'N'}
-                            </Link>
-                            <div>
-                                <h1 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2">
-                                    {displayName}
-                                    {profile?.role === 'admin' && (
-                                        <span className="px-2 py-0.5 rounded-md bg-primary text-black text-[8px] font-black tracking-widest">
-                                            NATIONAL ADMIN
-                                        </span>
-                                    )}
-                                    <span className={`w-2 h-2 rounded-full animate-pulse ${user ? 'bg-primary' : 'bg-white/20'}`} />
-                                </h1>
-                                <p className="text-[10px] font-bold text-white/40 uppercase tracking-[0.3em]">
-                                    {user ? (profile?.role === 'admin' ? 'Command Center Active' : 'Sentinel Active') : 'Guest Mode'}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        {/* Notification Bell */}
-                        <NotificationPanel />
-
-                        {user && profile?.role === 'admin' && (
-                            <Link
-                                href="/admin/dashboard"
-                                className="px-6 py-3 rounded-2xl bg-primary text-black text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(56,189,248,0.4)]"
-                            >
-                                <Shield size={14} />
-                                Enterprise Intelligence
-                            </Link>
-                        )}
-                        {(!user || user.is_anonymous) && (
-                            <div className="px-4 py-2 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-2">
-                                <span className="relative flex h-2 w-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                                </span>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-white/60">Guardian Active</span>
-                            </div>
-                        )}
-                        {user && profile?.role !== 'admin' && (
-                            <button
-                                onClick={async () => {
-                                    if (confirm("Elevate this account to National Administrator?")) {
-                                        const { data: { session } } = await supabase.auth.getSession();
-                                        console.log("Promotion attempt for user:", session?.user?.id);
-                                        const res = await fetch('/api/admin/promote-me', {
-                                            headers: {
-                                                'Authorization': session?.access_token ? `Bearer ${session.access_token}` : ''
-                                            }
-                                        });
-                                        const json = await res.json();
-                                        if (json.success) {
-                                            alert(json.message + "\n\n" + json.instruction);
-                                            window.location.reload();
-                                        } else {
-                                            alert("Promotion failed: " + json.error);
-                                        }
-                                    }
-                                }}
-                                className="px-6 py-3 rounded-2xl bg-reserve-red text-white text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all animate-pulse"
-                            >
-                                Promote to Admin
-                            </button>
-                        )}
-                        <VoiceController />
-                        <Link href="/notifications" className="w-12 h-12 rounded-2xl glass-panel flex items-center justify-center hover:bg-white/10 transition-all">
-                            <Activity size={20} className="text-white/60" />
-                        </Link>
-                    </div>
-                </div>
-            </header>
-
-            <main className="relative z-10 flex-1 px-6 max-w-7xl mx-auto w-full space-y-8 pb-10">
-
-                {/* Dashboard Grid */}
+                {/* 12-Column Grid Layout - Restored Functional Layout */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-                    {/* Primary Flow (8 Columns) */}
+                    {/* Primary Content (8 Columns) */}
                     <div className="lg:col-span-8 space-y-8">
 
-                        {/* Sentinel Directives (Autonomous Engine Results) */}
-                        <section className="space-y-4">
-                            <div className="flex items-center justify-between px-2">
-                                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-primary">Autonomous Directives</h2>
-                                {isSentinelThinking && <span className="text-[10px] font-bold text-white/30 animate-pulse italic">Sentinel Scanning...</span>}
+                        {/* 1. Autonomous Directives (Moved to Top) */}
+                        <section className="w-full">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                                    Autonomous Directives
+                                    <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">LIVE</span>
+                                </h2>
                             </div>
-
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <AnimatePresence mode="popLayout">
-                                    {directives.length > 0 ? (
-                                        directives.map((directive, idx) => (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                key={idx}
-                                                className={`p-5 rounded-3xl border-2 glass-panel ${directive.type === 'REGIONAL_ALERT' ? 'border-reserve-red/30 bg-reserve-red/5' :
-                                                    directive.type === 'SUPPLY_CHAIN_AUDIT' ? 'border-watch-orange/30 bg-watch-orange/5' :
-                                                        'border-primary/30 bg-primary/5'
-                                                    }`}
-                                            >
-                                                <div className="flex items-start justify-between mb-3">
-                                                    <span className={`px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest ${directive.type === 'REGIONAL_ALERT' ? 'bg-reserve-red text-white' :
-                                                        'bg-primary text-black'
-                                                        }`}>
-                                                        {directive.type.replace('_', ' ')}
-                                                    </span>
-                                                    <div className="text-[10px] font-bold text-white/30">{directive.priority.toUpperCase()}</div>
+                                {directives.length > 0 ? (
+                                    directives.map((directive, idx) => (
+                                        <div key={idx} className="p-5 rounded-2xl bg-white dark:bg-surface-dark border border-primary/20 shadow-sm flex items-start gap-4 hover:border-primary/50 transition-colors">
+                                            <div className={`p-3 rounded-xl ${directive.priority === 'critical' ? 'bg-reserve-red/10 text-reserve-red' :
+                                                directive.priority === 'high' ? 'bg-watch-orange/10 text-watch-orange' :
+                                                    'bg-primary/10 text-primary'
+                                                }`}>
+                                                <Shield size={20} />
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${directive.priority === 'critical' ? 'bg-reserve-red text-white' : 'bg-gray-100 dark:bg-white/10 text-gray-500'
+                                                        }`}>{directive.type.replace(/_/g, " ")}</span>
                                                 </div>
-                                                <h3 className="text-sm font-black mb-1 line-clamp-1">{directive.rationale}</h3>
-                                                <p className="text-xs text-white/60 leading-relaxed line-clamp-2">{directive.proposedAction}</p>
-                                            </motion.div>
-                                        ))
-                                    ) : (
-                                        <div className="col-span-full h-32 rounded-3xl border-2 border-dashed border-white/5 flex flex-col items-center justify-center grayscale opacity-30">
-                                            <Shield size={32} className="mb-2" />
-                                            <span className="text-[10px] font-black uppercase tracking-widest">No Critical Threats Detected</span>
+                                                <h4 className="text-sm font-bold text-forest-green dark:text-white leading-tight">{directive.rationale}</h4>
+                                                <p className="text-xs text-gray-500 mt-1 leading-relaxed">{directive.proposedAction}</p>
+                                            </div>
                                         </div>
-                                    )}
-                                </AnimatePresence>
+                                    ))
+                                ) : (
+                                    <div className="col-span-full p-6 rounded-2xl bg-white dark:bg-surface-dark border border-dashed border-gray-200 dark:border-white/10 flex items-center justify-center gap-4 opacity-70">
+                                        <div className="h-10 w-10 rounded-full bg-access-green/10 flex items-center justify-center text-access-green">
+                                            <CheckCircle size={20} />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-forest-green dark:text-white">All Systems Nominal</p>
+                                            <p className="text-xs text-gray-400">Sentinel has detected no active threats in your region.</p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </section>
 
-                        {/* Action Nodes */}
-                        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <Link href="/scan" className="group relative h-64 rounded-[2.5rem] bg-primary overflow-hidden transition-all hover:scale-[1.02] active:scale-95 shadow-2xl">
-                                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?auto=format&fit=crop&q=80&w=1000')] bg-cover opacity-20 mix-blend-overlay" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/80 to-transparent" />
-                                <div className="relative h-full p-8 flex flex-col justify-between">
-                                    <div className="w-16 h-16 rounded-3xl bg-white/20 backdrop-blur-xl border border-white/30 flex items-center justify-center shadow-inner">
-                                        <Search size={32} className="text-white" />
+                        {/* 2. Action Cards (Large - Restored Functional Prominence) */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Forensic Scanner */}
+                            <Link href="/scan" className="group relative h-64 rounded-[2rem] bg-forest-green overflow-hidden transition-all hover:scale-[1.02] active:scale-95 shadow-xl hover:shadow-2xl">
+                                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?auto=format&fit=crop&q=80&w=1000')] bg-cover opacity-10 mix-blend-overlay" />
+                                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
+
+                                <div className="relative h-full p-8 flex flex-col justify-between z-10">
+                                    <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-inner">
+                                        <Scan size={28} className="text-white" />
                                     </div>
                                     <div>
                                         <h3 className="text-3xl font-black text-white leading-none mb-2">FORENSIC<br />SCANNER</h3>
-                                        <p className="text-black/60 font-black text-[10px] uppercase tracking-[0.2em]">Launch Multimodal Eye</p>
+                                        <p className="text-white/60 font-bold text-[10px] uppercase tracking-[0.2em]">Launch Multimodal Eye</p>
                                     </div>
-                                    <ChevronRight className="absolute top-8 right-8 text-white/40 group-hover:text-white transition-colors" />
+                                    <div className="absolute top-6 right-6 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-forest-green transition-all">
+                                        <ArrowRight size={16} />
+                                    </div>
                                 </div>
                             </Link>
 
-                            <Link href="/prescription" className="group relative h-64 rounded-[2.5rem] bg-zinc-900 border-2 border-white/5 overflow-hidden transition-all hover:scale-[1.02] active:scale-95 shadow-2xl">
-                                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" />
-                                <div className="relative h-full p-8 flex flex-col justify-between">
-                                    <div className="w-16 h-16 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                                        <Activity size={32} className="text-primary" />
+                            {/* Stewardship Auditor */}
+                            <Link href="/prescription" className="group relative h-64 rounded-[2rem] bg-white dark:bg-surface-dark border border-gray-200 dark:border-white/10 overflow-hidden transition-all hover:scale-[1.02] active:scale-95 shadow-xl hover:shadow-2xl">
+                                <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-white dark:from-white/5 dark:to-transparent" />
+                                <div className="relative h-full p-8 flex flex-col justify-between z-10">
+                                    <div className="w-14 h-14 rounded-2xl bg-forest-green/10 border border-forest-green/20 flex items-center justify-center">
+                                        <Activity size={28} className="text-forest-green dark:text-white" />
                                     </div>
                                     <div>
-                                        <h3 className="text-3xl font-black text-white leading-none mb-2">STEWARDSHIP<br />AUDITOR</h3>
-                                        <p className="text-white/40 font-black text-[10px] uppercase tracking-[0.2em]">BETA v3.0 | AMR Shield</p>
+                                        <h3 className="text-3xl font-black text-forest-green dark:text-white leading-none mb-2">STEWARDSHIP<br />AUDITOR</h3>
+                                        <p className="text-gray-400 font-bold text-[10px] uppercase tracking-[0.2em]">BETA v3.0 | AMR Shield</p>
                                     </div>
-                                    <ChevronRight className="absolute top-8 right-8 text-white/20 group-hover:text-primary transition-colors" />
+                                    <div className="absolute top-6 right-6 w-8 h-8 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center group-hover:bg-forest-green group-hover:text-white transition-all">
+                                        <ArrowRight size={16} />
+                                    </div>
                                 </div>
                             </Link>
-                        </section>
+                        </div>
 
-                        {/* Recent History Segment */}
-                        {scans.length > 0 && (
-                            <section className="space-y-4">
-                                <div className="flex items-center justify-between px-2">
-                                    <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white/40">Recent Logs</h2>
-                                    <Link href="/history" className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline">View Ledger</Link>
-                                </div>
-                                <div className="space-y-3">
-                                    {scans.slice(0, 3).map(scan => (
-                                        <div key={scan.id} className="glass-panel p-4 rounded-3xl border border-white/5 flex items-center justify-between group hover:border-primary/40 transition-all">
+                        {/* 3. Recent Activity Section (List View) */}
+                        <section>
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-xl font-extrabold text-forest-green dark:text-white">Recent Safety Activity</h3>
+                                <Link className="text-sm font-bold text-primary hover:underline" href="/history">View All History</Link>
+                            </div>
+
+                            <div className="flex flex-col gap-3">
+                                {scans.length === 0 ? (
+                                    <div className="p-8 text-center bg-white dark:bg-surface-dark rounded-xl border border-dashed border-gray-200 dark:border-white/10">
+                                        <p className="text-gray-400 font-medium">No recent activity found.</p>
+                                        <p className="text-sm text-gray-500 mt-1">Your scans will appear here.</p>
+                                    </div>
+                                ) : (
+                                    scans.slice(0, 3).map((scan) => (
+                                        <div key={scan.id} className="flex items-center justify-between p-4 bg-white dark:bg-surface-dark rounded-xl border border-gray-100 dark:border-white/5 hover:border-primary/20 transition-colors shadow-sm">
                                             <div className="flex items-center gap-4">
-                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${scan.risk_level === 'safe' ? 'bg-access-green/10 text-access-green' : 'bg-reserve-red/10 text-reserve-red'
+                                                <div className={`h-10 w-10 rounded-full flex items-center justify-center ${scan.risk_level === 'safe'
+                                                    ? 'bg-access-green/10 text-access-green'
+                                                    : scan.risk_level === 'suspicious'
+                                                        ? 'bg-watch-orange/10 text-watch-orange'
+                                                        : 'bg-reserve-red/10 text-reserve-red'
                                                     }`}>
-                                                    {scan.authenticity_score}%
+                                                    {scan.risk_level === 'safe' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
                                                 </div>
                                                 <div>
-                                                    <p className="font-black text-sm uppercase tracking-tight">{scan.drug_name}</p>
-                                                    <p className="text-[10px] font-bold text-white/30">{new Date(scan.created_at).toDateString()}</p>
+                                                    <p className="font-bold text-forest-green dark:text-white text-sm">{scan.drug_name}</p>
+                                                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                        <span className="capitalize">{scan.risk_level}</span>
+                                                        <span>•</span>
+                                                        <span className="flex items-center gap-1"><Clock size={10} /> {new Date(scan.created_at).toLocaleDateString()}</span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary/20 group-hover:text-primary transition-all">
-                                                <ChevronRight size={14} />
-                                            </div>
+                                            <button className="text-gray-400 hover:text-forest-green dark:hover:text-white transition-colors">
+                                                <MoreHorizontal size={20} />
+                                            </button>
                                         </div>
-                                    ))}
-                                </div>
-                            </section>
-                        )}
+                                    ))
+                                )}
+                            </div>
+                        </section>
                     </div>
 
-                    {/* Side Intelligence (4 Columns) */}
+                    {/* Sidebar Intelligence (4 Columns - Restored Sidebars) */}
                     <div className="lg:col-span-4 space-y-8">
 
-                        {/* Thinking Stream */}
-                        <section className="space-y-4">
-                            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white/40 px-2">Thought Signature</h2>
-                            <ThinkingPanel thoughts={sentinelThoughts} isAnalyzing={isSentinelThinking} />
+                        {/* 1. Thought Signature (Thinking Panel) */}
+                        <section className="w-full">
+                            <div className="flex items-center justify-between mb-2 px-2">
+                                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-primary/60">Live Intelligence</h2>
+                                {isSentinelThinking && <span className="text-[10px] font-bold text-primary animate-pulse italic">Thinking...</span>}
+                            </div>
+                            <ThinkingPanel thoughts={sentinelThoughts} isAnalyzing={isSentinelThinking} agentName="Ndunari Guardian" />
                         </section>
 
-                        {/* Network Stats */}
-                        <section className="glass-panel p-6 rounded-[2.5rem] border border-white/5 space-y-6">
+                        {/* 2. Guardian Impact (Stats) */}
+                        <section className="bg-white dark:bg-surface-dark p-6 rounded-[2rem] border border-gray-200 dark:border-white/5 space-y-6 shadow-sm">
                             <div>
-                                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white/40 mb-4">Guardian Impact</h2>
+                                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-4">Guardian Impact</h2>
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-end">
-                                        <p className="text-[10px] font-black text-white/30 uppercase">Total Verified</p>
-                                        <p className="text-2xl font-black">{stats.total}</p>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase">Total Verified</p>
+                                        <p className="text-3xl font-black text-forest-green dark:text-white">{stats.total}</p>
                                     </div>
-                                    <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                                    <div className="w-full h-2 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
                                         <div className="h-full bg-primary" style={{ width: `${(stats.safe / Math.max(stats.total, 1)) * 100}%` }} />
                                     </div>
                                     <div className="flex justify-between text-[10px] font-black uppercase">
@@ -345,50 +287,45 @@ export default function HomePage() {
                                     </div>
                                 </div>
                             </div>
-
-                            <Link href="/map" className="block p-4 rounded-2xl bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all group">
+                            <Link href="/map" className="block p-4 rounded-2xl bg-forest-green text-white hover:bg-forest-green/90 transition-all group shadow-lg">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <MapIcon size={18} className="text-primary" />
+                                        <MapIcon size={18} />
                                         <span className="text-xs font-black uppercase tracking-widest">Surveillance Map</span>
                                     </div>
-                                    <TrendingUp size={16} className="text-primary group-hover:translate-x-1 transition-transform" />
+                                    <TrendingUp size={16} className="group-hover:translate-x-1 transition-transform" />
                                 </div>
                             </Link>
                         </section>
 
-                        {/* AI Research Hub */}
-                        <section className="p-6 rounded-[2.5rem] bg-zinc-900 border border-white/5">
-                            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white/40 mb-4 px-2">National Research Hub</h2>
-                            <div className="space-y-3">
-                                <a href="https://www.who.int/groups/aware/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-[10px] font-black uppercase text-white/60">
+                        {/* 3. National Research Hub */}
+                        <section className="p-6 rounded-[2rem] bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/5">
+                            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-4 px-2">National Research Hub</h2>
+                            <div className="space-y-2">
+                                <a href="https://www.who.int/groups/aware/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl hover:bg-white dark:hover:bg-white/5 transition-all text-[10px] font-black uppercase text-gray-500 dark:text-white/60">
                                     <Globe size={14} className="text-primary" /> WHO AWaRe Portal
                                 </a>
-                                <a href="https://greenbook.nafdac.gov.ng/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-[10px] font-black uppercase text-white/60">
+                                <a href="https://greenbook.nafdac.gov.ng/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl hover:bg-white dark:hover:bg-white/5 transition-all text-[10px] font-black uppercase text-gray-500 dark:text-white/60">
                                     <Database size={14} className="text-primary" /> NAFDAC Greenbook
                                 </a>
-                                <a href="https://ncdc.gov.ng/diseases/sitreps/?cat=15&name=Antimicrobial%20Resistance" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-[10px] font-black uppercase text-white/60">
+                                <a href="https://ncdc.gov.ng/diseases/sitreps/?cat=15&name=Antimicrobial%20Resistance" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl hover:bg-white dark:hover:bg-white/5 transition-all text-[10px] font-black uppercase text-gray-500 dark:text-white/60">
                                     <Activity size={14} className="text-primary" /> Nigeria AMR Strategy
                                 </a>
-                                <a href="https://dashboard.globalamrhub.org/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-[10px] font-black uppercase text-white/60">
+                                <a href="https://dashboard.globalamrhub.org/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl hover:bg-white dark:hover:bg-white/5 transition-all text-[10px] font-black uppercase text-gray-500 dark:text-white/60">
                                     <BookOpen size={14} className="text-primary" /> Global AMR Intelligence
                                 </a>
                             </div>
                         </section>
+
                     </div>
                 </div>
             </main>
 
-            {/* Mobile Navigation */}
-            <nav className="fixed bottom-6 left-6 right-6 z-50 lg:hidden">
-                <div className="glass-panel h-16 rounded-full flex items-center justify-between px-6 shadow-2xl border border-white/10 bg-black/60 backdrop-blur-3xl">
-                    <Link href="/" className="text-primary"><Activity size={24} /></Link>
-                    <Link href="/map" className="text-white/40"><MapIcon size={24} /></Link>
-                    <Link href="/scan" className="w-14 h-14 -mt-10 rounded-2xl bg-primary flex items-center justify-center shadow-xl border-4 border-background-dark"><Search size={24} className="text-black" /></Link>
-                    <Link href="/history" className="text-white/40"><TrendingUp size={24} /></Link>
-                    <Link href="/profile" className="text-white/40"><Users size={24} /></Link>
-                </div>
-            </nav>
+            <MobileNav />
         </div>
     );
 }
+
+// Add these missing imports to top of file
+// import { Map as MapIcon, TrendingUp, Database, BookOpen, Globe } from "lucide-react";
+// Already added in main imports block

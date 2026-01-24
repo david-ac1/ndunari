@@ -10,13 +10,10 @@ import { normalizeError, logError } from '@/lib/errors/app-errors'; // Add error
 export interface UserProfile {
     id: string;
     display_name: string;
-    health_integrity_score: number;
-    total_scans: number;
-    total_prescriptions_analyzed: number;
-    preferred_language: string;
-    share_data: boolean;
-    profile_image_url?: string;
-    role: 'user' | 'admin';
+    avatar_url?: string;
+    role: 'user' | 'admin' | 'pharmacist' | 'dev';
+    bio?: string;
+    created_at: string;
 }
 
 interface AuthContextType {
@@ -47,7 +44,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log("Auth: Fetching profile for", userId);
         try {
             const { data, error } = await supabase
-                .from('user_profiles')
+                .from('profiles')
                 .select('*')
                 .eq('id', userId)
                 .single();
@@ -171,7 +168,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             .on('postgres_changes', {
                 event: 'UPDATE',
                 schema: 'public',
-                table: 'user_profiles',
+                table: 'profiles',
                 filter: `id=eq.${user.id}`
             }, (payload) => {
                 console.log("Auth: Real-time profile update detected", payload.new);
