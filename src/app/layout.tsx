@@ -5,6 +5,7 @@ import { AuthProvider } from "@/app/components/providers/AuthProvider";
 import { ScanDataProvider } from "@/lib/contexts/ScanDataContext";
 import { ErrorBoundary } from "@/app/components/ErrorBoundary";
 import SkipLink from "@/app/components/SkipLink";
+import RouteGuard from "@/app/components/RouteGuard";
 import "./globals.css";
 
 const inter = Inter({
@@ -61,7 +62,9 @@ export default function RootLayout({
                 <ErrorBoundary>
                     <AuthProvider>
                         <ScanDataProvider>
-                            {children}
+                            <RouteGuard>
+                                {children}
+                            </RouteGuard>
                         </ScanDataProvider>
                     </AuthProvider>
                 </ErrorBoundary>

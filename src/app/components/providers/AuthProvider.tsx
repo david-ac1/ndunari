@@ -79,40 +79,47 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // 1. Check for existing session
         const initAuth = async () => {
             console.log("Auth: Initializing...");
+
+            // Timeout failsafe
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Auth initialization timed out')), 5000)
+            );
+
             try {
-                const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
+                // Race between auth check and timeout
+                await Promise.race([
+                    (async () => {
+                        const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
+                        if (sessionError) throw sessionError;
 
-                if (sessionError) throw sessionError;
-
-                if (initialSession) {
-                    console.log("Auth: Found existing session:", initialSession.user.id);
-                    setSession(initialSession);
-                    setUser(initialSession.user);
-                    const p = await fetchProfile(initialSession.user.id);
-                    setProfile(p);
-                } else {
-                    console.log("Auth: No session found, attempting anonymous sign-in...");
-                    // No session - try anonymous sign-in
-                    const { user: anonUser, error: signInError } = await signInAnonymously();
-                    if (signInError) {
-                        console.error("Auth: Anonymous sign-in failed:", signInError.message);
-                        // If it fails with "provider disabled", we know they missed Step 6
-                        if (signInError.message.includes("disabled")) {
-                            console.warn("TIP: Enable 'Anonymous Sign-Ins' in Supabase Auth Settings -> Providers");
+                        if (initialSession) {
+                            if (initialSession.user.is_anonymous) {
+                                console.log("Auth: Anonymous session detected in strict mode. Signing out...");
+                                await supabase.auth.signOut();
+                                setUser(null);
+                                setProfile(null);
+                            } else {
+                                console.log("Auth: Found existing verified session:", initialSession.user.id);
+                                setSession(initialSession);
+                                setUser(initialSession.user);
+                                const p = await fetchProfile(initialSession.user.id);
+                                setProfile(p);
+                            }
+                        } else {
+                            console.log("Auth: No session found.");
+                            setUser(null);
+                            setProfile(null);
                         }
-                    } else if (anonUser) {
-                        console.log("Auth: Anonymous sign-in successful:", anonUser.id);
-                        setUser(anonUser);
-                        const p = await fetchProfile(anonUser.id);
-                        setProfile(p);
-                    }
-                }
+                    })(),
+                    timeoutPromise
+                ]);
             } catch (error) { // Replaced catch: any
                 const err = normalizeError(error);
                 console.error('Auth: Initialization failed:', err);
-                logError(err, 'AuthProvider.initAuth'); // Log the error
+                // Even on error, we must turn off loading so RouteGuard can handle it
+                logError(err, 'AuthProvider.initAuth');
             } finally {
-                console.log("Auth: Initialization complete");
+                console.log("Auth: Initialization complete (finally)");
                 setLoading(false);
             }
         };
@@ -134,17 +141,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
 
             if (event === 'SIGNED_OUT') {
-                console.log("Auth: User signed out, re-initializing anonymous session...");
-                // Reset states
-                setLoading(true);
-                // Attempt re-auth
-                const { user: anonUser, error: signInError } = await signInAnonymously();
-                if (anonUser) {
-                    setUser(anonUser);
-                    const p = await fetchProfile(anonUser.id);
-                    setProfile(p);
-                }
-                setLoading(false);
+                console.log("Auth: User signed out.");
+                setUser(null);
+                setSession(null);
+                setProfile(null);
             } else if (event === 'SIGNED_IN') {
                 console.log("Auth: User signed in, triggering cloud synchronization...");
                 syncManager.syncLocalToCloud().then(result => {
