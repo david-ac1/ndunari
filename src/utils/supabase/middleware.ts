@@ -64,7 +64,7 @@ export async function updateSession(request: NextRequest) {
         }
 
         const { data: profile } = await supabase
-            .from('user_profiles')
+            .from('profiles')
             .select('role')
             .eq('id', user.id)
             .single();
