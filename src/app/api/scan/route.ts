@@ -149,12 +149,16 @@ export async function POST(request: NextRequest) {
                         evidenceMap.set(angle, buffer.toString('base64'));
                     }
                     await saveScanEvidence(scanId, evidenceMap, supabaseAdmin);
-
                 } else {
                     console.warn('[API] No authenticated user - 3D scan not saved to database');
                 }
-            } catch (saveError) {
+            } catch (saveError: any) {
                 console.error('[API] Failed to save 3D scan:', saveError);
+                // Expose error to client for debugging
+                return NextResponse.json(
+                    { error: `Database Save Failed: ${saveError.message || saveError}` },
+                    { status: 500 }
+                );
             }
 
             console.log('3D verification scan completed:', {
@@ -266,11 +270,14 @@ export async function POST(request: NextRequest) {
                     console.log('[API] Single Scan saved to database:', scanId);
                 }
             } else {
-                console.warn('[API] No authenticated user - scan not saved to database');
+                console.warn('[API] No authenticated user - scan not saved. Auth Headers:', request.headers.get('cookie') ? 'Present' : 'Missing');
             }
-        } catch (saveError) {
+        } catch (saveError: any) {
             console.error('[API] Failed to save scan:', saveError);
-            // Don't fail the entire request if DB save fails
+            return NextResponse.json(
+                { error: `Database Save Failed: ${saveError.message || saveError}` },
+                { status: 500 }
+            );
         }
 
         console.log('Single scan completed:', {

@@ -230,3 +230,14 @@
   "duration": 51532
 }
 ---
+{
+  "timestamp": "2026-01-23T21:40:24.728Z",
+  "imageSize": 116744,
+  "mimeType": "image/jpeg",
+  "promptLength": 2595,
+  "responseTextLength": 1855,
+  "responseTextPreview": "{\n  \"authenticityScore\": 98,\n  \"drugName\": \"Erythrofaith 500 (Erythromycin Stearate Tablets BP 500mg)\",\n  \"nafdacNumber\": \"B4-6289\",\n  \"batchNumber\": \"NOT_VISIBLE\",\n  \"expiryDate\": \"NOT_VISIBLE\",\n  \"findings\": [\n    \"NAFDAC registration number B4-6289 is officially verified in the NAFDAC Greenbook for Erythrofaith-500.\",\n    \"Manufacturer McW Healthcare Pvt Ltd (India) and Marketing Authorization holder DannyFaith Pharmacy Ltd are legitimate entities.\",\n    \"Presence of a security hologram and h",
+  "finishReason": "STOP",
+  "duration": 20804
+}
+---
