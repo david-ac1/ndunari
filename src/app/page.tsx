@@ -5,7 +5,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/app/components/providers/AuthProvider";
 import { supabase } from "@/lib/supabase/client";
 import { useScanData } from "@/lib/contexts/ScanDataContext";
-import { sentinelAgentService, type SentinelDirective } from "@/lib/gemini/sentinel-agent.service";
+import { type SentinelDirective } from "@/lib/gemini/sentinel-agent.service";
+import { analyzeSurveillanceLogsAction } from "@/app/actions/sentinel";
 import {
     ShieldCheck,
     ArrowRight,
@@ -71,7 +72,7 @@ export default function HomePage() {
                 const thought2Id = Math.random().toString(36).substring(7);
                 setSentinelThoughts(prev => [...prev, { id: thought2Id, text: "Analyzing regional threat vectors...", level: 'sentinel', timestamp: new Date() }]);
 
-                const newDirectives = await sentinelAgentService.analyzeSurveillanceLogs(scanList.slice(0, 50));
+                const newDirectives = await analyzeSurveillanceLogsAction(scanList.slice(0, 50));
                 setDirectives(newDirectives);
 
                 const thought3Id = Math.random().toString(36).substring(7);

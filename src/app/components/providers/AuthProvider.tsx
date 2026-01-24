@@ -81,17 +81,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const initAuth = async () => {
             console.log("Auth: Initializing...");
 
-            // Timeout failsafe
+            // Timeout failsafe (increased to 10s)
             const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Auth initialization timed out')), 5000)
+                setTimeout(() => reject(new Error('Auth initialization timed out')), 10000)
             );
 
             try {
                 // Race between auth check and timeout
                 await Promise.race([
                     (async () => {
+                        console.log("Auth: Getting session...");
                         const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
-                        if (sessionError) throw sessionError;
+
+                        if (sessionError) {
+                            console.error("Auth: getSession error raw:", sessionError);
+                            throw sessionError;
+                        }
 
                         if (initialSession) {
                             if (initialSession.user.is_anonymous) {
@@ -114,10 +119,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     })(),
                     timeoutPromise
                 ]);
-            } catch (error) { // Replaced catch: any
+            } catch (error) {
+                console.error('Auth: Initialization CRITICAL FAILURE:', error);
                 const err = normalizeError(error);
-                console.error('Auth: Initialization failed:', err);
-                // Even on error, we must turn off loading so RouteGuard can handle it
                 logError(err, 'AuthProvider.initAuth');
             } finally {
                 console.log("Auth: Initialization complete (finally)");

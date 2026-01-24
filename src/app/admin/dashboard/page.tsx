@@ -44,7 +44,7 @@ export default function AdminDashboard() {
             const { count: scanCount } = await supabase.from('scans').select('*', { count: 'exact', head: true });
             const { count: fakeCount } = await supabase.from('scans').select('*', { count: 'exact', head: true }).eq('risk_level', 'counterfeit');
             const { count: reserveCount } = await supabase.from('prescriptions').select('*', { count: 'exact', head: true }).eq('aware_category', 'RESERVE');
-            const { count: guardianCount } = await supabase.from('user_profiles').select('*', { count: 'exact', head: true });
+            const { count: guardianCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
 
             // 2. Get Recent Activity
             const { data: scans } = await supabase
