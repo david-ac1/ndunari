@@ -13,6 +13,7 @@ export interface UserProfile {
     avatar_url?: string;
     role: 'user' | 'admin' | 'pharmacist' | 'dev';
     bio?: string;
+    preferred_language?: string;
     created_at: string;
 }
 

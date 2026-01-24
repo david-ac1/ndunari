@@ -74,10 +74,11 @@ export default function Header() {
                             {user && profile?.role === 'admin' && (
                                 <Link
                                     href="/admin/dashboard"
-                                    className="hidden md:flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                                    title="Admin Dashboard"
+                                    className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-bold text-xs uppercase tracking-wide border border-primary/20"
+                                    title="Access Enterprise Intelligence"
                                 >
-                                    <Shield size={20} />
+                                    <Shield size={16} />
+                                    <span>Enterprise Intelligence</span>
                                 </Link>
                             )}
 

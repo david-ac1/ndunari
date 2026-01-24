@@ -1,30 +1,38 @@
--- Migration: Promote User to Admin (Manual)
--- Version: 20260124_promote_admin
--- Description: Run this SQL in Supabase Dashboard to force-promote a user to Admin
+-- Migration: Promote User to Admin (Robust Upsert)
+-- Version: 20260126_promote_admin_v2
+-- Description: Safely promotes a user to Admin, creating the profile row if it's missing (sync issue).
 
--- 1. Replace 'YOUR_EMAIL@EXAMPLE.COM' with your actual production email
 DO $$
 DECLARE
-    target_email TEXT := 'YOUR_EMAIL@EXAMPLE.COM'; -- << CHANGE THIS
+    target_email TEXT := 'davidachibiri8@gmail.com'; -- << REPLACE THIS WITH YOUR EMAIL
     target_user_id UUID;
+    target_meta JSONB;
 BEGIN
-    -- Find the user ID from auth.users
-    SELECT id INTO target_user_id FROM auth.users WHERE email = target_email;
+    -- 1. Find the user ID and Metadata from auth.users
+    SELECT id, raw_user_meta_data INTO target_user_id, target_meta 
+    FROM auth.users 
+    WHERE email = target_email;
 
     IF target_user_id IS NULL THEN
-        RAISE NOTICE 'User not found: %', target_email;
+        RAISE NOTICE '❌ User not found in auth.users: %', target_email;
     ELSE
-        -- 2. Bypass the trigger to update the role
-        -- We temporarily disable the trigger for this transaction
-        ALTER TABLE public.user_profiles DISABLE TRIGGER on_role_change;
-
-        UPDATE public.user_profiles
-        SET role = 'admin'
-        WHERE id = target_user_id;
-
-        -- Re-enable the trigger immediately
-        ALTER TABLE public.user_profiles ENABLE TRIGGER on_role_change;
+        -- 2. Upsert into public.profiles
+        -- This handles two cases:
+        -- A) Profile exists: Updates role to 'admin'
+        -- B) Profile missing (sync error): Creates new profile with 'admin' role
         
-        RAISE NOTICE 'User % promoted to Admin successfully.', target_email;
+        INSERT INTO public.profiles (id, display_name, avatar_url, role, preferred_language)
+        VALUES (
+            target_user_id,
+            COALESCE(target_meta->>'full_name', 'Admin User'),
+            COALESCE(target_meta->>'avatar_url', ''),
+            'admin',
+            'en'
+        )
+        ON CONFLICT (id) DO UPDATE
+        SET role = 'admin',
+            updated_at = now();
+            
+        RAISE NOTICE '✅ SUCCESS: User % is now an Admin.', target_email;
     END IF;
 END $$;
