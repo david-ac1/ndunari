@@ -6,15 +6,16 @@ import { z } from "zod";
  * Represents an autonomous action planned by the agent
  */
 export const SentinelDirectiveSchema = z.object({
-    id: z.string(),
-    type: z.enum(["REGIONAL_ALERT", "SUPPLY_CHAIN_AUDIT", "COMMUNITY_NOTIFICATION", "REGULATORY_ESCALATION"]),
-    region: z.string(),
-    confidence: z.number().min(0).max(100),
+    id: z.string().optional(),
+    type: z.enum(["IMMEDIATE_WARNING", "SURVEILLANCE_UPDATE", "STEWARDSHIP_ACTION", "REGIONAL_ALERT", "SUPPLY_CHAIN_AUDIT"]),
+    region: z.string().optional(),
+    confidence: z.number().min(0).max(100).optional(),
+    source: z.enum(["PERSONAL", "GLOBAL", "SYSTEM"]).optional(),
     rationale: z.string(),
-    evidence: z.array(z.string()),
+    evidence: z.array(z.string()).optional(),
     proposedAction: z.string(),
     priority: z.enum(["low", "medium", "high", "critical"]),
-    timestamp: z.string(),
+    timestamp: z.string().optional(),
 });
 
 export type SentinelDirective = z.infer<typeof SentinelDirectiveSchema>;
@@ -113,53 +114,7 @@ export class SentinelAgentService {
         }
     }
 
-    /**
-     * Analyze recent scan logs to identify patterns
-     * This is an "Action Era" marathon task
-     */
-    async analyzeSurveillanceLogs(scanLogs: any[]): Promise<SentinelDirective[]> {
-        const logContext = JSON.stringify(scanLogs.slice(0, 50)); // Analyze last 50
 
-        const prompt = `You are THE SENTINEL, an autonomous public health orchestrator for Nigeria's pharmaceutical supply chain.
-        
-        CURRENT SURVEILLANCE DATA:
-        ${logContext}
-        
-        TASK:
-        Act as a Marathon Agent. Analyze these scan results for supply chain fractures, counterfeit clusters, or AMR (Anti-Microbial Resistance) risks.
-        
-        CRITICAL REASONING STEPS:
-        1. Identify regional clusters of 'counterfeit' or 'suspicious' results.
-        2. Detect batch number anomalies (e.g., the same batch appearing in distant regions simultaneously).
-        3. Flag "Watch" or "Reserve" antibiotics being used for minor indications.
-        4. Plan autonomous interventions based on findings.
-        
-        RESPONSE FORMAT (JSON Array of Directives):
-        [{
-          "id": "DIR-YYYY-NNNN",
-          "type": "REGIONAL_ALERT" | "SUPPLY_CHAIN_AUDIT" | "COMMUNITY_NOTIFICATION" | "REGULATORY_ESCALATION",
-          "region": "State Name",
-          "confidence": 0-100,
-          "rationale": "Why this directive is needed",
-          "evidence": ["Evidence 1", "Evidence 2"],
-          "proposedAction": "Next autonomous step to execute",
-          "priority": "low" | "medium" | "high" | "critical",
-          "timestamp": "ISO Date"
-        }]
-        
-        Respond ONLY with a valid JSON array.`;
-
-        try {
-            const result = await retryWithBackoff(() => this.model.generateContent(prompt));
-            const response = await result.response;
-            const text = response.text();
-            const json = this.safeParseJson(text, []);
-            return z.array(SentinelDirectiveSchema).parse(json);
-        } catch (error) {
-            console.error("Sentinel Analysis failed:", error);
-            return [];
-        }
-    }
 
     /**
      * Generate risk masks for the national map
@@ -196,45 +151,92 @@ export class SentinelAgentService {
             const json = this.safeParseJson(text, []);
             return z.array(RiskMaskSchema).parse(json);
         } catch (error) {
-            console.error("Sentinel Risk Mask failure:", error);
+            console.error("Sentinel Recall Notice failure:", error);
             return [];
         }
     }
 
     /**
-     * Generate official AI-drafted recall notices
+     * Analyze surveillance logs and global data to generate actionable stewardship directives.
+     * Uses Gemini 1.5 Pro (Thinking Model) concept for deep pattern correlation.
      */
-    async generateRecallNotices(scanLogs: any[]): Promise<RecallNotice[]> {
-        const suspiciousLogs = scanLogs.filter(s => s.risk_level === 'counterfeit' || s.risk_level === 'suspicious');
-        if (suspiciousLogs.length === 0) return [];
-
-        const logContext = JSON.stringify(suspiciousLogs.slice(0, 30));
-        const prompt = `You are the NAFDAC Autonomous Recall Orchestrator.
-        
-        EVIDENCE LOGS: ${logContext}
-        
-        TASK:
-        Draft formal Pharmaceutical Recall Notices for drugs with high-confidence counterfeit signatures.
-        
-        RESPONSE FORMAT (JSON Array):
-        [{
-          "id": "RECALL-2024-NNN",
-          "drugName": "Exact Drug Name",
-          "batchNumber": "Batch/Lot",
-          "reason": "Detailed forensic reason for recall",
-          "severity": "low" | "medium" | "high" | "critical",
-          "scope": "Regional" | "National",
-          "publishedAt": "ISO Date"
-        }]`;
-
+    async analyzeSurveillanceLogs(scanHistory: any[], globalStats: any[] = []): Promise<SentinelDirective[]> {
         try {
-            const result = await this.model.generateContent(prompt);
-            const text = result.response.text();
-            const json = this.safeParseJson(text, []);
-            return z.array(RecallNoticeSchema).parse(json);
+            const model = this.model;
+
+            const prompt = `
+            You are the Ndunari Sentinel, an autonomous AI steward for medication safety in Nigeria.
+            
+            OBJECTIVE:
+            Analyze the provided surveillance logs to identify active threats and generate strategic stewardship directives.
+            You possess "collective intelligence" - you must correlate the User's Personal History with Global Regional Trends.
+
+            INPUTS:
+            1. PERSONAL_LOGS: The user's recent scan history.
+            2. GLOBAL_INTELLIGENCE: Aggregated threat levels by region (De-identified).
+
+            ANALYSIS LOGIC:
+            - **Personal Anomalies**: If the user scans a high-risk drug repeatedly, warn them directly.
+            - **Global Covariance**: If the user is in a region (e.g., "Lagos") where GLOBAL_INTELLIGENCE shows a surge in counterfeits, but the user has only scanned "Safe" items so far, PRE-EMPTIVELY warn them.
+            - **Stewardship**: Recommend actions that help the collective (e.g., "Report this batch to NAFDAC").
+
+            DATA:
+            PERSONAL_LOGS: ${JSON.stringify(scanHistory)}
+            GLOBAL_INTELLIGENCE: ${JSON.stringify(globalStats)}
+
+            OUTPUT FORMAT:
+            Return a JSON array of "Directives". Each directive must have:
+            - type: "IMMEDIATE_WARNING" | "SURVEILLANCE_UPDATE" | "STEWARDSHIP_ACTION"
+            - priority: "critical" | "high" | "medium" | "low"
+            - source: "PERSONAL" (from user's own scans) or "GLOBAL" (from collective intelligence) or "SYSTEM" (from internal system logic)
+            - rationale: "Why is this directive issued? Be specific about the threat correlation."
+            - proposedAction: "What should the user do?"
+
+            Example:
+            [
+              {
+                "type": "IMMEDIATE_WARNING",
+                "priority": "critical",
+                "source": "GLOBAL",
+                "rationale": "Global intelligence detects a 40% surge in fake Anti-Malarials in your active region (Lagos).",
+                "proposedAction": "Switch to NAFDAC-verified suppliers immediately. Do not purchase from hawkers."
+              }
+            ]
+
+            Generate 2-3 high-value directives based on the data. If no threats, return a "SURVEILLANCE_UPDATE" confirming nominal status.
+            `;
+
+            const result = await model.generateContent(prompt);
+            const response = result.response;
+            const text = response.text();
+
+            // Clean markdown wrapping if present
+            const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
+            const rawDirectives = z.array(SentinelDirectiveSchema).parse(JSON.parse(cleanText));
+
+            // Post-hydrate directives with missing system fields
+            return rawDirectives.map(d => ({
+                ...d,
+                id: d.id || Math.random().toString(36).substring(7),
+                timestamp: d.timestamp || new Date().toISOString()
+            })) as SentinelDirective[];
+
         } catch (error) {
-            console.error("Sentinel Recall Notice failure:", error);
-            return [];
+            console.error("Sentinel Analysis Error:", error);
+            // Fallback safe directive
+            return [{
+                id: 'sys-err',
+                type: 'SURVEILLANCE_UPDATE' as const,
+                priority: 'low' as const,
+                source: 'SYSTEM' as const,
+                region: 'System',
+                confidence: 0,
+                evidence: [],
+                timestamp: new Date().toISOString(),
+                rationale: 'Sentinel update services temporarily unavailable.',
+                proposedAction: 'Continue manual verification.'
+            }];
         }
     }
 

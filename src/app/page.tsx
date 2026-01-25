@@ -144,17 +144,38 @@ export default function HomePage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {directives.length > 0 ? (
                                     directives.map((directive, idx) => (
-                                        <div key={idx} className="p-5 rounded-2xl bg-white dark:bg-surface-dark border border-primary/20 shadow-sm flex items-start gap-4 hover:border-primary/50 transition-colors">
-                                            <div className={`p-3 rounded-xl ${directive.priority === 'critical' ? 'bg-reserve-red/10 text-reserve-red' :
+                                        <div key={idx} className="p-5 rounded-2xl bg-white dark:bg-surface-dark border border-primary/20 shadow-sm flex items-start gap-4 hover:border-primary/50 transition-colors relative overflow-hidden group">
+                                            {/* Source Indicator Watermark (Subtle) */}
+                                            {directive.source === 'GLOBAL' && (
+                                                <div className="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                                    <Globe size={80} />
+                                                </div>
+                                            )}
+
+                                            <div className={`p-3 rounded-xl z-10 ${directive.priority === 'critical' ? 'bg-reserve-red/10 text-reserve-red' :
                                                 directive.priority === 'high' ? 'bg-watch-orange/10 text-watch-orange' :
                                                     'bg-primary/10 text-primary'
                                                 }`}>
                                                 <Shield size={20} />
                                             </div>
-                                            <div>
-                                                <div className="flex items-center gap-2 mb-1">
+                                            <div className="z-10 flex-1">
+                                                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                                    {/* Type Badge */}
                                                     <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${directive.priority === 'critical' ? 'bg-reserve-red text-white' : 'bg-gray-100 dark:bg-white/10 text-gray-500'
-                                                        }`}>{directive.type.replace(/_/g, " ")}</span>
+                                                        }`}>
+                                                        {directive.type.replace(/_/g, " ")}
+                                                    </span>
+
+                                                    {/* Source Badge (NEW) */}
+                                                    {directive.source === 'GLOBAL' ? (
+                                                        <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
+                                                            <Globe size={10} /> Global Intel
+                                                        </span>
+                                                    ) : directive.source === 'PERSONAL' && (
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 border border-gray-200 dark:border-white/10 px-2 py-0.5 rounded">
+                                                            Personal
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <h4 className="text-sm font-bold text-forest-green dark:text-white leading-tight">{directive.rationale}</h4>
                                                 <p className="text-xs text-gray-500 mt-1 leading-relaxed">{directive.proposedAction}</p>

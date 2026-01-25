@@ -49,7 +49,7 @@ export async function saveScan(scanData: {
 
     // Check privacy preference
     const { data: profile } = await supabaseClient
-        .from('user_profiles')
+        .from('profiles')
         .select('share_data')
         .eq('id', userId)
         .single();
@@ -270,14 +270,14 @@ async function updateUserStats(userId: string, type: 'scan' | 'prescription', su
     if (error) {
         // Try alternative method if RPC not available
         const { data: profile } = await supabaseClient
-            .from('user_profiles')
+            .from('profiles')
             .select(field)
             .eq('id', userId)
             .single();
 
         if (profile) {
             await supabaseClient
-                .from('user_profiles')
+                .from('profiles')
                 .update({ [field]: (profile[field as keyof typeof profile] as number) + 1 })
                 .eq('id', userId);
         }
