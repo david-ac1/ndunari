@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
         console.log("Admin API: User found", user.id);
 
         const { data: profile } = await supabaseAdmin
-            .from('user_profiles')
+            .from('profiles')
             .select('role')
             .eq('id', user.id)
             .single();

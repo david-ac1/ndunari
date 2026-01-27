@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, History, ScanLine, AlertTriangle, User } from "lucide-react";
+import { LayoutGrid, History, ScanLine, AlertTriangle, User, Pill } from "lucide-react";
 
 export default function MobileNav() {
     const pathname = usePathname();
@@ -22,14 +22,16 @@ export default function MobileNav() {
                     <span className="text-[10px] font-bold">Home</span>
                 </Link>
 
-                {/* History */}
+                {/* Medications (New) */}
                 <Link
-                    href="/history"
-                    className={`flex flex-col items-center gap-1 transition-colors ${isActive("/history") ? "text-primary" : "text-gray-400 dark:text-gray-500 hover:text-forest-green dark:hover:text-white"
+                    href="/dashboard/medications"
+                    className={`flex flex-col items-center gap-1 transition-colors ${isActive("/dashboard/medications") ? "text-primary" : "text-gray-400 dark:text-gray-500 hover:text-forest-green dark:hover:text-white"
                         }`}
                 >
-                    <History size={24} strokeWidth={isActive("/history") ? 2.5 : 2} />
-                    <span className="text-[10px] font-bold">History</span>
+                    <div className="relative">
+                        <Pill size={24} strokeWidth={isActive("/dashboard/medications") ? 2.5 : 2} />
+                    </div>
+                    <span className="text-[10px] font-bold">Meds</span>
                 </Link>
 
                 {/* FAB: Scan */}

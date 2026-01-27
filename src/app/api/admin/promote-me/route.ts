@@ -18,7 +18,7 @@ export async function GET(request: Request) {
         }
 
         const { data, error } = await supabaseAdmin
-            .from('user_profiles')
+            .from('profiles')
             .update({ role: 'admin' })
             .eq('id', user.id)
             .select()
