@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { interceptCourseAbandonmentAction } from "@/app/actions/medication";
+import { AgentThoughtStream, type ReasoningStep } from "@/app/components/reasoning/AgentThoughtStream";
 
 interface MedicationCourse {
     id: string;
@@ -88,6 +89,7 @@ export default function MedicationsPage() {
         scientificRationale: string;
         persuasionMessage: string;
         courseId: string;
+        reasoningSteps?: ReasoningStep[];
     } | null>(null);
 
     // Add Form State
@@ -178,7 +180,14 @@ export default function MedicationsPage() {
                     totalDoses: course.total_doses
                 });
 
-                setInterceptData({ ...warning, courseId: course.id });
+                // Add timestamps to reasoning steps
+                const stepsWithTimestamps = warning.reasoningSteps?.map((step, idx) => ({
+                    ...step,
+                    timestamp: new Date(Date.now() + idx * 100), // Stagger timestamps slightly
+                    status: 'complete' as const
+                }));
+
+                setInterceptData({ ...warning, courseId: course.id, reasoningSteps: stepsWithTimestamps });
                 setShowInterceptModal(true);
             } finally {
                 setLoading(false);
@@ -419,6 +428,17 @@ export default function MedicationsPage() {
                             </div>
 
                             <div className="p-8 space-y-6">
+                                {/* AI Reasoning Stream */}
+                                {interceptData.reasoningSteps && interceptData.reasoningSteps.length > 0 && (
+                                    <AgentThoughtStream
+                                        agentName="AMR Guardian"
+                                        agentType="guardian"
+                                        steps={interceptData.reasoningSteps}
+                                        isThinking={false}
+                                        compact={true}
+                                    />
+                                )}
+
                                 {/* Rationale */}
                                 <div className="bg-reserve-red/5 p-4 rounded-xl border border-reserve-red/10">
                                     <h3 className="text-xs font-black uppercase text-reserve-red mb-2 text-center">Scientific Rationale</h3>

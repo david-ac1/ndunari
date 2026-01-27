@@ -43,9 +43,9 @@ CREATE POLICY "Admins can view all notifications"
     TO authenticated
     USING (
         EXISTS (
-            SELECT 1 FROM user_profiles
-            WHERE user_profiles.id = auth.uid()
-            AND user_profiles.role = 'admin'
+            SELECT 1 FROM profiles
+            WHERE profiles.id = auth.uid()
+            AND profiles.role = 'admin'
         )
     );
 
