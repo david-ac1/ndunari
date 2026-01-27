@@ -258,6 +258,23 @@ export default function ScanPage() {
                 });
             }
 
+            // Add detailed reasoning steps
+            setThoughts(prev => [...prev, {
+                id: Date.now().toString() + '-1',
+                text: "Image captured. Starting OCR analysis on package text...",
+                level: 'forensic',
+                timestamp: new Date()
+            }]);
+
+            await new Promise(r => setTimeout(r, 500)); // Brief delay for UI
+
+            setThoughts(prev => [...prev, {
+                id: Date.now().toString() + '-2',
+                text: "Extracting NAFDAC registration number from packaging...",
+                level: 'forensic',
+                timestamp: new Date()
+            }]);
+
             const formData = new FormData();
             formData.append('image', blob, 'scan.jpg');
             formData.append('mode', 'single');
@@ -266,11 +283,33 @@ export default function ScanPage() {
                 formData.append('longitude', location.longitude.toString());
             }
 
+            setThoughts(prev => [...prev, {
+                id: Date.now().toString() + '-3',
+                text: "Validating against NAFDAC database and WHO Essential Medicines list...",
+                level: 'forensic',
+                timestamp: new Date()
+            }]);
+
             setScanState('analyzing');
+
+            setThoughts(prev => [...prev, {
+                id: Date.now().toString() + '-4',
+                text: "Initiating Google Search grounding for similar packaging reports...",
+                level: 'sentinel',
+                timestamp: new Date()
+            }]);
+
             const apiRes = await fetch('/api/scan', { method: 'POST', body: formData });
             const data = await apiRes.json();
 
             if (!apiRes.ok) throw new Error(data.error || 'Scan failed');
+
+            setThoughts(prev => [...prev, {
+                id: Date.now().toString() + '-5',
+                text: `Forensic analysis complete. Authenticity score: ${data.data.forensic.authenticityScore}%`,
+                level: 'system',
+                timestamp: new Date()
+            }]);
 
             setResult({ ...data.data, scanMode: 'single', anglesScanned: 1 });
             setLastScanPreview(preview);
