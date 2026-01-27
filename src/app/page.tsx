@@ -72,7 +72,7 @@ export default function HomePage() {
                 const thought2Id = Math.random().toString(36).substring(7);
                 setSentinelThoughts(prev => [...prev, { id: thought2Id, text: "Analyzing regional threat vectors...", level: 'sentinel', timestamp: new Date() }]);
 
-                const newDirectives = await analyzeSurveillanceLogsAction(scanList.slice(0, 50));
+                const newDirectives = await analyzeSurveillanceLogsAction(scanList.slice(0, 50), user?.id);
                 setDirectives(newDirectives);
 
                 const thought3Id = Math.random().toString(36).substring(7);

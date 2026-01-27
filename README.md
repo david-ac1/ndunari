@@ -101,6 +101,90 @@ Ndunari has been engineered for reliability in a high-stakes clinical environmen
 <img width="625" height="295" alt="Screenshot 2026-01-14 141459" src="https://github.com/user-attachments/assets/248d2ca8-8856-42a9-a141-d236ee26804b" />
 <img width="1196" height="706" alt="Screenshot 2026-01-23 232554" src="https://github.com/user-attachments/assets/710003a6-84b1-48b2-88d4-c25e2e0d2f22" />
 
+```
+
+---
+
+## 🎯 How the Sentinel Works: A Complete Scenario
+
+The **Ndunari Sentinel** is your autonomous health guardian. It combines three data sources to protect you:
+
+### Data Sources
+1. **Your Personal Scan History** - Every drug you've scanned
+2. **Global Surveillance Intelligence** - Aggregated threats from the entire Ndunari network
+3. **Medication Adherence Behavior** - Your active medication courses and completion rates
+
+### Real-World Example Scenario
+
+**Day 1 (Monday):**
+- You scan a suspicious "Amoxicillin" package at a pharmacy
+- The **Forensic Eye** detects subtle printing errors in the NAFDAC logo
+- VERDICT: "Suspected Counterfeit"
+- Your scan is logged and anonymized geolocation data is recorded (e.g., "Lagos, Nigeria")
+
+**Day 1 (Evening):**
+- You navigate to the **Home Page**
+- The Sentinel automatically analyzes your scans + global data
+- **DIRECTIVE ISSUED**: 
+  ```
+  TYPE: IMMEDIATE_WARNING
+  PRIORITY: Critical
+  SOURCE: PERSONAL
+  RATIONALE: "You scanned a suspected counterfeit Amoxicillin. Fake antibiotics can cause treatment failure and death."
+  ACTION: "Return the purchase immediately. Buy only from NAFDAC-verified pharmacies."
+  ```
+
+**Day 3 (Wednesday):**
+- You purchase genuine Amoxicillin from a verified pharmacy and start a 10-day course
+- You log this in the **/drugs** Medication Tab
+- The system sets up a dosing schedule (3x daily, 8-hour intervals)
+
+**Day 5 (Friday):**
+- You feel better and decide to stop taking the antibiotic (only 4/10 days complete)
+- You try to delete the course from the **Medications Tab**
+- **AMR GUARDIAN INTERCEPT TRIGGERED**:
+  ```
+  GUARDIAN WARNING: "Stopping Amoxicillin at 40% creates resistant bacteria."
+  SCIENTIFIC RATIONALE: "Incomplete antibiotic courses allow surviving bacteria to mutate. This is the #1 cause of Superbugs."
+  CHOICES:
+  - "I Will Finish The Course" (Recommended)
+  - "I understand the risk, stop anyway"
+  ```
+
+**Day 6 (Saturday):**
+- You ignore your dose reminder and are now 50 hours late
+- You open the **Home Page**
+- The Sentinel analyzes your behavior + detects the overdue dose
+- **NEW DIRECTIVE ISSUED**:
+  ```
+  TYPE:STEWARDSHIP_ACTION
+  PRIORITY: High
+  SOURCE: PERSONAL
+  RATIONALE: "You are 50 hours overdue on your Amoxicillin dose. Therapeutic levels have dropped, risking treatment failure."
+  ACTION: "Take your dose immediately and resume the schedule. If you feel well, still finish the full course."
+  ```
+
+**Day 7 (Sunday):**
+- Meanwhile, 50 other Ndunari users in Lagos scanned fake "Artemether" (Antimalarial)
+- This creates a regional cluster
+- You open the Home Page again
+- **GLOBAL INTELLIGENCE DIRECTIVE**:
+  ```
+  TYPE: REGIONAL_ALERT
+  PRIORITY: Medium
+  SOURCE: GLOBAL
+  RATIONALE: "Global intelligence detects a 60% surge in fake Antimalarials in your region (Lagos)."
+  ACTION: "Avoid purchasing Antimalarials from street vendors. Cross-reference all purchases with the Ndunari network."
+  ```
+
+### Key Insight
+The Sentinel doesn't just react to YOUR scans. It:
+1. **Prevents you** from making dangerous purchases (Personal Directives)
+2. **Warns you preemptively** about regional threats before you encounter them (Global Directives)
+3. **Monitors your medication behavior** to prevent AMR spread (Adherence Directives)
+
+This is **Collective Intelligence for Public Health**.
+
 ---
 
 ## 🏗️ Architecture

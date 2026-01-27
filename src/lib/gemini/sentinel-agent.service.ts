@@ -159,51 +159,81 @@ export class SentinelAgentService {
     /**
      * Analyze surveillance logs and global data to generate actionable stewardship directives.
      * Uses Gemini 1.5 Pro (Thinking Model) concept for deep pattern correlation.
+     * NOW ENHANCED: Monitors medication adherence to detect AMR risk behaviors.
      */
-    async analyzeSurveillanceLogs(scanHistory: any[], globalStats: any[] = []): Promise<SentinelDirective[]> {
+    async analyzeSurveillanceLogs(scanHistory: any[], globalStats: any[] = [], medicationData: any[] = []): Promise<SentinelDirective[]> {
         try {
             const model = this.model;
+
+            // Format medication data for the prompt
+            const activeCourses = medicationData.filter(m => m.status === 'active');
+            const abandonedCourses = medicationData.filter(m => m.status === 'abandoned');
+
+            // Detect overdue doses
+            const now = new Date();
+            const overdueCourses = activeCourses.filter(m => {
+                if (m.next_dose_due) {
+                    const due = new Date(m.next_dose_due);
+                    const hoursDiff = (now.getTime() - due.getTime()) / (1000 * 60 * 60);
+                    return hoursDiff > 48; // More than 48h overdue
+                }
+                return false;
+            });
+
+            const medicationContext = medicationData.length > 0 ? `
+            **MEDICATION ADHERENCE DATA:**
+            - Active Courses: ${activeCourses.map(m => `${m.drug_name} (${m.category}): ${m.doses_taken}/${m.total_doses} doses`).join(', ') || 'None'}
+            - Abandoned Courses: ${abandonedCourses.map(m => `${m.drug_name} (${m.category}): Stopped at ${Math.round((m.doses_taken / m.total_doses) * 100)}%`).join(', ') || 'None'}
+            - Severely Overdue: ${overdueCourses.map(m => `${m.drug_name}: ${Math.floor((now.getTime() - new Date(m.next_dose_due!).getTime()) / (1000 * 60 * 60))}h late`).join(', ') || 'None'}
+            
+            ADHERENCE DIRECTIVE RULES:
+            - If there are Abandoned Courses (especially Antibiotics/Antimalarials): Issue a **STEWARDSHIP_ACTION** directive explaining the AMR risk.
+            - If there are Severely Overdue doses: Issue an **IMMEDIATE_WARNING** about therapeutic failure.
+            ` : '';
 
             const prompt = `
             You are the Ndunari Sentinel, an autonomous AI steward for medication safety in Nigeria.
             
             OBJECTIVE:
             Analyze the provided surveillance logs to identify active threats and generate strategic stewardship directives.
-            You possess "collective intelligence" - you must correlate the User's Personal History with Global Regional Trends.
+            You possess "collective intelligence" - you must correlate the User's Personal History with Global Regional Trends AND Medication Adherence Behavior.
 
             INPUTS:
             1. PERSONAL_LOGS: The user's recent scan history.
             2. GLOBAL_INTELLIGENCE: Aggregated threat levels by region (De-identified).
+            3. MEDICATION_ADHERENCE: Active and abandoned medication courses.
 
             ANALYSIS LOGIC:
             - **Personal Anomalies**: If the user scans a high-risk drug repeatedly, warn them directly.
             - **Global Covariance**: If the user is in a region (e.g., "Lagos") where GLOBAL_INTELLIGENCE shows a surge in counterfeits, but the user has only scanned "Safe" items so far, PRE-EMPTIVELY warn them.
             - **Stewardship**: Recommend actions that help the collective (e.g., "Report this batch to NAFDAC").
+            - **NON-ADHERENCE DETECTION**: If the user abandoned an antibiotic course early, this creates AMR risk. Issue a CRITICAL directive.
 
             DATA:
             PERSONAL_LOGS: ${JSON.stringify(scanHistory)}
             GLOBAL_INTELLIGENCE: ${JSON.stringify(globalStats)}
+            ${medicationContext}
 
             OUTPUT FORMAT:
             Return a JSON array of "Directives". Each directive must have:
-            - type: "IMMEDIATE_WARNING" | "SURVEILLANCE_UPDATE" | "STEWARDSHIP_ACTION"
+            - type: "IMMEDIATE_WARNING" | "SURVEILLANCE_UPDATE" | "STEWARDSHIP_ACTION" | "REGIONAL_ALERT"
             - priority: "critical" | "high" | "medium" | "low"
-            - source: "PERSONAL" (from user's own scans) or "GLOBAL" (from collective intelligence) or "SYSTEM" (from internal system logic)
+            - source: "PERSONAL" (from user's own scans/behavior) or "GLOBAL" (from collective intelligence) or "SYSTEM" (from internal system logic)
             - rationale: "Why is this directive issued? Be specific about the threat correlation."
             - proposedAction: "What should the user do?"
 
             Example:
             [
               {
-                "type": "IMMEDIATE_WARNING",
+                "type": "STEWARDSHIP_ACTION",
                 "priority": "critical",
-                "source": "GLOBAL",
-                "rationale": "Global intelligence detects a 40% surge in fake Anti-Malarials in your active region (Lagos).",
-                "proposedAction": "Switch to NAFDAC-verified suppliers immediately. Do not purchase from hawkers."
+                "source": "PERSONAL",
+                "rationale": "You abandoned your Amoxicillin course at 30% completion. Incomplete antibiotic treatment creates resistant bacteria that can spread to your community.",
+                "proposedAction": "Resume your Amoxicillin course immediately or consult a doctor for an alternative. Never stop antibiotics early."
               }
             ]
 
-            Generate 2-3 high-value directives based on the data. If no threats, return a "SURVEILLANCE_UPDATE" confirming nominal status.
+            Generate 2-4 high-value directives based on the data. If no threats, return a "SURVEILLANCE_UPDATE" confirming nominal status.
             `;
 
             const result = await model.generateContent(prompt);
