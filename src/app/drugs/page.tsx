@@ -28,6 +28,8 @@ interface MedicationCourse {
     next_dose_due?: string;
     last_dose_time?: string;
     status: 'active' | 'completed' | 'abandoned';
+    abandoned_at?: string;
+    abandonment_reason?: string;
 }
 
 function getIntervalHours(freq: string): number {
@@ -110,6 +112,7 @@ export default function MedicationsPage() {
                 .from('medication_courses')
                 .select('*')
                 .eq('user_id', user?.id)
+                .in('status', ['active', 'completed']) // Exclude abandoned from UI
                 .order('created_at', { ascending: false });
 
             if (data) setCourses(data);
@@ -162,7 +165,7 @@ export default function MedicationsPage() {
     }
 
     async function handleStopCourse(course: MedicationCourse) {
-        // 1. If completed, just delete
+        // 1. If completed, just delete (already finished properly)
         if (course.status === 'completed' || course.doses_taken >= course.total_doses) {
             await deleteCourse(course.id);
             return;
@@ -189,20 +192,67 @@ export default function MedicationsPage() {
 
                 setInterceptData({ ...warning, courseId: course.id, reasoningSteps: stepsWithTimestamps });
                 setShowInterceptModal(true);
+            } catch (error) {
+                console.error('Error in AMR Guardian intercept:', error);
+                // If intercept fails, still allow deletion
+                await deleteCourse(course.id);
             } finally {
                 setLoading(false);
             }
         } else {
-            // Just delete simple meds
+            // Just delete simple meds (non-antimicrobials)
             await deleteCourse(course.id);
         }
     }
 
     async function proceedWithAbandonment() {
-        if (interceptData) {
-            await deleteCourse(interceptData.courseId);
+        if (!interceptData) return;
+
+        try {
+            console.log('[Medication Abandonment] User proceeded despite warning:', {
+                courseId: interceptData.courseId,
+                riskLevel: interceptData.riskLevel
+            });
+
+            // Find the course being abandoned
+            const course = courses.find(c => c.id === interceptData.courseId);
+            if (!course) {
+                console.error('[Medication Abandonment] Course not found');
+                return;
+            }
+
+            // **CRITICAL**: Mark as abandoned in database instead of deleting
+            // This allows Sentinel and Stewardship to track abandonment patterns
+            const { error } = await supabase
+                .from('medication_courses')
+                .update({
+                    status: 'abandoned',
+                    abandoned_at: new Date().toISOString(),
+                    abandonment_reason: 'user_stopped_early'
+                })
+                .eq('id', interceptData.courseId);
+
+            if (error) {
+                console.error('[Medication Abandonment] Database update failed:', error);
+                alert('Failed to update medication status. Please try again.');
+                return;
+            }
+
+            console.log('[Medication Abandonment] Successfully logged to database', {
+                drug: course.drug_name,
+                progress: `${course.doses_taken}/${course.total_doses}`,
+                category: course.category
+            });
+
+            // Remove from UI (optimistic update)
+            setCourses(prev => prev.filter(c => c.id !== interceptData.courseId));
+
+            // Close modal
             setShowInterceptModal(false);
             setInterceptData(null);
+        } catch (error) {
+            console.error('[Medication Abandonment] Unexpected error:', error);
+            alert('An unexpected error occurred. Please try again.');
         }
     }
 
@@ -248,88 +298,178 @@ export default function MedicationsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-background-light dark:bg-background-dark p-6 pb-24">
-            <div className="max-w-2xl mx-auto space-y-8">
+        <div className="min-h-screen bg-gradient-to-br from-background-light via-background-light to-primary/5 dark:from-background-dark dark:via-background-dark dark:to-primary/5 pb-24">
+            {/* Gradient Accent Line */}
+            <div className="absolute top-0 left-0 right-0 h-[2px] gradient-primary" />
+
+            <div className="max-w-2xl mx-auto p-6 space-y-8">
 
                 {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-black text-forest-green dark:text-white flex items-center gap-2">
-                            <Pill className="text-primary" /> Medication Steward
-                        </h1>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
-                            Adherence & Resistance Guard
-                        </p>
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="glass-panel-strong p-6 rounded-3xl relative overflow-hidden"
+                >
+                    {/* Animated background gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-access-green/10 animate-gradient-shift" />
+
+                    <div className="relative flex items-center justify-between">
+                        <div>
+                            <h1 className="text-3xl font-black text-forest-green dark:text-white flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-2xl gradient-primary flex items-center justify-center shadow-glow-primary animate-pulse-glow">
+                                    <Pill className="text-white" size={24} />
+                                </div>
+                                Medication Steward
+                            </h1>
+                            <p className="text-xs font-bold text-primary uppercase tracking-widest mt-2 ml-1">
+                                🛡️ Adherence & Resistance Guard
+                            </p>
+                        </div>
+                        <motion.button
+                            whileHover={{ scale: 1.1, rotate: 90 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setShowAddModal(true)}
+                            className="w-14 h-14 gradient-primary text-white rounded-2xl shadow-glow-primary hover:shadow-glow-primary-lg transition-all font-bold relative overflow-hidden group"
+                        >
+                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform" />
+                            <Plus size={28} className="relative z-10" />
+                        </motion.button>
                     </div>
-                    <button
-                        onClick={() => setShowAddModal(true)}
-                        className="p-3 bg-primary text-forest-green rounded-full shadow-lg hover:bg-primary/90 transition-all font-bold">
-                        <Plus size={20} />
-                    </button>
-                </div>
+                </motion.div>
 
                 {/* Course List */}
                 <div className="space-y-4">
                     {courses.length === 0 && !loading && (
-                        <div className="text-center p-8 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-2xl">
-                            <p className="text-gray-400 font-bold">No active medications.</p>
-                            <p className="text-xs text-gray-500 mt-2">Add a course to enable the AMR Guardian.</p>
-                        </div>
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="glass-panel p-12 rounded-3xl text-center relative overflow-hidden"
+                        >
+                            {/* Animated background elements */}
+                            <div className="absolute inset-0 opacity-10">
+                                <div className="absolute top-10 left-10 w-32 h-32 bg-primary rounded-full blur-3xl animate-float" />
+                                <div className="absolute bottom-10 right-10 w-40 h-40 bg-access-green rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }} />
+                            </div>
+
+                            <div className="relative">
+                                <div className="w-20 h-20 mx-auto mb-6 rounded-3xl gradient-primary/20 flex items-center justify-center">
+                                    <Pill size={40} className="text-primary" strokeWidth={2.5} />
+                                </div>
+                                <p className="text-xl font-black text-forest-green dark:text-white mb-2">No Active Medications</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto leading-relaxed">
+                                    Track your prescriptions to enable smart adherence reminders and AMR Guardian protection.
+                                </p>
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => setShowAddModal(true)}
+                                    className="mt-6 px-6 py-3 gradient-primary text-white font-bold rounded-xl shadow-glow-primary hover:shadow-glow-primary-lg transition-all flex items-center gap-2 mx-auto"
+                                >
+                                    <Plus size={20} />
+                                    Add Your First Medication
+                                </motion.button>
+                            </div>
+                        </motion.div>
                     )}
 
-                    {courses.map(course => (
-                        <div key={course.id} className="relative bg-white dark:bg-surface-dark p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden group">
-                            {/* Background Progress */}
-                            <div className="absolute left-0 bottom-0 h-1 bg-gray-100 dark:bg-white/10 w-full">
+                    {courses.map((course, index) => (
+                        <motion.div
+                            key={course.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            className="relative glass-panel p-6 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
+                        >
+                            {/* Glassmorphic overlay on hover */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                            {/* Animated Progress Bar */}
+                            <div className="absolute left-0 bottom-0 h-1.5 bg-gray-100 dark:bg-white/5 w-full overflow-hidden">
                                 <motion.div
                                     initial={{ width: 0 }}
                                     animate={{ width: `${(course.doses_taken / course.total_doses) * 100}%` }}
-                                    className={`h-full ${course.status === 'completed' ? 'bg-access-green' : 'bg-primary'}`}
-                                />
+                                    transition={{ duration: 1, ease: "easeOut" }}
+                                    className={`h-full relative ${course.status === 'completed'
+                                        ? 'gradient-primary'
+                                        : 'bg-gradient-to-r from-primary to-access-green'
+                                        }`}
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+                                </motion.div>
                             </div>
 
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${course.category === 'ANTIBIOTIC' ? 'bg-reserve-red/10 text-reserve-red' :
-                                        course.category === 'ANTIMALARIAL' ? 'bg-watch-orange/10 text-watch-orange' :
-                                            'bg-gray-100 text-gray-500'
-                                        }`}>
-                                        {course.category}
-                                    </span>
-                                    <h3 className="text-xl font-black text-forest-green dark:text-white mt-1">{course.drug_name}</h3>
-                                    <div className="flex items-center gap-3 mt-1">
-                                        <p className="text-sm text-gray-400 font-medium flex items-center gap-1">
-                                            <Clock size={12} /> {course.frequency}
+                            <div className="relative flex justify-between items-start mb-4">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className={`text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full ${course.category === 'ANTIBIOTIC' ? 'bg-gradient-to-r from-reserve-red/20 to-reserve-red/10 text-reserve-red border border-reserve-red/20' :
+                                            course.category === 'ANTIMALARIAL' ? 'bg-gradient-to-r from-watch-orange/20 to-watch-orange/10 text-watch-orange border border-watch-orange/20' :
+                                                course.category === 'ANTIVIRAL' ? 'bg-gradient-to-r from-access-green/20 to-access-green/10 text-access-green border border-access-green/20' :
+                                                    'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400'
+                                            }`}>
+                                            {course.category}
+                                        </span>
+                                        {course.status === 'completed' && (
+                                            <motion.span
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-access-green/10 text-access-green flex items-center gap-1 border border-access-green/20"
+                                            >
+                                                <CheckCircle size={12} /> Complete
+                                            </motion.span>
+                                        )}
+                                    </div>
+                                    <h3 className="text-2xl font-black text-forest-green dark:text-white mb-2">
+                                        {course.drug_name}
+                                    </h3>
+                                    <div className="flex items-center gap-4">
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1.5">
+                                            <Clock size={14} className="text-primary" />
+                                            {course.frequency}
                                         </p>
-                                        {/* Next Dose Timer */}
                                         {course.status === 'active' && <NextDoseTimer nextDue={course.next_dose_due} />}
                                     </div>
                                 </div>
-                                <button
+                                <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
                                     onClick={() => handleStopCourse(course)}
-                                    className="text-gray-300 hover:text-reserve-red transition-colors p-2">
-                                    <Trash2 size={18} />
-                                </button>
+                                    className="text-gray-300 hover:text-reserve-red transition-colors p-2 rounded-xl hover:bg-reserve-red/10"
+                                >
+                                    <Trash2 size={20} />
+                                </motion.button>
                             </div>
 
-                            <div className="flex items-center justify-between mt-4">
-                                <div className="text-sm font-bold text-forest-green dark:text-white">
-                                    {course.doses_taken} / <span className="text-gray-400">{course.total_doses} Doses</span>
+                            <div className="relative flex items-center justify-between mt-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="text-sm font-bold text-forest-green dark:text-white">
+                                        <span className="text-2xl">{course.doses_taken}</span>
+                                        <span className="text-gray-400"> / {course.total_doses}</span>
+                                    </div>
+                                    <span className="text-xs text-gray-400 font-medium">doses</span>
                                 </div>
 
                                 {course.status === 'completed' ? (
-                                    <div className="flex items-center gap-2 text-access-green font-black uppercase text-xs tracking-widest">
-                                        <CheckCircle size={16} /> Course Complete
-                                    </div>
+                                    <motion.div
+                                        initial={{ scale: 0, rotate: -180 }}
+                                        animate={{ scale: 1, rotate: 0 }}
+                                        className="flex items-center gap-2 px-4 py-2 rounded-xl gradient-primary text-white font-black uppercase text-xs tracking-widest shadow-glow-primary"
+                                    >
+                                        <CheckCircle size={18} />
+                                        Course Complete
+                                    </motion.div>
                                 ) : (
-                                    <button
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
                                         onClick={() => handleTakeDose(course)}
-                                        className="px-4 py-2 bg-forest-green dark:bg-white dark:text-forest-green text-white rounded-xl text-sm font-bold shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-2">
-                                        <CheckCircle size={16} /> Take Dose
-                                    </button>
+                                        className="px-6 py-3 gradient-primary text-white rounded-xl text-sm font-bold shadow-glow-primary hover:shadow-glow-primary-lg transition-all flex items-center gap-2 group"
+                                    >
+                                        <CheckCircle size={18} className="group-hover:rotate-12 transition-transform" />
+                                        Take Dose
+                                    </motion.button>
                                 )}
                             </div>
-                        </div>
+                        </motion.div>
                     ))}
                 </div>
             </div>
@@ -337,16 +477,33 @@ export default function MedicationsPage() {
             {/* ADD MODAL */}
             <AnimatePresence>
                 {showAddModal && (
-                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-md"
+                        onClick={() => setShowAddModal(false)}
+                    >
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-white dark:bg-surface-dark w-full max-w-md p-6 rounded-3xl shadow-2xl border border-gray-100 dark:border-white/10">
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="glass-panel-strong w-full max-w-md p-8 rounded-3xl shadow-2xl border-2 border-primary/20 relative overflow-hidden"
+                        >
+                            {/* Gradient accent */}
+                            <div className="absolute top-0 left-0 right-0 h-1 gradient-primary" />
 
                             <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-xl font-black text-forest-green dark:text-white">New Prescription</h2>
-                                <button onClick={() => setShowAddModal(false)}><X /></button>
+                                <h2 className="text-2xl font-black text-forest-green dark:text-white">New Prescription</h2>
+                                <motion.button
+                                    whileHover={{ scale: 1.1, rotate: 90 }}
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={() => setShowAddModal(false)}
+                                    className="w-10 h-10 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 flex items-center justify-center transition-colors"
+                                >
+                                    <X size={20} />
+                                </motion.button>
                             </div>
 
                             <div className="space-y-4">
@@ -406,7 +563,7 @@ export default function MedicationsPage() {
                                 </button>
                             </div>
                         </motion.div>
-                    </div>
+                    </motion.div>
                 )}
             </AnimatePresence>
 
