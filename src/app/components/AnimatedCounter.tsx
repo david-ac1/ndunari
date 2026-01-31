@@ -19,7 +19,7 @@ export default function AnimatedCounter({
 }: AnimatedCounterProps) {
     const [count, setCount] = useState(0);
     const countRef = useRef(0);
-    const rafRef = useRef<number>();
+    const rafRef = useRef<number | undefined>(undefined);
 
     useEffect(() => {
         const startTime = performance.now();
