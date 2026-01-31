@@ -11,6 +11,7 @@ export type AppError =
     | ValidationError
     | DatabaseError
     | AIServiceError
+    | TimeoutError
     | UnknownError;
 
 export interface NetworkError {
@@ -45,6 +46,12 @@ export interface AIServiceError {
     message: string;
     service: 'gemini' | 'forensic_eye' | 'sentinel' | 'stewardship';
     retryable: boolean;
+}
+
+export interface TimeoutError {
+    type: 'timeout';
+    message: string;
+    operation?: string;
 }
 
 export interface UnknownError {
@@ -164,6 +171,10 @@ export function getUserMessage(error: AppError): string {
         case 'ai_service':
             return `AI service (${error.service}) is temporarily unavailable. ${error.retryable ? 'Retrying...' : 'Please try again later.'
                 }`;
+        case 'timeout':
+            return error.operation
+                ? `${error.operation} took too long. Please try again.`
+                : 'Operation timed out. Please try again.';
         case 'unknown':
             return 'An unexpected error occurred. Please try again.';
     }

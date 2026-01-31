@@ -40,6 +40,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [session, setSession] = useState<Session | null>(null);
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
+    const [authError, setAuthError] = useState<string | null>(null);
 
     const fetchProfile = async (userId: string) => {
         console.log("Auth: Fetching profile for", userId);
@@ -77,55 +78,95 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     useEffect(() => {
-        // 1. Check for existing session
-        const initAuth = async () => {
-            console.log("Auth: Initializing...");
+        let isMounted = true;
+        let retryCount = 0;
+        const MAX_RETRIES = 3;
+        const TIMEOUT_MS = 8000; // 8 seconds
 
-            // Timeout failsafe (increased to 10s)
-            const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Auth initialization timed out')), 10000)
+        const initAuth = async () => {
+            if (!isMounted) return;
+
+            console.log(`[Auth Init] Starting (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`);
+
+            const timeoutPromise = new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error('timeout')), TIMEOUT_MS)
             );
 
             try {
-                // Race between auth check and timeout
                 await Promise.race([
                     (async () => {
-                        console.log("Auth: Getting session...");
                         const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
 
+                        if (!isMounted) return;
+
                         if (sessionError) {
-                            console.error("Auth: getSession error raw:", sessionError);
                             throw sessionError;
                         }
 
                         if (initialSession) {
                             if (initialSession.user.is_anonymous) {
-                                console.log("Auth: Anonymous session detected in strict mode. Signing out...");
+                                console.log("[Auth Init] Removing anonymous session");
                                 await supabase.auth.signOut();
-                                setUser(null);
-                                setProfile(null);
+                                if (isMounted) {
+                                    setUser(null);
+                                    setProfile(null);
+                                }
                             } else {
-                                console.log("Auth: Found existing verified session:", initialSession.user.id);
-                                setSession(initialSession);
-                                setUser(initialSession.user);
-                                const p = await fetchProfile(initialSession.user.id);
-                                setProfile(p);
+                                console.log(`[Auth Init] Session found: ${initialSession.user.email || initialSession.user.id}`);
+                                if (isMounted) {
+                                    setSession(initialSession);
+                                    setUser(initialSession.user);
+                                    const p = await fetchProfile(initialSession.user.id);
+                                    setProfile(p);
+                                }
                             }
                         } else {
-                            console.log("Auth: No session found.");
-                            setUser(null);
-                            setProfile(null);
+                            console.log("[Auth Init] No session");
+                            if (isMounted) {
+                                setUser(null);
+                                setProfile(null);
+                            }
                         }
                     })(),
                     timeoutPromise
                 ]);
+
+                // Success - clear any previous errors
+                if (isMounted) {
+                    setAuthError(null);
+                    console.log("[Auth Init] ✓ Complete");
+                }
             } catch (error) {
-                console.error('Auth: Initialization CRITICAL FAILURE:', error);
-                const err = normalizeError(error);
-                logError(err, 'AuthProvider.initAuth');
+                if (!isMounted) return;
+
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                const isTimeout = errorMessage === 'timeout';
+                const isNetworkError = errorMessage.includes('fetch') || errorMessage.includes('network');
+
+                // Retry logic for transient errors
+                if ((isTimeout || isNetworkError) && retryCount < MAX_RETRIES) {
+                    retryCount++;
+                    const backoffDelay = Math.min(1000 * Math.pow(2, retryCount - 1), 5000); // Exponential backoff
+                    console.warn(`[Auth Init] Transient error, retrying in ${backoffDelay}ms...`, errorMessage);
+                    setTimeout(() => initAuth(), backoffDelay);
+                    return;
+                }
+
+                // Final failure - log appropriately
+                if (isTimeout || isNetworkError) {
+                    console.warn(`[Auth Init] Network issue after ${retryCount + 1} attempts - continuing in offline mode`);
+                    setAuthError('offline');
+                } else {
+                    // Critical error
+                    console.error('[Auth Init] Critical failure:', error);
+                    const err = normalizeError(error);
+                    logError(err, 'AuthProvider.initAuth');
+                    setAuthError(err.message);
+                }
             } finally {
-                console.log("Auth: Initialization complete (finally)");
-                setLoading(false);
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
         };
 
@@ -159,6 +200,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         });
 
         return () => {
+            isMounted = false;
             subscription.unsubscribe();
         };
     }, []); // Run ONCE on mount - prevents infinite loop

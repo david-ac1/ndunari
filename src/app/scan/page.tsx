@@ -452,34 +452,66 @@ export default function ScanPage() {
 
                     {/* Viewfinder UI Overlays */}
                     <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center z-10">
-                        {/* Scan Brackets */}
+                        {/* Scan Brackets - Enhanced with Pulsing Glow */}
                         <div className="relative w-[80%] max-w-[500px] h-[300px] border border-white/10 rounded-xl">
-                            <div className="absolute -top-1 -left-1 w-10 h-10 border-t-4 border-l-4 border-primary rounded-tl-xl"></div>
-                            <div className="absolute -top-1 -right-1 w-10 h-10 border-t-4 border-r-4 border-primary rounded-tr-xl"></div>
-                            <div className="absolute -bottom-1 -left-1 w-10 h-10 border-b-4 border-l-4 border-primary rounded-bl-xl"></div>
-                            <div className="absolute -bottom-1 -right-1 w-10 h-10 border-b-4 border-r-4 border-primary rounded-br-xl"></div>
+                            {/* Animated Corner Brackets */}
+                            <motion.div
+                                animate={{ opacity: [0.6, 1, 0.6], scale: [1, 1.02, 1] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                                className="absolute -top-1 -left-1 w-10 h-10 border-t-4 border-l-4 border-primary rounded-tl-xl shadow-glow-primary"
+                            />
+                            <motion.div
+                                animate={{ opacity: [0.6, 1, 0.6], scale: [1, 1.02, 1] }}
+                                transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                                className="absolute -top-1 -right-1 w-10 h-10 border-t-4 border-r-4 border-primary rounded-tr-xl shadow-glow-primary"
+                            />
+                            <motion.div
+                                animate={{ opacity: [0.6, 1, 0.6], scale: [1, 1.02, 1] }}
+                                transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+                                className="absolute -bottom-1 -left-1 w-10 h-10 border-b-4 border-l-4 border-primary rounded-bl-xl shadow-glow-primary"
+                            />
+                            <motion.div
+                                animate={{ opacity: [0.6, 1, 0.6], scale: [1, 1.02, 1] }}
+                                transition={{ duration: 2, repeat: Infinity, delay: 1.5 }}
+                                className="absolute -bottom-1 -right-1 w-10 h-10 border-b-4 border-r-4 border-primary rounded-br-xl shadow-glow-primary"
+                            />
 
-                            {/* Scanning Line Animation */}
+                            {/* Enhanced Scanning Line Animation */}
                             {(scanState === 'scanning' || scanState === 'analyzing' || scanState === 'idle') && (
-                                <motion.div
-                                    animate={{ top: ["0%", "100%", "0%"] }}
-                                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                                    className="absolute left-0 right-0 h-[2px] bg-primary/50 shadow-[0_0_15px_#11d452] opacity-50"
-                                />
+                                <>
+                                    <motion.div
+                                        animate={{ top: ["0%", "100%", "0%"] }}
+                                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                                        className="absolute left-0 right-0 h-[3px] gradient-primary shadow-glow-primary opacity-80 blur-[1px]"
+                                    />
+                                    <motion.div
+                                        animate={{ top: ["0%", "100%", "0%"] }}
+                                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                                        className="absolute left-0 right-0 h-[1px] bg-white"
+                                    />
+                                </>
                             )}
 
                             {/* Help Text */}
-                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10">
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="absolute -top-12 left-1/2 -translate-x-1/2 glass-panel-subtle px-4 py-1.5 rounded-full border border-primary/30"
+                            >
                                 <p className="text-white text-xs font-medium tracking-wide">
                                     {scanState === 'upload_pending' ? 'UPLOAD IMAGE' : 'ALIGN PACKAGING WITHIN BRACKETS'}
                                 </p>
-                            </div>
+                            </motion.div>
                         </div>
 
-                        {/* Glassmorphic Badges (Mockups for Look & Feel) */}
+                        {/* Glassmorphic AI Insight Badges */}
                         {isGuiding && (
-                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="absolute top-[25%] left-[60%] glass-panel p-3 rounded-xl flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/20">
-                                <div className="size-8 rounded-full bg-primary flex items-center justify-center text-white">
+                            <motion.div
+                                initial={{ scale: 0.8, opacity: 0, y: 20 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                className="absolute top-[25%] left-[60%] glass-panel-strong p-3 rounded-xl flex items-center gap-3 border border-primary/30 shadow-glow-primary animate-float"
+                            >
+                                <div className="size-8 rounded-full gradient-primary flex items-center justify-center text-white shadow-glow-primary animate-pulse-glow">
                                     <Zap size={16} />
                                 </div>
                                 <div>
@@ -494,27 +526,49 @@ export default function ScanPage() {
                     <div className="mt-auto relative z-30 flex flex-col items-center pb-8 pt-10 px-6 bg-gradient-to-t from-black/80 to-transparent">
                         {/* Main Controls Row */}
                         <div className="flex items-center gap-12">
-                            <button className="size-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-all">
-                                <Zap size={24} />
+                            <button className="size-12 rounded-full glass-panel-subtle border border-primary/30 flex items-center justify-center text-white hover:bg-primary/20 hover:shadow-glow-primary transition-all group">
+                                <Zap size={24} className="group-hover:scale-110 transition-transform" />
                             </button>
 
-                            <div className="relative group cursor-pointer" onClick={scanState === 'idle' ? captureImage : (scanState === 'upload_pending' ? () => fileInputRef.current?.click() : resetScan)}>
-                                <div className="size-20 rounded-full border-4 border-white flex items-center justify-center p-1 active:scale-95 transition-transform">
-                                    <div className={`size-full rounded-full shadow-lg transition-all ${scanState === 'upload_pending' ? 'bg-watch-orange' : 'bg-primary group-hover:bg-primary/90'}`}></div>
+                            {/* Capture Button - Enhanced with Ripple Animation */}
+                            {scanState === 'idle' || scanState === 'upload_pending' ? (
+                                <motion.button
+                                    onClick={() => {
+                                        if (scanState === 'idle' && webcamRef.current) {
+                                            const screenshot = webcamRef.current.getScreenshot();
+                                            if (screenshot) processScan(screenshot, 'camera');
+                                        }
+                                    }}
+                                    whileTap={{ scale: 0.9 }}
+                                    className="size-20 rounded-full gradient-primary shadow-xl-glow flex items-center justify-center group relative overflow-hidden"
+                                >
+                                    {/* Ripple effect on click */}
+                                    <motion.div
+                                        className="absolute inset-0 bg-white rounded-full"
+                                        initial={{ scale: 0, opacity: 0.5 }}
+                                        whileTap={{ scale: 3, opacity: 0 }}
+                                        transition={{ duration: 0.6 }}
+                                    />
+                                    <div className="size-16 rounded-full bg-white flex items-center justify-center relative z-10 group-hover:scale-105 transition-transform">
+                                        <Camera size={32} className="text-primary" />
+                                    </div>
+                                </motion.button>
+                            ) : (
+                                <div className="size-20 rounded-full gradient-primary shadow-xl-glow flex items-center justify-center relative overflow-hidden animate-pulse-glow">
+                                    <div className="size-16 rounded-full bg-white/90 flex items-center justify-center">
+                                        <div className="animate-spin">
+                                            <ScanLine size={32} className="text-primary" />
+                                        </div>
+                                    </div>
                                 </div>
-                                <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-white text-[10px] font-bold tracking-widest whitespace-nowrap">
-                                    {scanState === 'upload_pending' ? 'UPLOAD' : 'CAPTURE'}
-                                </span>
-                            </div>
+                            )}
 
-                            <div className="flex flex-col gap-1 bg-white/10 border border-white/20 rounded-full p-1">
-                                <button className="size-10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors">
-                                    <Plus size={20} />
-                                </button>
-                                <button className="size-10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors">
-                                    <Minus size={20} />
-                                </button>
-                            </div>
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="size-12 rounded-full glass-panel-subtle border border-primary/30 flex items-center justify-center text-white hover:bg-primary/20 hover:shadow-glow-primary transition-all group"
+                            >
+                                <Upload size={24} className="group-hover:scale-110 transition-transform" />
+                            </button>
                         </div>
 
                         {/* Secondary Actions */}
